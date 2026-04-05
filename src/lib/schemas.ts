@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { accentKeys } from "@/lib/theme";
 
 export const loginSchema = z.object({
   username: z.string().min(1),
@@ -33,12 +34,16 @@ export const itemStateSchema = z.object({
   bookmarked: z.boolean().optional(),
 });
 
+export const feedSourceFilterSchema = z.enum(["ALL", "RSS", "REDDIT", "YOUTUBE"]).default("ALL");
+
 export const searchSchema = z.object({
   q: z.string().default(""),
+  sourceFilter: feedSourceFilterSchema.optional().default("ALL"),
 });
 
 export const settingsSchema = z.object({
   theme: z.enum(["SYSTEM", "LIGHT", "DARK"]).optional(),
+  accentColor: z.enum(accentKeys).optional(),
   refreshIntervalMinutes: z.number().int().min(5).max(1440).optional(),
   autoRefreshEnabled: z.boolean().optional(),
   readerOpenOriginalByDefault: z.boolean().optional(),

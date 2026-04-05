@@ -10,7 +10,7 @@ import { ItemCard } from "@/components/item-card";
 import { Button } from "@/components/ui/button";
 import { MobileShell, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
 import { api } from "@/lib/client";
-import { relativeTime } from "@/lib/utils";
+import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord, NavFeed } from "@/types/app";
 
 export default function FeedDetailPage() {
@@ -18,6 +18,7 @@ export default function FeedDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showEdit, setShowEdit] = useState(false);
+  const [refreshQueued, setRefreshQueued] = useState(false);
 
   const items = useQuery({
     queryKey: ["items", "feed", params.feedId],
@@ -33,13 +34,26 @@ export default function FeedDetailPage() {
   });
 
   const feed = me.data?.navigation.feeds.find((f) => f.id === params.feedId);
+  const feedTitle = decodeHtmlEntities(feed?.label || feed?.title || "");
 
   const refresh = useMutation({
     mutationFn: () => api(`/api/feeds/${params.feedId}/refresh`, { method: "POST" }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       await queryClient.invalidateQueries({ queryKey: ["items", "feed", params.feedId] });
+      setRefreshQueued(true);
+      const delays = [1500, 4000, 8000];
+      delays.forEach((delay, index) => {
+        setTimeout(() => {
+          void queryClient.invalidateQueries({ queryKey: ["me"] });
+          void queryClient.invalidateQueries({ queryKey: ["items", "feed", params.feedId] });
+          if (index === delays.length - 1) {
+            setRefreshQueued(false);
+          }
+        }, delay);
+      });
     },
+    onError: () => setRefreshQueued(false),
   });
 
   const markRead = useMutation({
@@ -77,19 +91,25 @@ export default function FeedDetailPage() {
               <button onClick={() => router.back()} className="rounded-lg p-1 text-secondary">
                 <ArrowLeft className="size-5" />
               </button>
-              <FeedAvatar feedId={feed.id} title={feed.label || feed.title} />
+              <FeedAvatar feedId={feed.id} title={feedTitle} />
               <div className="min-w-0 flex-1">
-                <h1 className="text-base font-semibold truncate">{feed.label || feed.title}</h1>
+                <h1 className="text-base font-semibold truncate">{feedTitle}</h1>
                 <p className="text-xs text-secondary">
                   {feed.counts.unreadCount} unread · {relativeTime(feed.lastRefreshedAt)}
                 </p>
+                {refreshQueued ? (
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                    Refreshing
+                  </p>
+                ) : null}
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => refresh.mutate()}
-                  className="rounded-lg p-2 text-secondary"
+                  disabled={refresh.isPending || refreshQueued}
+                  className="rounded-lg p-2 text-secondary disabled:opacity-70"
                 >
-                  <RefreshCcw className={`size-4 ${refresh.isPending ? "animate-spin" : ""}`} />
+                  <RefreshCcw className={`size-4 ${(refresh.isPending || refreshQueued) ? "animate-spin" : ""}`} />
                 </button>
                 <button
                   onClick={() => setShowEdit(true)}

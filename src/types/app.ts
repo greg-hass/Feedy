@@ -56,6 +56,18 @@ export type MeResponse = {
     username: string;
     settings: {
       theme: "SYSTEM" | "LIGHT" | "DARK";
+      accentColor:
+        | "EMERALD"
+        | "BLUE"
+        | "INDIGO"
+        | "VIOLET"
+        | "PINK"
+        | "ORANGE"
+        | "AMBER"
+        | "LIME"
+        | "CYAN"
+        | "TEAL"
+        | "SLATE";
       refreshIntervalMinutes: number;
       autoRefreshEnabled: boolean;
       readerOpenOriginalByDefault: boolean;

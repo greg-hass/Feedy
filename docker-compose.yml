@@ -38,6 +38,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       APP_URL: ${APP_URL:-http://192.168.1.186:4000}
       DATA_DIR: /app/data
+      HOSTNAME: 0.0.0.0
     depends_on:
       postgres:
         condition: service_healthy

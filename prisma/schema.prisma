@@ -57,6 +57,20 @@ enum ThemePreference {
   DARK
 }
 
+enum AccentPreference {
+  EMERALD
+  BLUE
+  INDIGO
+  VIOLET
+  PINK
+  ORANGE
+  AMBER
+  LIME
+  CYAN
+  TEAL
+  SLATE
+}
+
 model User {
   id           String         @id @default(cuid())
   username     String         @unique
@@ -76,6 +90,7 @@ model Settings {
   id                            String          @id @default(cuid())
   userId                        String          @unique
   theme                         ThemePreference @default(SYSTEM)
+  accentColor                   AccentPreference @default(EMERALD)
   refreshIntervalMinutes        Int             @default(60)
   autoRefreshEnabled            Boolean         @default(true)
   readerOpenOriginalByDefault   Boolean         @default(false)

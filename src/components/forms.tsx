@@ -26,11 +26,11 @@ export function AddFolderForm({ onClose }: { onClose?: () => void }) {
   });
 
   return (
-    <div className="surface rounded-[20px] border border-subtle p-4">
+    <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.22)]">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">New folder</p>
         {onClose && (
-          <button onClick={onClose} className="rounded-lg p-1 text-secondary">
+          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
             <X className="size-4" />
           </button>
         )}
@@ -82,35 +82,45 @@ export function EditFolderSheet({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-md rounded-t-[24px] bg-[var(--surface-strong)] p-5 pb-8"
+        className="max-h-[min(78vh,720px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold">Edit folder</h3>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-secondary">
+        <div className="mb-3 flex justify-center">
+          <div className="h-1.5 w-11 rounded-full bg-[var(--surface-muted)]" />
+        </div>
+
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-[15px] font-semibold">Edit folder</h3>
+            <p className="mt-1 text-xs text-secondary">Rename, reorder, or remove this folder.</p>
+          </div>
+          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
             <X className="size-5" />
           </button>
         </div>
 
-        <label className="mt-4 block">
+        <label className="mt-3 block">
           <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Name</span>
           <Input value={title} onChange={(event) => setTitle(event.target.value)} />
         </label>
 
         {onReorder && (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-2.5 flex gap-2">
             <button
               onClick={() => onReorder("up")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-subtle bg-[var(--surface-muted)] py-2.5 text-xs font-medium text-secondary"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
             >
               <ArrowUp className="size-4" />
               Move up
             </button>
             <button
               onClick={() => onReorder("down")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-subtle bg-[var(--surface-muted)] py-2.5 text-xs font-medium text-secondary"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
             >
               <ArrowDown className="size-4" />
               Move down
@@ -118,7 +128,7 @@ export function EditFolderSheet({
           </div>
         )}
 
-        <Button onClick={() => mutation.mutate()} className="mt-4 w-full" disabled={!title.trim()}>
+        <Button onClick={() => mutation.mutate()} className="mt-3.5 w-full" disabled={!title.trim()}>
           Save
         </Button>
 
@@ -129,7 +139,7 @@ export function EditFolderSheet({
               onClose();
             }
           }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 px-4 py-2.5 text-sm font-medium text-[var(--danger)]"
+          className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 px-4 py-2.5 text-sm font-medium text-[var(--danger)]"
         >
           <Trash2 className="size-4" />
           Delete folder
@@ -171,11 +181,11 @@ export function AddFeedForm({
   });
 
   return (
-    <div className="surface rounded-[20px] border border-subtle p-4">
+    <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.22)]">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">Add feed</p>
         {onClose && (
-          <button onClick={onClose} className="rounded-lg p-1 text-secondary">
+          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
             <X className="size-4" />
           </button>
         )}
@@ -202,7 +212,7 @@ export function AddFeedForm({
           <select
             value={folderId}
             onChange={(event) => setFolderId(event.target.value)}
-            className="mt-3 h-12 w-full rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm"
+            className="mt-3 h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] px-4 text-sm text-[var(--text-primary)]"
           >
             <option value="">No folder</option>
             {folders.map((folder) => (
@@ -261,32 +271,40 @@ export function EditFeedSheet({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-md rounded-t-[24px] bg-[var(--surface-strong)] p-5 pb-8"
+        className="max-h-[min(78vh,720px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold">Edit feed</h3>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-secondary">
+        <div className="mb-3 flex justify-center">
+          <div className="h-1.5 w-11 rounded-full bg-[var(--surface-muted)]" />
+        </div>
+
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[15px] font-semibold">Edit feed</h3>
+            <p className="mt-1 truncate text-xs text-secondary">{feed.sourceUrl}</p>
+          </div>
+          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
             <X className="size-5" />
           </button>
         </div>
 
-        <p className="mt-1 truncate text-xs text-secondary">{feed.sourceUrl}</p>
-
-        <label className="mt-4 block">
+        <label className="mt-3 block">
           <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Label</span>
           <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder={feed.title} />
         </label>
 
         {folders.length > 0 && (
-          <label className="mt-3 block">
+          <label className="mt-2.5 block">
             <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Folder</span>
             <select
               value={folderId}
               onChange={(event) => setFolderId(event.target.value)}
-              className="h-12 w-full rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm"
+              className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] px-4 text-sm text-[var(--text-primary)]"
             >
               <option value="">No folder</option>
               {folders.map((folder) => (
@@ -300,7 +318,7 @@ export function EditFeedSheet({
 
         <button
           onClick={() => setIsPinned(!isPinned)}
-          className={`mt-3 flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
+          className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
             isPinned
               ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
               : "border-subtle text-secondary"
@@ -311,17 +329,17 @@ export function EditFeedSheet({
         </button>
 
         {onReorder && (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-2.5 flex gap-2">
             <button
               onClick={() => onReorder("up")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-subtle bg-[var(--surface-muted)] py-2.5 text-xs font-medium text-secondary"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
             >
               <ArrowUp className="size-4" />
               Move up
             </button>
             <button
               onClick={() => onReorder("down")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-subtle bg-[var(--surface-muted)] py-2.5 text-xs font-medium text-secondary"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
             >
               <ArrowDown className="size-4" />
               Move down
@@ -329,7 +347,7 @@ export function EditFeedSheet({
           </div>
         )}
 
-        <Button onClick={() => mutation.mutate()} className="mt-4 w-full" disabled={mutation.isPending}>
+        <Button onClick={() => mutation.mutate()} className="mt-3.5 w-full" disabled={mutation.isPending}>
           Save
         </Button>
 
@@ -340,7 +358,7 @@ export function EditFeedSheet({
               onClose();
             }
           }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 px-4 py-2.5 text-sm font-medium text-[var(--danger)]"
+          className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 px-4 py-2.5 text-sm font-medium text-[var(--danger)]"
         >
           <Trash2 className="size-4" />
           Delete feed

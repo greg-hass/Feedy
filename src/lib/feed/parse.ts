@@ -5,6 +5,7 @@ import Parser from "rss-parser";
 import { FeedSourceType } from "@prisma/client";
 import { fetchWithTimeout } from "@/lib/http";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 const parser = new Parser({
   defaultRSS: 2.0,
@@ -48,7 +49,7 @@ function detectSourceType(url: string, feedType?: string | null): FeedSourceType
     return FeedSourceType.RSS;
   }
 
-  return FeedSourceType.UNKNOWN;
+  return FeedSourceType.RSS;
 }
 
 function hashUniqueKey(feedId: string, raw: string) {
@@ -66,8 +67,8 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
   const sourceType = detectSourceType(url, feed.feedUrl ?? feed.generator ?? null);
 
   return {
-    title: feed.title?.trim() || "Untitled feed",
-    description: feed.description?.trim() || null,
+    title: decodeHtmlEntities(feed.title?.trim()) || "Untitled feed",
+    description: decodeHtmlEntities(feed.description?.trim()) || null,
     siteUrl: feed.link?.trim() || null,
     feedUrl: feed.feedUrl?.trim() || url,
     iconUrl: ((feed as { image?: { url?: string } }).image?.url as string | undefined) ?? null,
@@ -104,15 +105,15 @@ export async function fetchAndParseFeed(url: string, feedId: string) {
       uniqueKey: hashUniqueKey(feedId, rawId),
       guid: item.guid ?? (typeof extra.id === "string" ? extra.id : null),
       externalId: (typeof extra.id === "string" ? extra.id : null) ?? item.guid ?? null,
-      title: item.title?.trim() || "Untitled item",
-      summary: item.contentSnippet?.trim() || item.summary?.trim() || null,
+      title: decodeHtmlEntities(item.title?.trim()) || "Untitled item",
+      summary: decodeHtmlEntities(item.contentSnippet?.trim() || item.summary?.trim()) || null,
       contentHtml:
         (extra.contentEncoded as string | undefined) ??
         item["content"] ??
         null,
       author:
-        item.creator?.trim() ||
-        (typeof extra.author === "string" ? extra.author.trim() : null),
+        decodeHtmlEntities(item.creator?.trim()) ||
+        (typeof extra.author === "string" ? decodeHtmlEntities(extra.author.trim()) : null),
       canonicalUrl: canonicalUrl || null,
       commentsUrl: typeof extra.comments === "string" ? extra.comments.trim() : null,
       mediaUrl:
@@ -129,8 +130,8 @@ export async function fetchAndParseFeed(url: string, feedId: string) {
     etag: response.headers.get("etag"),
     lastModified: response.headers.get("last-modified"),
     feed: {
-      title: feed.title?.trim() || "Untitled feed",
-      description: feed.description?.trim() || null,
+      title: decodeHtmlEntities(feed.title?.trim()) || "Untitled feed",
+      description: decodeHtmlEntities(feed.description?.trim()) || null,
       siteUrl: feed.link?.trim() || null,
       iconUrl: ((feed as { image?: { url?: string } }).image?.url as string | undefined) ?? null,
       sourceType,

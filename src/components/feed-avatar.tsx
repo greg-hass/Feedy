@@ -9,7 +9,7 @@ export function FeedAvatar({
 }) {
   return (
     <Image
-      src={`/api/icons/${feedId}`}
+      src={`/api/icons/${feedId}?v=2`}
       alt={title}
       width={48}
       height={48}

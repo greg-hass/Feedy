@@ -14,8 +14,15 @@ export type IconJobPayload = {
   feedId: string;
 };
 
+type QueueEnqueueResult<T> = {
+  enqueued: boolean;
+  job: T;
+};
+
 let refreshQueue: Queue<RefreshJobPayload> | undefined;
 let iconQueue: Queue<IconJobPayload> | undefined;
+
+const INFLIGHT_JOB_STATES = new Set(["waiting", "active", "delayed", "prioritized", "waiting-children"]);
 
 function getRefreshQueue() {
   refreshQueue ??= new Queue<RefreshJobPayload>(refreshQueueName, {
@@ -52,13 +59,41 @@ function getIconQueue() {
 }
 
 export async function enqueueFeedRefresh(payload: RefreshJobPayload) {
-  return getRefreshQueue().add(`refresh:${payload.feedId}`, payload, {
-    jobId: `refresh:${payload.feedId}`,
+  const queue = getRefreshQueue();
+  const dedupeId = `refresh-${payload.feedId}`;
+  const existing = await queue.getJob(dedupeId);
+
+  if (existing) {
+    const state = await existing.getState();
+    if (INFLIGHT_JOB_STATES.has(state)) {
+      return { enqueued: false, job: existing } as QueueEnqueueResult<typeof existing>;
+    }
+
+    await existing.remove().catch(() => null);
+  }
+
+  const job = await queue.add(dedupeId, payload, {
+    jobId: dedupeId,
   });
+  return { enqueued: true, job } as QueueEnqueueResult<typeof job>;
 }
 
 export async function enqueueIconFetch(payload: IconJobPayload) {
-  return getIconQueue().add(`icon:${payload.feedId}`, payload, {
-    jobId: `icon:${payload.feedId}`,
+  const queue = getIconQueue();
+  const dedupeId = `icon-${payload.feedId}`;
+  const existing = await queue.getJob(dedupeId);
+
+  if (existing) {
+    const state = await existing.getState();
+    if (INFLIGHT_JOB_STATES.has(state)) {
+      return { enqueued: false, job: existing } as QueueEnqueueResult<typeof existing>;
+    }
+
+    await existing.remove().catch(() => null);
+  }
+
+  const job = await queue.add(dedupeId, payload, {
+    jobId: dedupeId,
   });
+  return { enqueued: true, job } as QueueEnqueueResult<typeof job>;
 }

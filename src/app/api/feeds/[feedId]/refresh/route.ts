@@ -11,16 +11,18 @@ export async function POST(_request: Request, context: { params: Params }) {
   try {
     const user = await assertApiUser();
     const { feedId } = await context.params;
-    await prisma.refreshJob.create({
-      data: {
-        userId: user.id,
-        feedId,
-        trigger: JobTrigger.MANUAL,
-        status: JobStatus.QUEUED,
-      },
-    });
-    await enqueueFeedRefresh({ feedId, trigger: "manual" });
-    return NextResponse.json({ ok: true });
+    const queued = await enqueueFeedRefresh({ feedId, trigger: "manual" });
+    if (queued.enqueued) {
+      await prisma.refreshJob.create({
+        data: {
+          userId: user.id,
+          feedId,
+          trigger: JobTrigger.MANUAL,
+          status: JobStatus.QUEUED,
+        },
+      });
+    }
+    return NextResponse.json({ ok: true, queued: queued.enqueued });
   } catch (error) {
     return apiError(error instanceof Error ? error.message : "Could not queue refresh");
   }

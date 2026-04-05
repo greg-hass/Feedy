@@ -31,6 +31,11 @@ async function scheduleDueFeeds() {
       continue;
     }
 
+    const queued = await enqueueFeedRefresh({ feedId: feed.id, trigger: "auto" });
+    if (!queued.enqueued) {
+      continue;
+    }
+
     await prisma.refreshJob.create({
       data: {
         userId: user.id,
@@ -39,7 +44,6 @@ async function scheduleDueFeeds() {
         status: JobStatus.QUEUED,
       },
     });
-    await enqueueFeedRefresh({ feedId: feed.id, trigger: "auto" });
   }
 }
 

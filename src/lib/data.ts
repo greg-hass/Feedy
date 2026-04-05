@@ -1,5 +1,9 @@
-import { Prisma } from "@prisma/client";
+import { FeedSourceType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+
+export type TimelineSourceFilter = "RSS" | "REDDIT" | "YOUTUBE";
+export type TimelineStateFilter = "UNREAD" | "READ" | "ALL";
+export type FeedSourceFilter = "ALL" | TimelineSourceFilter;
 
 type FeedCountRow = {
   feedId: string;
@@ -12,6 +16,16 @@ type FolderCountRow = {
   totalCount: bigint;
   unreadCount: bigint;
 };
+
+type TimelineItemRecord = Prisma.ItemGetPayload<{
+  include: {
+    feed: {
+      include: { icon: true; folder: true };
+    };
+    bookmarks: true;
+    readStates: true;
+  };
+}>;
 
 export async function getFeedCounts(userId: string) {
   const rows = await prisma.$queryRaw<FeedCountRow[]>(Prisma.sql`
@@ -104,16 +118,47 @@ export async function getNavigationData(userId: string) {
   };
 }
 
-export async function getTimelineItems(userId: string, options?: { feedId?: string; saved?: boolean }) {
-  return prisma.item.findMany({
+export async function getTimelineItems(
+  userId: string,
+  options?: {
+    feedId?: string;
+    saved?: boolean;
+    sourceFilter?: TimelineSourceFilter;
+    stateFilter?: TimelineStateFilter;
+  },
+): Promise<TimelineItemRecord[]> {
+  const sourceTypeFilter =
+    options?.sourceFilter === "YOUTUBE"
+      ? {
+          in: [
+            FeedSourceType.YOUTUBE_RSS,
+            FeedSourceType.YOUTUBE_CHANNEL_RSS,
+            FeedSourceType.YOUTUBE_PLAYLIST_RSS,
+          ],
+        }
+      : options?.sourceFilter === "REDDIT"
+        ? FeedSourceType.REDDIT_RSS
+        : options?.sourceFilter === "RSS"
+          ? { in: [FeedSourceType.RSS, FeedSourceType.ATOM, FeedSourceType.UNKNOWN] }
+          : undefined;
+
+  const stateWhere =
+    options?.saved
+      ? { bookmarks: { some: { userId } } }
+      : options?.stateFilter === "READ"
+        ? { readStates: { some: { userId } } }
+        : options?.stateFilter === "ALL"
+          ? {}
+          : { readStates: { none: { userId } } };
+
+  const query: Prisma.ItemFindManyArgs = {
     where: {
       feed: {
         userId,
         ...(options?.feedId ? { id: options.feedId } : {}),
+        ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
       },
-      ...(options?.saved
-        ? { bookmarks: { some: { userId } } }
-        : { readStates: { none: { userId } } }),
+      ...stateWhere,
     },
     include: {
       feed: {
@@ -124,17 +169,39 @@ export async function getTimelineItems(userId: string, options?: { feedId?: stri
     },
     orderBy: [{ publishedAt: "desc" }, { discoveredAt: "desc" }],
     take: 100,
-  });
+  };
+
+  return prisma.item.findMany(query) as Promise<TimelineItemRecord[]>;
 }
 
-export async function getFeedSearch(userId: string, query: string) {
+export async function getFeedSearch(
+  userId: string,
+  query: string,
+  sourceFilter: FeedSourceFilter = "ALL",
+) {
   if (!query.trim()) {
     return [];
   }
 
+  const sourceTypeFilter =
+    sourceFilter === "YOUTUBE"
+      ? {
+          in: [
+            FeedSourceType.YOUTUBE_RSS,
+            FeedSourceType.YOUTUBE_CHANNEL_RSS,
+            FeedSourceType.YOUTUBE_PLAYLIST_RSS,
+          ],
+        }
+      : sourceFilter === "REDDIT"
+        ? FeedSourceType.REDDIT_RSS
+        : sourceFilter === "RSS"
+          ? { in: [FeedSourceType.RSS, FeedSourceType.ATOM, FeedSourceType.UNKNOWN] }
+          : undefined;
+
   return prisma.feed.findMany({
     where: {
       userId,
+      ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
       OR: [
         { title: { contains: query, mode: "insensitive" } },
         { label: { contains: query, mode: "insensitive" } },

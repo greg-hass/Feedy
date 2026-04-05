@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bookmark, Compass, Flame, LogOut, Rss, Settings } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import { api } from "@/lib/client";
-import { cn } from "@/lib/utils";
 import type { MeResponse } from "@/types/app";
 
 const navItems = [
@@ -50,86 +50,113 @@ export function MobileShell({
   });
 
   const unreadTotal = me.data?.navigation.stats.unreadTotal ?? 0;
+  const totalFeeds = me.data?.navigation.feeds.length ?? 0;
+
+  useEffect(() => {
+    const accent = me.data?.user.settings.accentColor ?? "EMERALD";
+    document.documentElement.dataset.accent = accent;
+  }, [me.data?.user.settings.accentColor]);
 
   return (
-    <div className="app-shell screen-fade">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-8 pt-4">
-        <header className="sticky top-3 z-20">
-          <div className="surface rounded-[24px] border border-subtle px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-semibold leading-tight">{title}</h1>
-                {subtitle ? <p className="mt-0.5 text-xs text-secondary">{subtitle}</p> : null}
+    <div className="app-shell screen-enter">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+        {/* Premium Header - Solid Background */}
+        <header className="sticky top-0 z-40 px-5 pb-3 pt-[max(16px,env(safe-area-inset-top))]" style={{ backgroundColor: 'var(--app-bg)' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between">
+                <div className="flex h-6 items-center rounded-full px-2.5" style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--accent)' }}>
+                    Feedy
+                  </span>
+                </div>
+                {/* Unread/Total Feeds Badge */}
+                <div className="flex items-center gap-2 rounded-full px-3 py-1" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{unreadTotal}</span>
+                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>/ {totalFeeds} feeds</span>
+                </div>
               </div>
-              <div className="ml-3 flex items-center gap-2 shrink-0">
-                {actions}
-                <button
-                  onClick={() => logout.mutate()}
-                  className="rounded-xl border border-subtle p-2 text-secondary active:bg-[var(--surface-muted)]"
-                  aria-label="Sign out"
-                >
-                  <LogOut className="size-4" />
-                </button>
-              </div>
+              <h1 className="mt-2 text-[28px] font-bold leading-[1.05] tracking-[-0.04em]" style={{ color: 'var(--text-primary)' }}>{title}</h1>
+              {subtitle ? (
+                <p className="mt-1.5 text-[15px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {actions}
+              <button
+                onClick={() => logout.mutate()}
+                className="flex h-10 w-10 items-center justify-center rounded-full"
+                style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-secondary)' }}
+                aria-label="Sign out"
+              >
+                <LogOut className="size-[18px]" />
+              </button>
             </div>
           </div>
         </header>
 
-        {unreadTotal > 0 && pathname === "/app/unread" ? (
-          <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-3 py-2 text-sm">
-            <span className="text-secondary">Unread items</span>
-            <span className="text-base font-semibold accent">{unreadTotal}</span>
+        {/* Main Content */}
+        <div className="px-5">
+          <main key={pathname} className="flex-1 pb-28">
+            {children}
+          </main>
+        </div>
+
+        {/* iOS-style Full-Width Tab Bar - Emerald Accent */}
+        <nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(8px,env(safe-area-inset-bottom))]" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+          <div className="mx-auto flex max-w-md items-center justify-around">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors duration-200"
+                  style={{ 
+                    color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                    fontWeight: active ? 600 : 500
+                  }}
+                >
+                  <Icon 
+                    className="size-6" 
+                    strokeWidth={active ? 2.5 : 2}
+                    fill="none"
+                    style={{ color: active ? 'var(--accent)' : 'var(--text-secondary)' }}
+                  />
+                  <span style={{ letterSpacing: '0.05em' }}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
-        ) : null}
-
-        <main className="mt-4 flex-1">{children}</main>
-
-        <nav className="surface fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md items-center justify-around rounded-t-[20px] border-t border-subtle px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-medium transition-colors",
-                  active ? "accent text-[var(--accent)]" : "text-secondary",
-                )}
-              >
-                <div className="relative">
-                  <Icon className="size-5" />
-                  {item.href === "/app/unread" && unreadTotal > 0 && (
-                    <span className="absolute -right-1.5 -top-1 flex size-4 items-center justify-center rounded-full bg-[var(--danger)] text-[8px] font-bold text-white">
-                      {unreadTotal > 99 ? "99" : unreadTotal}
-                    </span>
-                  )}
-                </div>
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
         </nav>
       </div>
     </div>
   );
 }
 
+// Premium Loading Skeleton
 export function LoadingSkeleton() {
   return (
-    <div className="space-y-3">
-      {[1, 2, 3, 4].map((i) => (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="surface animate-pulse rounded-[24px] border border-subtle p-4"
+          className="overflow-hidden rounded-2xl"
+          style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}
         >
-          <div className="h-3 w-16 rounded-full bg-[var(--surface-muted)]" />
-          <div className="mt-3 h-5 w-3/4 rounded-full bg-[var(--surface-muted)]" />
-          <div className="mt-2 h-3 w-full rounded-full bg-[var(--surface-muted)]" />
-          <div className="mt-2 h-3 w-2/3 rounded-full bg-[var(--surface-muted)]" />
-          <div className="mt-4 flex gap-2">
-            <div className="h-10 flex-1 rounded-xl bg-[var(--surface-muted)]" />
-            <div className="h-10 flex-1 rounded-xl bg-[var(--surface-muted)]" />
+          <div className="aspect-video w-full shimmer" />
+          <div className="p-4">
+            <div className="h-3 w-20 rounded-full" style={{ backgroundColor: 'var(--surface-muted)' }} />
+            <div className="mt-3 h-5 w-4/5 rounded-full" style={{ backgroundColor: 'var(--surface-muted)' }} />
+            <div className="mt-2 h-4 w-full rounded-full" style={{ backgroundColor: 'var(--surface-muted)' }} />
+            <div className="mt-2 h-4 w-2/3 rounded-full" style={{ backgroundColor: 'var(--surface-muted)' }} />
+            <div className="mt-4 flex gap-2">
+              <div className="h-10 flex-1 rounded-xl" style={{ backgroundColor: 'var(--surface-muted)' }} />
+              <div className="h-10 w-10 rounded-xl" style={{ backgroundColor: 'var(--surface-muted)' }} />
+            </div>
           </div>
         </div>
       ))}
@@ -137,6 +164,7 @@ export function LoadingSkeleton() {
   );
 }
 
+// Premium Error State
 export function ErrorState({
   title = "Something went wrong",
   message,
@@ -147,13 +175,17 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="surface rounded-[24px] border border-subtle p-6 text-center">
-      <p className="text-lg font-semibold">{title}</p>
-      <p className="mt-2 text-sm text-secondary">{message}</p>
+    <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+        <span className="text-xl">⚠️</span>
+      </div>
+      <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
+      <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-4 rounded-xl bg-[var(--accent)] px-6 py-2 text-sm font-medium text-white"
+          className="mt-5 rounded-xl px-6 py-2.5 text-sm font-semibold text-white"
+          style={{ backgroundColor: 'var(--accent)', color: 'var(--accent-contrast)' }}
         >
           Try again
         </button>
@@ -162,6 +194,7 @@ export function ErrorState({
   );
 }
 
+// Premium Empty State
 export function EmptyState({
   title,
   body,
@@ -172,10 +205,14 @@ export function EmptyState({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="surface rounded-[24px] border border-dashed border-subtle px-5 py-10 text-center">
-      {icon && <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">{icon}</div>}
-      <h3 className="text-base font-semibold">{title}</h3>
-      <p className="mt-2 text-sm text-secondary">{body}</p>
+    <div className="rounded-2xl px-6 py-12 text-center" style={{ backgroundColor: 'var(--surface)', border: '1px dashed var(--border)' }}>
+      {icon && (
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'var(--accent-dim)', color: 'var(--accent)' }}>
+          {icon}
+        </div>
+      )}
+      <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{body}</p>
     </div>
   );
 }

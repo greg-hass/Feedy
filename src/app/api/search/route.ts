@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   try {
     const user = await assertApiUser();
     const query = await parseQuery(new URL(request.url).searchParams, searchSchema);
-    const results = await getFeedSearch(user.id, query.q);
+    const results = await getFeedSearch(user.id, query.q, query.sourceFilter);
     return NextResponse.json(results);
   } catch (error) {
     return apiError(error instanceof Error ? error.message : "Could not search feeds");

@@ -16,21 +16,24 @@ export async function POST(_request: Request, context: { params: Params }) {
       select: { id: true },
     });
 
-    await prisma.$transaction(
-      feeds.map((feed) =>
-        prisma.refreshJob.create({
-          data: {
-            userId: user.id,
-            feedId: feed.id,
-            trigger: JobTrigger.MANUAL,
-            status: JobStatus.QUEUED,
-          },
-        }),
-      ),
+    const results = await Promise.all(
+      feeds.map(async (feed) => {
+        const queued = await enqueueFeedRefresh({ feedId: feed.id, trigger: "manual" });
+        if (queued.enqueued) {
+          await prisma.refreshJob.create({
+            data: {
+              userId: user.id,
+              feedId: feed.id,
+              trigger: JobTrigger.MANUAL,
+              status: JobStatus.QUEUED,
+            },
+          });
+        }
+        return queued.enqueued;
+      }),
     );
 
-    await Promise.all(feeds.map((feed) => enqueueFeedRefresh({ feedId: feed.id, trigger: "manual" })));
-    return NextResponse.json({ ok: true, queued: feeds.length });
+    return NextResponse.json({ ok: true, queued: results.filter(Boolean).length });
   } catch (error) {
     return apiError(error instanceof Error ? error.message : "Could not refresh folder");
   }

@@ -2,6 +2,16 @@ import { clsx, type ClassValue } from "clsx";
 import { formatDistanceToNowStrict } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
+const ENTITY_MAP: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&apos;": "'",
+  "&nbsp;": " ",
+};
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -20,4 +30,15 @@ export function absoluteUrl(path: string) {
 
 export function safeText(value: string | null | undefined, fallback = "") {
   return value?.trim() || fallback;
+}
+
+export function decodeHtmlEntities(value: string | null | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  return value.replace(
+    /&amp;|&lt;|&gt;|&quot;|&#39;|&apos;|&nbsp;/g,
+    (entity) => ENTITY_MAP[entity] ?? entity,
+  );
 }

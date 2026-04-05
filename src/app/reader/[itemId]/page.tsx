@@ -40,8 +40,8 @@ export default function ReaderPage() {
 
   if (item.isLoading) {
     return (
-      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-4">
-        <div className="surface animate-pulse rounded-[24px] border border-subtle p-5">
+      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(16px,env(safe-area-inset-top))]">
+        <div className="animate-pulse rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-5 shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
           <div className="h-3 w-20 rounded-full bg-[var(--surface-muted)]" />
           <div className="mt-3 h-8 w-3/4 rounded-full bg-[var(--surface-muted)]" />
           <div className="mt-4 h-5 w-1/2 rounded-full bg-[var(--surface-muted)]" />
@@ -57,8 +57,8 @@ export default function ReaderPage() {
 
   if (!item.data) {
     return (
-      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-4">
-        <div className="surface rounded-[24px] border border-subtle p-6 text-center">
+      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(16px,env(safe-area-inset-top))]">
+        <div className="rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-6 text-center shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
           <p className="text-sm text-secondary">Failed to load article.</p>
           <Button onClick={() => router.back()} className="mt-4">Go back</Button>
         </div>
@@ -69,17 +69,17 @@ export default function ReaderPage() {
   const data = item.data;
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-4">
-      <div className="surface rounded-[24px] border border-subtle">
-        <header className="sticky top-3 z-20 rounded-t-[24px] border-b border-subtle bg-[var(--surface-strong)] px-4 py-3">
+    <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(12px,env(safe-area-inset-top))]">
+      <header className="sticky top-0 z-40 -mx-4 px-4 pb-3 pt-1" style={{ backgroundColor: "var(--app-bg)" }}>
+        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface-strong)_92%,black_8%)] px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.24)] backdrop-blur-xl">
           <div className="flex items-center justify-between">
-            <button onClick={() => router.back()} className="rounded-lg p-1 text-secondary">
+            <button onClick={() => router.back()} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary">
               <ArrowLeft className="size-5" />
             </button>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => state.mutate({ bookmarked: !data.bookmarked })}
-                className="rounded-lg p-2 text-secondary"
+                className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
               >
                 {data.bookmarked ? (
                   <BookmarkCheck className="size-5 text-[var(--accent)]" />
@@ -95,19 +95,21 @@ export default function ReaderPage() {
                         navigator.share({ title: data.title, url: data.canonicalUrl });
                       }
                     }}
-                    className="rounded-lg p-2 text-secondary"
+                    className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
                   >
                     <Share2 className="size-5" />
                   </button>
-                  <a href={data.canonicalUrl} target="_blank" rel="noreferrer" className="rounded-lg p-2 text-secondary">
+                  <a href={data.canonicalUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary">
                     <ExternalLink className="size-5" />
                   </a>
                 </>
               )}
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <div className="screen-enter overflow-hidden rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
         <div className="px-5 pt-4">
           <div className="flex items-center gap-2">
             <FeedAvatar feedId={data.feed.id} title={data.feed.label || data.feed.title} />
@@ -116,11 +118,11 @@ export default function ReaderPage() {
             </p>
           </div>
 
-          <h1 className="mt-3 text-2xl font-semibold leading-tight">{data.title}</h1>
+          <h1 className="mt-3 text-[2rem] font-semibold leading-[1.08] tracking-[-0.04em]">{data.title}</h1>
 
           <div className="mt-3 flex items-center justify-between text-xs text-secondary">
             <span>{new Date(data.publishedAt || 0).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
-            <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--accent)]">
+            <span className="rounded-full border border-subtle bg-[var(--accent-soft)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent)]">
               {data.feed.sourceType.replaceAll("_", " ")}
             </span>
           </div>
@@ -141,7 +143,7 @@ export default function ReaderPage() {
               href={data.redditPermalink}
               target="_blank"
               rel="noreferrer"
-              className="mt-4 flex items-center gap-2 rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
+              className="mt-4 flex items-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
             >
               <span className="font-medium">View on Reddit</span>
               <ExternalLink className="size-3.5 text-secondary" />
@@ -174,7 +176,7 @@ export default function ReaderPage() {
               href={data.canonicalUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-between rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
+              className="flex items-center justify-between rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
             >
               <span className="font-medium">Read original article</span>
               <ExternalLink className="size-4 text-secondary" />

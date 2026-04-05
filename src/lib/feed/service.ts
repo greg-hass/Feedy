@@ -1,10 +1,12 @@
 import { JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { fetchAndCacheIcon } from "@/lib/feed/icons";
 import { fetchAndParseFeed, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
 import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
+import type { FeedValidationResult } from "@/lib/feed/types";
 
-export async function createFeedForUser(
+async function createValidatedFeedForUser(
   userId: string,
   input: {
     sourceUrl: string;
@@ -12,8 +14,12 @@ export async function createFeedForUser(
     label?: string | null;
     refreshIntervalMinutes?: number | null;
   },
+  validated: FeedValidationResult,
+  options?: {
+    queueInitialRefresh?: boolean;
+    queueInitialIconFetch?: boolean;
+  },
 ) {
-  const validated = await validateFeedUrl(input.sourceUrl);
   const feed = await prisma.feed.create({
     data: {
       userId,
@@ -29,20 +35,41 @@ export async function createFeedForUser(
     },
   });
 
-  await prisma.refreshJob.create({
-    data: {
-      userId,
-      feedId: feed.id,
-      trigger: JobTrigger.MANUAL,
-      status: JobStatus.QUEUED,
-    },
-  });
+  if (options?.queueInitialRefresh !== false) {
+    const refresh = await enqueueFeedRefresh({ feedId: feed.id, trigger: "manual" });
+    if (refresh.enqueued) {
+      await prisma.refreshJob.create({
+        data: {
+          userId,
+          feedId: feed.id,
+          trigger: JobTrigger.MANUAL,
+          status: JobStatus.QUEUED,
+        },
+      });
+    }
+  }
 
-  await enqueueFeedRefresh({ feedId: feed.id, trigger: "manual" });
-  await enqueueIconFetch({ feedId: feed.id });
+  if (options?.queueInitialIconFetch !== false) {
+    await enqueueIconFetch({ feedId: feed.id });
+  }
 
   return feed;
 }
+
+export async function createFeedForUser(
+  userId: string,
+  input: {
+    sourceUrl: string;
+    folderId?: string | null;
+    label?: string | null;
+    refreshIntervalMinutes?: number | null;
+  },
+) {
+  const validated = await validateFeedUrl(input.sourceUrl);
+  return createValidatedFeedForUser(userId, input, validated);
+}
+
+export { createValidatedFeedForUser };
 
 export async function refreshFeed(feedId: string, trigger: JobTrigger) {
   const feed = await prisma.feed.findUnique({ where: { id: feedId } });
@@ -168,6 +195,8 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger) {
         metadata: { trigger },
       },
     });
+
+    await fetchAndCacheIcon(feed.id).catch(() => null);
 
     return newItemsCount;
   } catch (error) {

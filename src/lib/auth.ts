@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
-import { ThemePreference } from "@prisma/client";
+import { AccentPreference, ThemePreference } from "@prisma/client";
 
 const SESSION_COOKIE = "feedy_session";
 
@@ -40,6 +40,7 @@ export async function ensureSingleUser() {
           : {
               create: {
                 theme: ThemePreference.SYSTEM,
+                accentColor: AccentPreference.EMERALD,
                 refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
               },
             },
@@ -57,6 +58,7 @@ export async function ensureSingleUser() {
       settings: {
         create: {
           theme: ThemePreference.SYSTEM,
+          accentColor: AccentPreference.EMERALD,
           refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
         },
       },
