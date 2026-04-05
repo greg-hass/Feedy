@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+
+import { apiError, assertApiUser, parseJson } from "@/lib/api";
+import { prisma } from "@/lib/db";
+import { itemStateSchema } from "@/lib/schemas";
+
+type Params = Promise<{ itemId: string }>;
+
+export async function POST(request: Request, context: { params: Params }) {
+  try {
+    const user = await assertApiUser();
+    const { itemId } = await context.params;
+    const input = await parseJson(request, itemStateSchema);
+
+    if (typeof input.read === "boolean") {
+      if (input.read) {
+        await prisma.readState.upsert({
+          where: {
+            userId_itemId: {
+              userId: user.id,
+              itemId,
+            },
+          },
+          update: { lastReadAt: new Date() },
+          create: {
+            userId: user.id,
+            itemId,
+          },
+        });
+      } else {
+        await prisma.readState.deleteMany({
+          where: { userId: user.id, itemId },
+        });
+      }
+    }
+
+    if (typeof input.bookmarked === "boolean") {
+      if (input.bookmarked) {
+        await prisma.bookmark.upsert({
+          where: {
+            userId_itemId: {
+              userId: user.id,
+              itemId,
+            },
+          },
+          update: { bookmarkedAt: new Date() },
+          create: {
+            userId: user.id,
+            itemId,
+          },
+        });
+      } else {
+        await prisma.bookmark.deleteMany({
+          where: { userId: user.id, itemId },
+        });
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return apiError(error instanceof Error ? error.message : "Could not update item");
+  }
+}

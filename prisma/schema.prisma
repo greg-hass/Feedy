@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FeedSourceType {
+  RSS
+  ATOM
+  REDDIT_RSS
+  YOUTUBE_CHANNEL_RSS
+  YOUTUBE_PLAYLIST_RSS
+  YOUTUBE_RSS
+  UNKNOWN
+}
+
+enum FeedHealthStatus {
+  HEALTHY
+  DEGRADED
+  ERROR
+  PENDING
+}
+
+enum JobTrigger {
+  MANUAL
+  AUTO
+  IMPORT
+  SYSTEM
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum ImportExportType {
+  OPML_IMPORT
+  OPML_EXPORT
+  JSON_EXPORT
+}
+
+enum ImportExportStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum ThemePreference {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+model User {
+  id           String         @id @default(cuid())
+  username     String         @unique
+  passwordHash String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  settings     Settings?
+  folders      Folder[]
+  feeds        Feed[]
+  readStates   ReadState[]
+  bookmarks    Bookmark[]
+  refreshJobs  RefreshJob[]
+  importJobs   ImportExportRecord[]
+}
+
+model Settings {
+  id                            String          @id @default(cuid())
+  userId                        String          @unique
+  theme                         ThemePreference @default(SYSTEM)
+  refreshIntervalMinutes        Int             @default(60)
+  autoRefreshEnabled            Boolean         @default(true)
+  readerOpenOriginalByDefault   Boolean         @default(false)
+  createdAt                     DateTime        @default(now())
+  updatedAt                     DateTime        @updatedAt
+  user                          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feeds     Feed[]
+
+  @@index([userId, position])
+}
+
+model Feed {
+  id                       String           @id @default(cuid())
+  userId                   String
+  folderId                 String?
+  title                    String
+  label                    String?
+  description              String?
+  sourceUrl                String
+  siteUrl                  String?
+  sourceType               FeedSourceType   @default(UNKNOWN)
+  position                 Int              @default(0)
+  isPinned                 Boolean          @default(false)
+  refreshIntervalMinutes   Int?
+  lastRefreshedAt          DateTime?
+  lastSuccessfulRefreshAt  DateTime?
+  lastFailureAt            DateTime?
+  lastError                String?
+  healthStatus             FeedHealthStatus @default(PENDING)
+  etag                     String?
+  lastModified             String?
+  iconHintUrl              String?
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  user                     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder                   Folder?          @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  icon                     FeedIcon?
+  items                    Item[]
+  refreshJobs              RefreshJob[]
+  refreshLogs              RefreshLog[]
+
+  @@unique([userId, sourceUrl])
+  @@index([userId, folderId, position])
+  @@index([userId, isPinned, position])
+  @@index([lastRefreshedAt])
+}
+
+model FeedIcon {
+  id         String   @id @default(cuid())
+  feedId      String  @unique
+  sourceUrl   String?
+  mimeType    String?
+  storagePath String
+  fetchedAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  feed        Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+}
+
+model Item {
+  id             String    @id @default(cuid())
+  feedId         String
+  uniqueKey      String    @unique
+  guid           String?
+  externalId     String?
+  title          String
+  summary        String?
+  contentHtml    String?
+  readabilityHtml String?
+  author         String?
+  canonicalUrl   String?
+  commentsUrl    String?
+  mediaUrl       String?
+  youtubeVideoId String?
+  redditPermalink String?
+  publishedAt    DateTime?
+  discoveredAt   DateTime  @default(now())
+  fetchedAt      DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  feed           Feed      @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  readStates     ReadState[]
+  bookmarks      Bookmark[]
+
+  @@index([feedId, publishedAt(sort: Desc)])
+  @@index([discoveredAt(sort: Desc)])
+}
+
+model ReadState {
+  id         String   @id @default(cuid())
+  userId      String
+  itemId      String
+  lastReadAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId, lastReadAt(sort: Desc)])
+}
+
+model Bookmark {
+  id           String   @id @default(cuid())
+  userId       String
+  itemId       String
+  bookmarkedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item         Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId, bookmarkedAt(sort: Desc)])
+}
+
+model RefreshJob {
+  id           String     @id @default(cuid())
+  userId       String?
+  feedId       String?
+  trigger      JobTrigger
+  status       JobStatus  @default(QUEUED)
+  requestedAt  DateTime   @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  errorMessage String?
+  metadata     Json?
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  feed         Feed?      @relation(fields: [feedId], references: [id], onDelete: SetNull)
+
+  @@index([feedId, requestedAt(sort: Desc)])
+}
+
+model RefreshLog {
+  id           String    @id @default(cuid())
+  feedId       String
+  status       JobStatus
+  attempt      Int       @default(1)
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  newItems     Int       @default(0)
+  errorMessage String?
+  metadata     Json?
+  feed         Feed      @relation(fields: [feedId], references: [id], onDelete: Cascade)
+
+  @@index([feedId, startedAt(sort: Desc)])
+}
+
+model ImportExportRecord {
+  id          String             @id @default(cuid())
+  userId      String
+  type        ImportExportType
+  status      ImportExportStatus @default(QUEUED)
+  filename    String?
+  summary     Json?
+  createdAt   DateTime           @default(now())
+  completedAt DateTime?
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+}

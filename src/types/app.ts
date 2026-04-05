@@ -1,0 +1,72 @@
+export type NavFeed = {
+  id: string;
+  title: string;
+  label: string | null;
+  description: string | null;
+  sourceUrl: string;
+  siteUrl: string | null;
+  sourceType: string;
+  isPinned: boolean;
+  position: number;
+  lastRefreshedAt: string | null;
+  healthStatus: string;
+  folderId: string | null;
+  counts: {
+    unreadCount: number;
+    totalCount: number;
+  };
+};
+
+export type NavFolder = {
+  id: string;
+  title: string;
+  position: number;
+  counts: {
+    unreadCount: number;
+    totalCount: number;
+  };
+};
+
+export type ItemRecord = {
+  id: string;
+  title: string;
+  summary: string | null;
+  readabilityHtml?: string | null;
+  contentHtml?: string | null;
+  canonicalUrl: string | null;
+  commentsUrl: string | null;
+  mediaUrl: string | null;
+  publishedAt: string | null;
+  youtubeVideoId: string | null;
+  redditPermalink: string | null;
+  bookmarked: boolean;
+  read: boolean;
+  feed: {
+    id: string;
+    title: string;
+    label: string | null;
+    sourceType: string;
+  };
+};
+
+export type MeResponse = {
+  authenticated: boolean;
+  user: {
+    id: string;
+    username: string;
+    settings: {
+      theme: "SYSTEM" | "LIGHT" | "DARK";
+      refreshIntervalMinutes: number;
+      autoRefreshEnabled: boolean;
+      readerOpenOriginalByDefault: boolean;
+    };
+  };
+  navigation: {
+    folders: NavFolder[];
+    feeds: NavFeed[];
+    stats: {
+      unreadTotal: number;
+      savedCount: number;
+    };
+  };
+};
