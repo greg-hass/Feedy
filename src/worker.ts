@@ -1,4 +1,4 @@
-import { Worker } from "bullmq";
+import { UnrecoverableError, Worker } from "bullmq";
 
 import { JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -25,7 +25,11 @@ async function scheduleDueFeeds() {
       feed.user.settings?.refreshIntervalMinutes ??
       env.REFRESH_DEFAULT_INTERVAL_MINUTES;
     const dueAt =
-      (feed.lastRefreshedAt ? new Date(feed.lastRefreshedAt).getTime() : 0) +
+      (feed.lastRefreshedAt
+        ? new Date(feed.lastRefreshedAt).getTime()
+        : feed.lastFailureAt
+          ? new Date(feed.lastFailureAt).getTime()
+          : 0) +
       interval * 60 * 1000;
 
     if (dueAt > now) {
@@ -70,14 +74,24 @@ async function boot() {
   const refreshWorker = new Worker(
     refreshQueueName,
     async (job) => {
-      await refreshFeed(
-        job.data.feedId,
-        job.data.trigger === "auto" ? JobTrigger.AUTO : JobTrigger.MANUAL,
-      );
+      try {
+        await refreshFeed(
+          job.data.feedId,
+          job.data.trigger === "auto" ? JobTrigger.AUTO : JobTrigger.MANUAL,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown refresh error";
+
+        if (isPermanentRefreshError(message)) {
+          throw new UnrecoverableError(message);
+        }
+
+        throw error;
+      }
     },
     {
       connection: getRedis(),
-      concurrency: 4,
+      concurrency: env.REFRESH_WORKER_CONCURRENCY,
     },
   );
 
@@ -88,7 +102,7 @@ async function boot() {
     },
     {
       connection: getRedis(),
-      concurrency: 2,
+      concurrency: env.ICON_WORKER_CONCURRENCY,
     },
   );
 
@@ -110,6 +124,15 @@ async function boot() {
   }, 6 * 60 * 60 * 1000);
 
   console.log("Feedy worker started");
+}
+
+function isPermanentRefreshError(message: string) {
+  return (
+    /Feed not recognized as RSS 1 or 2\./i.test(message) ||
+    /Unexpected close tag/i.test(message) ||
+    /Invalid character in entity name/i.test(message) ||
+    /Feed returned (401|403|404|410|422)\b/i.test(message)
+  );
 }
 
 boot().catch((error) => {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 
 import { apiError, assertApiUser } from "@/lib/api";
 import { JobStatus, JobTrigger } from "@prisma/client";
@@ -10,6 +11,8 @@ type Params = Promise<{ feedId: string }>;
 export async function POST(_request: Request, context: { params: Params }) {
   try {
     const user = await assertApiUser();
+    const batchStartedAt = new Date();
+    const batchId = randomUUID();
     const { feedId } = await context.params;
     const queued = await enqueueFeedRefresh({ feedId, trigger: "manual" });
     if (queued.enqueued) {
@@ -19,10 +22,17 @@ export async function POST(_request: Request, context: { params: Params }) {
           feedId,
           trigger: JobTrigger.MANUAL,
           status: JobStatus.QUEUED,
+          requestedAt: batchStartedAt,
+          metadata: { batchId },
         },
       });
     }
-    return NextResponse.json({ ok: true, queued: queued.enqueued });
+    return NextResponse.json({
+      ok: true,
+      queued: queued.enqueued ? 1 : 0,
+      batchStartedAt: batchStartedAt.toISOString(),
+      batchId,
+    });
   } catch (error) {
     return apiError(error instanceof Error ? error.message : "Could not queue refresh");
   }

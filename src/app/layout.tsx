@@ -22,11 +22,11 @@ export const metadata: Metadata = {
   applicationName: "Feedy",
   icons: {
     icon: [
-      { url: "/api/pwa/icon?size=64", sizes: "64x64", type: "image/png" },
-      { url: "/api/pwa/icon?size=192", sizes: "192x192", type: "image/png" },
+      { url: "/icon-64.png", sizes: "64x64", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: [{ url: "/api/pwa/icon?size=180", sizes: "180x180", type: "image/png" }],
-    shortcut: [{ url: "/api/pwa/icon?size=64", sizes: "64x64", type: "image/png" }],
+    apple: [{ url: "/apple-icon-180.png", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/icon-64.png", sizes: "64x64", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,

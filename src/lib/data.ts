@@ -102,10 +102,33 @@ export async function getNavigationData(userId: string) {
       prisma.bookmark.count({ where: { userId } }),
     ]);
 
+  const folderFeedStats = new Map<
+    string,
+    { feedCount: number; issueCount: number }
+  >();
+
+  for (const feed of feeds) {
+    if (!feed.folderId) {
+      continue;
+    }
+
+    const current = folderFeedStats.get(feed.folderId) ?? { feedCount: 0, issueCount: 0 };
+    current.feedCount += 1;
+    if (feed.healthStatus !== "HEALTHY") {
+      current.issueCount += 1;
+    }
+    folderFeedStats.set(feed.folderId, current);
+  }
+
   return {
     folders: folders.map((folder) => ({
       ...folder,
-      counts: folderCounts.get(folder.id) ?? { unreadCount: 0, totalCount: 0 },
+      counts: {
+        articleCount: folderCounts.get(folder.id)?.totalCount ?? 0,
+        unreadCount: folderCounts.get(folder.id)?.unreadCount ?? 0,
+        feedCount: folderFeedStats.get(folder.id)?.feedCount ?? 0,
+        issueCount: folderFeedStats.get(folder.id)?.issueCount ?? 0,
+      },
     })),
     feeds: feeds.map((feed) => ({
       ...feed,

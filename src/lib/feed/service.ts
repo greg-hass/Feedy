@@ -1,6 +1,5 @@
 import { JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { fetchAndCacheIcon } from "@/lib/feed/icons";
 import { fetchAndParseFeed, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
 import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
@@ -196,7 +195,7 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger) {
       },
     });
 
-    await fetchAndCacheIcon(feed.id).catch(() => null);
+    await enqueueIconFetch({ feedId: feed.id }).catch(() => null);
 
     return newItemsCount;
   } catch (error) {

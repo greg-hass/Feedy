@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 
 import { apiError, assertApiUser } from "@/lib/api";
 import { JobStatus, JobTrigger } from "@prisma/client";
@@ -10,6 +11,8 @@ type Params = Promise<{ folderId: string }>;
 export async function POST(_request: Request, context: { params: Params }) {
   try {
     const user = await assertApiUser();
+    const batchStartedAt = new Date();
+    const batchId = randomUUID();
     const { folderId } = await context.params;
     const feeds = await prisma.feed.findMany({
       where: { userId: user.id, folderId },
@@ -26,6 +29,8 @@ export async function POST(_request: Request, context: { params: Params }) {
               feedId: feed.id,
               trigger: JobTrigger.MANUAL,
               status: JobStatus.QUEUED,
+              requestedAt: batchStartedAt,
+              metadata: { batchId },
             },
           });
         }
@@ -33,7 +38,12 @@ export async function POST(_request: Request, context: { params: Params }) {
       }),
     );
 
-    return NextResponse.json({ ok: true, queued: results.filter(Boolean).length });
+    return NextResponse.json({
+      ok: true,
+      queued: results.filter(Boolean).length,
+      batchStartedAt: batchStartedAt.toISOString(),
+      batchId,
+    });
   } catch (error) {
     return apiError(error instanceof Error ? error.message : "Could not refresh folder");
   }

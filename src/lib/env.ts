@@ -9,6 +9,8 @@ const envSchema = z.object({
   APP_PASSWORD: z.string().min(1).default("change-me"),
   COOKIE_SECURE: z.enum(["true", "false"]).default("false"),
   REFRESH_DEFAULT_INTERVAL_MINUTES: z.coerce.number().int().min(5).max(1440).default(60),
+  REFRESH_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(24).default(8),
+  ICON_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(12).default(4),
   DISCOVERY_SEARCH_PROVIDER: z.string().default("duckduckgo"),
   DATA_DIR: z.string().default("./data"),
 });
@@ -22,6 +24,8 @@ export const env = envSchema.parse({
   APP_PASSWORD: process.env.APP_PASSWORD ?? "change-me",
   COOKIE_SECURE: process.env.COOKIE_SECURE ?? "false",
   REFRESH_DEFAULT_INTERVAL_MINUTES: process.env.REFRESH_DEFAULT_INTERVAL_MINUTES ?? "60",
+  REFRESH_WORKER_CONCURRENCY: process.env.REFRESH_WORKER_CONCURRENCY ?? "8",
+  ICON_WORKER_CONCURRENCY: process.env.ICON_WORKER_CONCURRENCY ?? "4",
   DISCOVERY_SEARCH_PROVIDER: process.env.DISCOVERY_SEARCH_PROVIDER ?? "duckduckgo",
   DATA_DIR: process.env.DATA_DIR ?? "./data",
 });

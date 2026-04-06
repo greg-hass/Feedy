@@ -9,6 +9,9 @@ export type NavFeed = {
   isPinned: boolean;
   position: number;
   lastRefreshedAt: string | null;
+  lastSuccessfulRefreshAt: string | null;
+  lastFailureAt: string | null;
+  lastError: string | null;
   healthStatus: string;
   folderId: string | null;
   counts: {
@@ -23,7 +26,9 @@ export type NavFolder = {
   position: number;
   counts: {
     unreadCount: number;
-    totalCount: number;
+    articleCount: number;
+    feedCount: number;
+    issueCount: number;
   };
 };
 

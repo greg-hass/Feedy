@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, ChevronRight, FolderOpen, FolderPlus, MoreHorizontal, Plus, Rss, RefreshCcw, Search, Trash2, Upload } from "lucide-react";
+import { Bookmark, ChevronRight, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, Trash2, Upload, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { MobileShell, useMe, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
@@ -19,6 +19,53 @@ import type { ItemRecord, NavFeed, NavFolder } from "@/types/app";
 
 function formatSourceType(value: string) {
   return value.replaceAll("_RSS", "").replaceAll("_", " ");
+}
+
+function getHealthPresentation(status: string) {
+  switch (status) {
+    case "HEALTHY":
+      return {
+        label: "Healthy",
+        className:
+          "border-emerald-500/20 bg-emerald-500/12 text-emerald-300",
+      };
+    case "DEGRADED":
+      return {
+        label: "Issue",
+        className:
+          "border-amber-500/20 bg-amber-500/12 text-amber-300",
+      };
+    case "ERROR":
+      return {
+        label: "Error",
+        className:
+          "border-rose-500/20 bg-rose-500/12 text-rose-300",
+      };
+    default:
+      return {
+        label: "Pending",
+        className:
+          "border-slate-400/20 bg-slate-400/12 text-slate-300",
+      };
+  }
+}
+
+function getHealthSummary(feed: NavFeed) {
+  if (feed.healthStatus === "ERROR" && feed.lastError) {
+    return "Tap for latest refresh error";
+  }
+
+  if (feed.healthStatus === "HEALTHY") {
+    return feed.lastSuccessfulRefreshAt
+      ? `Last good refresh ${relativeTime(feed.lastSuccessfulRefreshAt)}`
+      : "Feed is refreshing normally";
+  }
+
+  if (feed.healthStatus === "DEGRADED") {
+    return "Feed has intermittent refresh issues";
+  }
+
+  return "Waiting for the first successful refresh";
 }
 
 function SectionLabel({
@@ -78,9 +125,9 @@ function SegmentedControl<T extends string>({
 
 export function UnreadScreen() {
   const [stateFilter, setStateFilter] = useState<"UNREAD" | "ALL" | "READ">(() => {
-    if (typeof window === "undefined") return "UNREAD";
+    if (typeof window === "undefined") return "ALL";
     const saved = window.sessionStorage.getItem("feedy-timeline-state");
-    return saved === "UNREAD" || saved === "ALL" || saved === "READ" ? saved : "UNREAD";
+    return saved === "UNREAD" || saved === "ALL" || saved === "READ" ? saved : "ALL";
   });
   const [sourceFilter, setSourceFilter] = useState<"ALL" | "RSS" | "REDDIT" | "YOUTUBE">(() => {
     if (typeof window === "undefined") return "ALL";
@@ -219,6 +266,7 @@ export function FeedsScreen() {
   const [showAddFeed, setShowAddFeed] = useState(false);
   const [showAddFolder, setShowAddFolder] = useState(false);
   const [query, setQuery] = useState("");
+  const [healthFilter, setHealthFilter] = useState<"ALL" | "HEALTHY" | "ISSUES">("ALL");
   const [showSwipeHint, setShowSwipeHint] = useState(false);
 
   useEffect(() => {
@@ -235,11 +283,15 @@ export function FeedsScreen() {
   const folders = me.data?.navigation.folders ?? [];
 
   const normalizedQuery = query.trim().toLowerCase();
+  const matchesHealth = (feed: NavFeed) =>
+    healthFilter === "ALL" ||
+    (healthFilter === "HEALTHY" ? feed.healthStatus === "HEALTHY" : feed.healthStatus !== "HEALTHY");
   const matchesFeed = (feed: NavFeed) =>
-    !normalizedQuery ||
-    [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
-      .filter(Boolean)
-      .some((value) => value!.toLowerCase().includes(normalizedQuery));
+    matchesHealth(feed) &&
+    (!normalizedQuery ||
+      [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(normalizedQuery)));
 
   const pinnedFeeds = feeds.filter((f) => f.isPinned && matchesFeed(f));
   const uncategorizedFeeds = feeds.filter((f) => !f.folderId && !f.isPinned && matchesFeed(f));
@@ -308,6 +360,18 @@ export function FeedsScreen() {
             className="h-11 border-0 bg-transparent px-0"
           />
         </div>
+        <div className="mt-3">
+          <SegmentedControl
+            value={healthFilter}
+            onChange={setHealthFilter}
+            options={[
+              { key: "ALL", label: "All" },
+              { key: "HEALTHY", label: "Healthy" },
+              { key: "ISSUES", label: "Issues" },
+            ]}
+            columns="grid-cols-3"
+          />
+        </div>
       </section>
 
       {showSwipeHint ? (
@@ -373,10 +437,16 @@ export function FeedsScreen() {
           />
         )}
 
-        {!!feeds.length && normalizedQuery && !pinnedFeeds.length && !visibleFolders.length && !uncategorizedFeeds.length && (
+        {!!feeds.length && (normalizedQuery || healthFilter !== "ALL") && !pinnedFeeds.length && !visibleFolders.length && !uncategorizedFeeds.length && (
           <EmptyState
-            title="No feeds match this search"
-            body="Try a feed title, folder name, source URL, or source type."
+            title={healthFilter === "ISSUES" ? "No feeds with issues" : "No feeds match this search"}
+            body={
+              healthFilter === "ISSUES"
+                ? "Everything visible right now is healthy."
+                : healthFilter === "HEALTHY"
+                  ? "Try another search or switch back to all feeds."
+                  : "Try a feed title, folder name, source URL, or source type."
+            }
             icon={<Search className="size-6" />}
           />
         )}
@@ -908,7 +978,9 @@ export function ImportExportScreen() {
 
 function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; index: number }) {
   const [showEdit, setShowEdit] = useState(false);
+  const [showHealth, setShowHealth] = useState(false);
   const queryClient = useQueryClient();
+  const health = getHealthPresentation(feed.healthStatus);
 
   const deleteFeed = useMutation({
     mutationFn: () => api(`/api/feeds/${feed.id}`, { method: "DELETE" }),
@@ -960,27 +1032,41 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
           </>
         }
       >
-        <Link href={`/app/feeds/${feed.id}`} className="flex min-w-0 flex-1 items-center gap-3 rounded-[20px] px-3 py-3">
-          <FeedAvatar feedId={feed.id} title={feed.label || feed.title} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">{feed.label || feed.title}</h3>
-              {feed.counts.unreadCount > 0 && (
-                <span className="rounded-full border border-subtle bg-[var(--accent-soft)] px-2.5 py-1 text-[10px] font-semibold text-[var(--accent)]">
-                  {feed.counts.unreadCount}
-                </span>
-              )}
+        <div className="flex min-w-0 items-center gap-3 rounded-[20px] px-3 py-3">
+          <Link href={`/app/feeds/${feed.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+            <FeedAvatar feedId={feed.id} title={feed.label || feed.title} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">{feed.label || feed.title}</h3>
+                {feed.counts.unreadCount > 0 && (
+                  <span className="rounded-full border border-subtle bg-[var(--accent-soft)] px-2.5 py-1 text-[10px] font-semibold text-[var(--accent)]">
+                    {feed.counts.unreadCount}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 truncate text-xs text-secondary">
+                {feed.description || feed.sourceUrl}
+              </p>
+              <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-secondary">
+                <span>{formatSourceType(feed.sourceType)}</span>
+                <span>·</span>
+                <span>{relativeTime(feed.lastRefreshedAt)}</span>
+              </div>
             </div>
-            <p className="mt-1 truncate text-xs text-secondary">
-              {feed.description || feed.sourceUrl}
-            </p>
-            <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-secondary">
-              <span>{formatSourceType(feed.sourceType)}</span>
-              <span>·</span>
-              <span>{relativeTime(feed.lastRefreshedAt)}</span>
-            </div>
-          </div>
-        </Link>
+          </Link>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setShowHealth(true);
+            }}
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] ${health.className}`}
+            aria-label={`View ${feed.label || feed.title} health`}
+          >
+            {health.label}
+          </button>
+        </div>
       </SwipeRow>
 
       {showEdit && (
@@ -991,7 +1077,100 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
           onReorder={(direction) => reorder.mutate(direction)}
         />
       )}
+      {showHealth && (
+        <FeedHealthSheet
+          feed={feed}
+          onClose={() => setShowHealth(false)}
+        />
+      )}
     </>
+  );
+}
+
+function FeedHealthSheet({
+  feed,
+  onClose,
+}: {
+  feed: NavFeed;
+  onClose: () => void;
+}) {
+  const health = getHealthPresentation(feed.healthStatus);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-3 flex justify-center">
+          <div className="h-1.5 w-11 rounded-full bg-[var(--surface-muted)]" />
+        </div>
+
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-[15px] font-semibold">Feed health</h3>
+            <p className="mt-1 truncate text-xs text-secondary">
+              {feed.label || feed.title}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Status</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {getHealthSummary(feed)}
+              </p>
+            </div>
+            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${health.className}`}>
+              {health.label}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Last refresh</p>
+            <p className="mt-1 text-sm text-[var(--text-primary)]">
+              {feed.lastRefreshedAt ? relativeTime(feed.lastRefreshedAt) : "Never"}
+            </p>
+          </div>
+
+          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Last successful refresh</p>
+            <p className="mt-1 text-sm text-[var(--text-primary)]">
+              {feed.lastSuccessfulRefreshAt ? relativeTime(feed.lastSuccessfulRefreshAt) : "No successful refresh yet"}
+            </p>
+          </div>
+
+          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Last failure</p>
+            <p className="mt-1 text-sm text-[var(--text-primary)]">
+              {feed.lastFailureAt ? relativeTime(feed.lastFailureAt) : "No recent failures"}
+            </p>
+          </div>
+
+          {feed.lastError ? (
+            <div className="rounded-[18px] border border-rose-500/20 bg-rose-500/10 px-3.5 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-rose-300">Latest error</p>
+              <p className="mt-1 text-sm leading-relaxed text-rose-100">
+                {feed.lastError}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1055,9 +1234,19 @@ function FolderRow({ folder, folders, index }: { folder: NavFolder; folders: Nav
             </div>
             <div className="min-w-0">
               <h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">{folder.title}</h3>
-              <p className="mt-1 text-xs text-secondary">
-                {folder.counts.unreadCount} unread · {folder.counts.totalCount} feeds
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-secondary">
+                <span>{folder.counts.unreadCount} unread</span>
+                <span>·</span>
+                <span>{folder.counts.feedCount} feeds</span>
+                {folder.counts.issueCount > 0 ? (
+                  <>
+                    <span>·</span>
+                    <span className="font-medium text-amber-300">
+                      {folder.counts.issueCount} issues
+                    </span>
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
           <ChevronRight className="size-4 shrink-0 text-secondary transition-colors group-hover:text-[var(--accent)]" />
@@ -1132,58 +1321,76 @@ function RefreshButton({
   invalidate: string[];
 }) {
   const queryClient = useQueryClient();
-  const [queued, setQueued] = useState(false);
+  const [trackedBatchId, setTrackedBatchId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const mutation = useMutation({
-    mutationFn: () => api(endpoint, { method: "POST" }),
-    onSuccess: async () => {
-      setQueued(true);
-      setProgress(18);
-      await queryClient.invalidateQueries({ queryKey: invalidate });
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
+  const refreshStatus = useQuery({
+    queryKey: ["refresh-status", endpoint, trackedBatchId],
+    queryFn: () =>
+      api<{
+        active: number;
+        completed: number;
+        failed: number;
+        queued: number;
+        running: number;
+        succeeded: number;
+        total: number;
+      }>(`/api/refresh/status?batchId=${encodeURIComponent(trackedBatchId ?? "")}`),
+    enabled: !!trackedBatchId,
+    refetchInterval: trackedBatchId ? 1500 : false,
+  });
 
-      const steps = [
-        { delay: 1200, progress: 42 },
-        { delay: 3200, progress: 68 },
-        { delay: 6200, progress: 88 },
-        { delay: 8400, progress: 100 },
-      ];
-      steps.forEach(({ delay, progress: nextProgress }, index) => {
-        setTimeout(() => {
-          setProgress(nextProgress);
-          void queryClient.invalidateQueries({ queryKey: invalidate });
-          void queryClient.invalidateQueries({ queryKey: ["me"] });
-          if (index === steps.length - 1) {
-            setTimeout(() => {
-              setQueued(false);
-              setProgress(0);
-            }, 300);
-          }
-        }, delay);
-      });
+  const mutation = useMutation({
+    mutationFn: () =>
+      api<{ batchId?: string; batchStartedAt?: string; queued?: number }>(endpoint, { method: "POST" }),
+    onSuccess: async (data) => {
+      setProgress(8);
+      setTrackedBatchId(data.batchId ?? null);
+      await queryClient.invalidateQueries({ queryKey: invalidate });
+      await queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      await queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
     },
     onError: () => {
-      setQueued(false);
+      setTrackedBatchId(null);
       setProgress(0);
     },
   });
 
-  const active = mutation.isPending || queued;
-
   useEffect(() => {
-    if (!active) {
+    if (!trackedBatchId) {
       return;
     }
 
-    const interval = window.setInterval(() => {
-      void queryClient.invalidateQueries({ queryKey: invalidate });
-      void queryClient.invalidateQueries({ queryKey: ["me"] });
-    }, 1500);
+    const status = refreshStatus.data;
+    if (!status) {
+      return;
+    }
 
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [active, invalidate, queryClient]);
+    const total = Math.max(status.total, 1);
+    const nextProgress =
+      status.active > 0
+        ? Math.min(94, Math.max(12, Math.round((status.completed / total) * 100)))
+        : 100;
+
+    setProgress(nextProgress);
+
+    void queryClient.invalidateQueries({ queryKey: invalidate });
+    void queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
+    void queryClient.invalidateQueries({ queryKey: ["me"] });
+    void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
+
+    if (status.total > 0 && status.active === 0) {
+      const timeout = window.setTimeout(() => {
+        setTrackedBatchId(null);
+        setProgress(0);
+      }, 500);
+
+      return () => window.clearTimeout(timeout);
+    }
+  }, [invalidate, queryClient, refreshStatus.data, trackedBatchId]);
+
+  const active = mutation.isPending || !!trackedBatchId;
+  const status = refreshStatus.data;
 
   return (
     <>
@@ -1205,10 +1412,12 @@ function RefreshButton({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[12px] font-semibold text-[var(--text-primary)]">
-                  {mutation.isPending ? "Queueing refresh" : "Refreshing feeds"}
+                  {mutation.isPending || !status ? "Queueing refresh" : "Refreshing feeds"}
                 </p>
                 <p className="mt-0.5 text-[11px] text-secondary">
-                  Pulling in the latest items from your subscriptions.
+                  {status
+                    ? `${status.completed} of ${status.total} feeds finished${status.failed ? ` · ${status.failed} failed` : ""}`
+                    : "Pulling in the latest items from your subscriptions."}
                 </p>
               </div>
               <span className="text-[11px] font-semibold text-[var(--accent)]">
