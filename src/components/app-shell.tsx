@@ -103,7 +103,7 @@ export function MobileShell({
         </div>
 
         {/* iOS-style Full-Width Tab Bar - Emerald Accent */}
-        <nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(8px,env(safe-area-inset-bottom))]" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+        <nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(12px,env(safe-area-inset-bottom))]" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
           <div className="mx-auto flex max-w-md items-center justify-around">
             {navItems.map((item) => {
               const Icon = item.icon;

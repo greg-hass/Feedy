@@ -185,13 +185,18 @@ function EditFeedModal({
   const me = queryClient.getQueryData<{ navigation: { folders: Array<{ id: string; title: string }> } }>(["me"]);
   const folders = me?.navigation.folders ?? [];
   const [folderId, setFolderId] = useState(feed.folderId || "");
+  const [excludeFromTimeline, setExcludeFromTimeline] = useState(feed.excludeFromTimeline);
 
   const mutation = useMutation({
     mutationFn: () =>
       import("@/lib/client").then(({ api }) =>
         api(`/api/feeds/${feed.id}`, {
           method: "PATCH",
-          body: JSON.stringify({ label: label || null, folderId: folderId || null }),
+          body: JSON.stringify({
+            label: label || null,
+            folderId: folderId || null,
+            excludeFromTimeline,
+          }),
         }),
       ),
     onSuccess: async () => {
@@ -229,6 +234,19 @@ function EditFeedModal({
             </select>
           </label>
         )}
+        <button
+          onClick={() => setExcludeFromTimeline(!excludeFromTimeline)}
+          className={`mt-3 flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
+            excludeFromTimeline
+              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "border-subtle text-secondary"
+          }`}
+        >
+          <span className={`inline-flex size-4 items-center justify-center rounded border ${excludeFromTimeline ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]" : "border-subtle"}`}>
+            {excludeFromTimeline ? "✓" : ""}
+          </span>
+          Hide from Timeline
+        </button>
         <button onClick={() => mutation.mutate()} className="mt-4 w-full rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-white">
           Save
         </button>

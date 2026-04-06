@@ -26,6 +26,7 @@ export const updateFeedSchema = z.object({
   title: z.string().max(200).optional(),
   position: z.number().int().min(0).optional(),
   isPinned: z.boolean().optional(),
+  excludeFromTimeline: z.boolean().optional(),
   refreshIntervalMinutes: z.number().int().min(5).max(1440).nullable().optional(),
 });
 

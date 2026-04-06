@@ -1,4 +1,4 @@
-import { JobStatus, JobTrigger } from "@prisma/client";
+import { Prisma, JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndParseFeed, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
@@ -19,20 +19,61 @@ async function createValidatedFeedForUser(
     queueInitialIconFetch?: boolean;
   },
 ) {
-  const feed = await prisma.feed.create({
-    data: {
+  const existingFeed = await prisma.feed.findFirst({
+    where: {
       userId,
-      folderId: input.folderId || null,
-      title: validated.title,
-      label: input.label || null,
-      description: validated.description,
-      sourceUrl: validated.feedUrl,
-      siteUrl: validated.siteUrl,
-      iconHintUrl: validated.iconUrl,
-      sourceType: validated.sourceType,
-      refreshIntervalMinutes: input.refreshIntervalMinutes || null,
+      OR: [
+        { sourceUrl: validated.feedUrl },
+        ...(validated.siteUrl ? [{ siteUrl: validated.siteUrl }] : []),
+      ],
+    },
+    select: {
+      id: true,
+      title: true,
+      label: true,
+      sourceUrl: true,
+      siteUrl: true,
     },
   });
+
+  if (existingFeed) {
+    if (validated.siteUrl && existingFeed.siteUrl === validated.siteUrl && shouldRepairLegacySourceUrl(existingFeed.sourceUrl, validated.feedUrl)) {
+      await prisma.feed.update({
+        where: { id: existingFeed.id },
+        data: {
+          sourceUrl: validated.feedUrl,
+          title: validated.title,
+          description: validated.description,
+          iconHintUrl: validated.iconUrl,
+          sourceType: validated.sourceType,
+        },
+      });
+    }
+    throw new Error(`Feed already exists in your library as ${existingFeed.label || existingFeed.title}.`);
+  }
+
+  let feed;
+  try {
+    feed = await prisma.feed.create({
+      data: {
+        userId,
+        folderId: input.folderId || null,
+        title: validated.title,
+        label: input.label || null,
+        description: validated.description,
+        sourceUrl: validated.feedUrl,
+        siteUrl: validated.siteUrl,
+        iconHintUrl: validated.iconUrl,
+        sourceType: validated.sourceType,
+        refreshIntervalMinutes: input.refreshIntervalMinutes || null,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("Feed already exists in your library.");
+    }
+    throw error;
+  }
 
   if (options?.queueInitialRefresh !== false) {
     const refresh = await enqueueFeedRefresh({ feedId: feed.id, trigger: "manual" });
@@ -53,6 +94,18 @@ async function createValidatedFeedForUser(
   }
 
   return feed;
+}
+
+function shouldRepairLegacySourceUrl(currentSourceUrl: string, validatedFeedUrl: string) {
+  if (currentSourceUrl === validatedFeedUrl) {
+    return false;
+  }
+
+  return (
+    currentSourceUrl.includes("pubsubhubbub.appspot.com") ||
+    currentSourceUrl.includes("feedburner.com") ||
+    currentSourceUrl.includes("feeds.feedproxy.google.com")
+  );
 }
 
 export async function createFeedForUser(

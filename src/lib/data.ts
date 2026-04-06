@@ -95,7 +95,7 @@ export async function getNavigationData(userId: string) {
       getFolderCounts(userId),
       prisma.item.count({
         where: {
-          feed: { userId },
+          feed: { userId, excludeFromTimeline: false },
           readStates: { none: { userId } },
         },
       }),
@@ -179,6 +179,7 @@ export async function getTimelineItems(
       feed: {
         userId,
         ...(options?.feedId ? { id: options.feedId } : {}),
+        ...(!options?.feedId ? { excludeFromTimeline: false } : {}),
         ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
       },
       ...stateWhere,

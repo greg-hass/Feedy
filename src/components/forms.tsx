@@ -247,6 +247,7 @@ export function EditFeedSheet({
   const [label, setLabel] = useState(feed.label || "");
   const [folderId, setFolderId] = useState(feed.folderId || "");
   const [isPinned, setIsPinned] = useState(feed.isPinned);
+  const [excludeFromTimeline, setExcludeFromTimeline] = useState(feed.excludeFromTimeline);
   const queryClient = useQueryClient();
 
   const me = queryClient.getQueryData<{
@@ -262,6 +263,7 @@ export function EditFeedSheet({
           label: label || null,
           folderId: folderId || null,
           isPinned,
+          excludeFromTimeline,
         }),
       }),
     onSuccess: async () => {
@@ -326,6 +328,18 @@ export function EditFeedSheet({
         >
           {isPinned ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
           Pin to top
+        </button>
+
+        <button
+          onClick={() => setExcludeFromTimeline(!excludeFromTimeline)}
+          className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
+            excludeFromTimeline
+              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "border-subtle text-secondary"
+          }`}
+        >
+          {excludeFromTimeline ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
+          Hide from Timeline
         </button>
 
         {onReorder && (

@@ -7,6 +7,7 @@ export type NavFeed = {
   siteUrl: string | null;
   sourceType: string;
   isPinned: boolean;
+  excludeFromTimeline: boolean;
   position: number;
   lastRefreshedAt: string | null;
   lastSuccessfulRefreshAt: string | null;

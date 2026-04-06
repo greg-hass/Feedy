@@ -64,13 +64,14 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
 
   const xml = await response.text();
   const feed = await parser.parseString(xml);
-  const sourceType = detectSourceType(url, feed.feedUrl ?? feed.generator ?? null);
+  const resolvedFeedUrl = response.url?.trim() || url;
+  const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? null);
 
   return {
     title: decodeHtmlEntities(feed.title?.trim()) || "Untitled feed",
     description: decodeHtmlEntities(feed.description?.trim()) || null,
     siteUrl: feed.link?.trim() || null,
-    feedUrl: feed.feedUrl?.trim() || url,
+    feedUrl: resolvedFeedUrl,
     iconUrl: ((feed as { image?: { url?: string } }).image?.url as string | undefined) ?? null,
     sourceType,
   };
@@ -84,7 +85,8 @@ export async function fetchAndParseFeed(url: string, feedId: string) {
 
   const xml = await response.text();
   const feed = await parser.parseString(xml);
-  const sourceType = detectSourceType(url, feed.feedUrl ?? feed.generator ?? null);
+  const resolvedFeedUrl = response.url?.trim() || url;
+  const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? null);
   const items: ParsedFeedItem[] = (feed.items ?? []).map((item) => {
     const extra = item as unknown as Record<string, unknown>;
     const canonicalUrl =
@@ -135,6 +137,7 @@ export async function fetchAndParseFeed(url: string, feedId: string) {
       siteUrl: feed.link?.trim() || null,
       iconUrl: ((feed as { image?: { url?: string } }).image?.url as string | undefined) ?? null,
       sourceType,
+      feedUrl: resolvedFeedUrl,
     },
     items,
   };

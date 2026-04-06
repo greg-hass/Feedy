@@ -125,6 +125,7 @@ model Feed {
   sourceType               FeedSourceType   @default(UNKNOWN)
   position                 Int              @default(0)
   isPinned                 Boolean          @default(false)
+  excludeFromTimeline      Boolean          @default(false)
   refreshIntervalMinutes   Int?
   lastRefreshedAt          DateTime?
   lastSuccessfulRefreshAt  DateTime?

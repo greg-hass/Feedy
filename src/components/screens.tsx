@@ -26,26 +26,26 @@ function getHealthPresentation(status: string) {
     case "HEALTHY":
       return {
         label: "Healthy",
-        className:
-          "border-emerald-500/20 bg-emerald-500/12 text-emerald-300",
+        className: "text-emerald-300",
+        dotClassName: "bg-emerald-400",
       };
     case "DEGRADED":
       return {
         label: "Issue",
-        className:
-          "border-amber-500/20 bg-amber-500/12 text-amber-300",
+        className: "text-amber-300",
+        dotClassName: "bg-amber-400",
       };
     case "ERROR":
       return {
         label: "Error",
-        className:
-          "border-rose-500/20 bg-rose-500/12 text-rose-300",
+        className: "text-rose-300",
+        dotClassName: "bg-rose-400",
       };
     default:
       return {
         label: "Pending",
-        className:
-          "border-slate-400/20 bg-slate-400/12 text-slate-300",
+        className: "text-slate-300",
+        dotClassName: "bg-slate-400",
       };
   }
 }
@@ -1039,7 +1039,7 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
               <div className="flex items-center justify-between gap-2">
                 <h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">{feed.label || feed.title}</h3>
                 {feed.counts.unreadCount > 0 && (
-                  <span className="rounded-full border border-subtle bg-[var(--accent-soft)] px-2.5 py-1 text-[10px] font-semibold text-[var(--accent)]">
+                  <span className="rounded-full border border-[var(--accent)]/30 bg-[var(--accent)] px-2.5 py-1 text-[10px] font-semibold text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.22)]">
                     {feed.counts.unreadCount}
                   </span>
                 )}
@@ -1047,25 +1047,27 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
               <p className="mt-1 truncate text-xs text-secondary">
                 {feed.description || feed.sourceUrl}
               </p>
-              <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-secondary">
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] uppercase tracking-[0.16em] text-secondary">
                 <span>{formatSourceType(feed.sourceType)}</span>
                 <span>·</span>
                 <span>{relativeTime(feed.lastRefreshedAt)}</span>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setShowHealth(true);
+                  }}
+                  className={`inline-flex items-center gap-1.5 text-[9px] font-semibold tracking-[0.12em] ${health.className}`}
+                  aria-label={`View ${feed.label || feed.title} health`}
+                >
+                  <span className={`size-1.5 rounded-full ${health.dotClassName}`} />
+                  <span>{health.label}</span>
+                </button>
               </div>
             </div>
           </Link>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setShowHealth(true);
-            }}
-            className={`shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] ${health.className}`}
-            aria-label={`View ${feed.label || feed.title} health`}
-          >
-            {health.label}
-          </button>
         </div>
       </SwipeRow>
 
@@ -1132,7 +1134,8 @@ function FeedHealthSheet({
                 {getHealthSummary(feed)}
               </p>
             </div>
-            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${health.className}`}>
+            <span className={`inline-flex items-center gap-2 rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${health.className}`}>
+              <span className={`size-2 rounded-full ${health.dotClassName}`} />
               {health.label}
             </span>
           </div>
