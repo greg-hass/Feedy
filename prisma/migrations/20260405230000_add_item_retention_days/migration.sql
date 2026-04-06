@@ -1,0 +1,2 @@
+ALTER TABLE "Settings"
+ADD COLUMN "itemRetentionDays" INTEGER NOT NULL DEFAULT 90;

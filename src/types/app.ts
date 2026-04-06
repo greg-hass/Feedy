@@ -68,6 +68,7 @@ export type MeResponse = {
         | "CYAN"
         | "TEAL"
         | "SLATE";
+      itemRetentionDays: number;
       refreshIntervalMinutes: number;
       autoRefreshEnabled: boolean;
       readerOpenOriginalByDefault: boolean;

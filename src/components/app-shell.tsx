@@ -10,7 +10,7 @@ import { api } from "@/lib/client";
 import type { MeResponse } from "@/types/app";
 
 const navItems = [
-  { href: "/app/unread", label: "Unread", icon: Flame },
+  { href: "/app/unread", label: "Timeline", icon: Flame },
   { href: "/app/feeds", label: "Feeds", icon: Rss },
   { href: "/app/discover", label: "Discover", icon: Compass },
   { href: "/app/saved", label: "Saved", icon: Bookmark },

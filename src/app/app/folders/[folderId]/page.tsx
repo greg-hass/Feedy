@@ -90,7 +90,7 @@ export default function FolderDetailPage() {
               <button onClick={() => router.back()} className="rounded-lg p-1 text-secondary">
                 <ArrowLeft className="size-5" />
               </button>
-              <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
                 <FolderOpen className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -137,7 +137,7 @@ export default function FolderDetailPage() {
                         {decodeHtmlEntities(feed.label || feed.title)}
                       </p>
                       {feed.counts.unreadCount > 0 ? (
-                        <span className="shrink-0 rounded-full border border-subtle bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">
+                        <span className="shrink-0 rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
                           {feed.counts.unreadCount}
                         </span>
                       ) : null}

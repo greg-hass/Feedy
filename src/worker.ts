@@ -8,6 +8,7 @@ import { ensureSingleUser } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { enqueueFeedRefresh, iconQueueName, refreshQueueName } from "@/lib/queue";
 import { getRedis } from "@/lib/redis";
+import { pruneUserData } from "@/lib/retention";
 import { ensureDataDirs } from "@/lib/storage";
 
 async function scheduleDueFeeds() {
@@ -44,6 +45,21 @@ async function scheduleDueFeeds() {
         status: JobStatus.QUEUED,
       },
     });
+  }
+}
+
+async function runRetentionCleanup() {
+  const user = await ensureSingleUser();
+  const retentionDays = user.settings?.itemRetentionDays ?? 90;
+  const result = await pruneUserData(user.id, retentionDays);
+
+  if (
+    result.deletedItems ||
+    result.deletedRefreshJobs ||
+    result.deletedRefreshLogs ||
+    result.deletedImportRecords
+  ) {
+    console.log("Retention cleanup completed", result);
   }
 }
 
@@ -85,9 +101,13 @@ async function boot() {
   });
 
   await scheduleDueFeeds();
+  await runRetentionCleanup();
   setInterval(() => {
     void scheduleDueFeeds();
   }, 60_000);
+  setInterval(() => {
+    void runRetentionCleanup();
+  }, 6 * 60 * 60 * 1000);
 
   console.log("Feedy worker started");
 }

@@ -91,6 +91,7 @@ model Settings {
   userId                        String          @unique
   theme                         ThemePreference @default(SYSTEM)
   accentColor                   AccentPreference @default(EMERALD)
+  itemRetentionDays             Int             @default(90)
   refreshIntervalMinutes        Int             @default(60)
   autoRefreshEnabled            Boolean         @default(true)
   readerOpenOriginalByDefault   Boolean         @default(false)

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, ChevronDown, ChevronRight, FolderOpen, FolderPlus, MoreHorizontal, Plus, Rss, RefreshCcw, Search, Trash2, Upload } from "lucide-react";
+import { Bookmark, ChevronRight, FolderOpen, FolderPlus, MoreHorizontal, Plus, Rss, RefreshCcw, Search, Trash2, Upload } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { MobileShell, useMe, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
@@ -77,15 +77,24 @@ function SegmentedControl<T extends string>({
 }
 
 export function UnreadScreen() {
-  const [feedFilter, setFeedFilter] = useState<string | null>(null);
-  const [stateFilter, setStateFilter] = useState<"UNREAD" | "ALL" | "READ">("UNREAD");
-  const [sourceFilter, setSourceFilter] = useState<"ALL" | "RSS" | "REDDIT" | "YOUTUBE">("ALL");
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [stateFilter, setStateFilter] = useState<"UNREAD" | "ALL" | "READ">(() => {
+    if (typeof window === "undefined") return "UNREAD";
+    const saved = window.sessionStorage.getItem("feedy-timeline-state");
+    return saved === "UNREAD" || saved === "ALL" || saved === "READ" ? saved : "UNREAD";
+  });
+  const [sourceFilter, setSourceFilter] = useState<"ALL" | "RSS" | "REDDIT" | "YOUTUBE">(() => {
+    if (typeof window === "undefined") return "ALL";
+    const saved = window.sessionStorage.getItem("feedy-timeline-source");
+    return saved === "ALL" || saved === "RSS" || saved === "REDDIT" || saved === "YOUTUBE" ? saved : "ALL";
+  });
+  const restoredScrollRef = useRef(false);
+
+  useEffect(() => {
+    window.sessionStorage.setItem("feedy-timeline-state", stateFilter);
+    window.sessionStorage.setItem("feedy-timeline-source", sourceFilter);
+  }, [stateFilter, sourceFilter]);
 
   const params = new URLSearchParams();
-  if (feedFilter) {
-    params.set("feedId", feedFilter);
-  }
   if (stateFilter !== "UNREAD") {
     params.set("stateFilter", stateFilter);
   }
@@ -95,116 +104,82 @@ export function UnreadScreen() {
   const itemsUrl = `/api/items${params.toString() ? `?${params.toString()}` : ""}`;
 
   const items = useQuery({
-    queryKey: ["items", "timeline", feedFilter, stateFilter, sourceFilter],
+    queryKey: ["items", "timeline", stateFilter, sourceFilter],
     queryFn: () => api<ItemRecord[]>(itemsUrl),
   });
 
-  const me = useMe();
-  const selectedFeed =
-    me.data?.navigation.feeds.find((feed) => feed.id === feedFilter)?.label ||
-    me.data?.navigation.feeds.find((feed) => feed.id === feedFilter)?.title ||
-    "All feeds";
-  const filterSummary = [
-    stateFilter === "ALL" ? "All items" : stateFilter === "READ" ? "Read" : "Unread",
-    sourceFilter === "ALL" ? "All sources" : sourceFilter === "RSS" ? "RSS" : sourceFilter === "REDDIT" ? "Reddit" : "YouTube",
-    selectedFeed,
-  ];
+  const scrollStorageKey = `feedy-timeline-scroll:${stateFilter}:${sourceFilter}`;
+
+  useEffect(() => {
+    restoredScrollRef.current = false;
+  }, [stateFilter, sourceFilter]);
+
+  useEffect(() => {
+    const saveScroll = () => {
+      window.sessionStorage.setItem(scrollStorageKey, String(window.scrollY));
+    };
+
+    window.addEventListener("scroll", saveScroll, { passive: true });
+    return () => {
+      saveScroll();
+      window.removeEventListener("scroll", saveScroll);
+    };
+  }, [scrollStorageKey]);
+
+  useEffect(() => {
+    if (items.isLoading || restoredScrollRef.current) {
+      return;
+    }
+
+    const savedScroll = Number(window.sessionStorage.getItem(scrollStorageKey) || "0");
+    restoredScrollRef.current = true;
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScroll, behavior: "auto" });
+    });
+  }, [items.isLoading, items.data, scrollStorageKey]);
 
   return (
     <MobileShell
-      title="Unread"
+      title="Timeline"
       actions={
-        <RefreshButton endpoint="/api/refresh/all" invalidate={["items", "unread"]} />
+        <RefreshButton endpoint="/api/refresh/all" invalidate={["items"]} />
       }
     >
       <section
-        className={`mb-4 rounded-[26px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] transition-[padding] duration-200 ${
-          filtersExpanded ? "p-4" : "px-4 py-3"
-        }`}
+        className="fixed inset-x-0 z-30 px-5 pb-3 pt-1"
+        style={{ top: "calc(env(safe-area-inset-top) + 92px)", backgroundColor: "var(--app-bg)" }}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
-              Timeline filters
-            </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              {filterSummary.map((label) => (
-                <span
-                  key={label}
-                  className="rounded-full border border-subtle bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] font-medium text-secondary"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="rounded-full border border-subtle bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] font-medium text-secondary">
-              {items.data?.length ?? 0} items
-            </div>
-            <button
-              onClick={() => setFiltersExpanded((value) => !value)}
-              className="flex size-8 items-center justify-center rounded-full border border-subtle bg-[var(--surface-muted)] text-secondary"
-              aria-label={filtersExpanded ? "Collapse filters" : "Expand filters"}
+        <div className="mx-auto max-w-md grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="sr-only">Timeline state</span>
+            <select
+              value={stateFilter}
+              onChange={(event) => setStateFilter(event.target.value as "UNREAD" | "ALL" | "READ")}
+              className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
             >
-              <ChevronDown className={`size-4 transition-transform ${filtersExpanded ? "rotate-180" : ""}`} />
-            </button>
-          </div>
+              <option value="UNREAD">Unread</option>
+              <option value="ALL">All</option>
+              <option value="READ">Read</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="sr-only">Timeline source</span>
+            <select
+              value={sourceFilter}
+              onChange={(event) => setSourceFilter(event.target.value as "ALL" | "RSS" | "REDDIT" | "YOUTUBE")}
+              className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+            >
+              <option value="ALL">All feeds</option>
+              <option value="RSS">RSS</option>
+              <option value="REDDIT">Reddit</option>
+              <option value="YOUTUBE">YouTube</option>
+            </select>
+          </label>
         </div>
-
-        {filtersExpanded ? (
-          <div className="mt-4 space-y-3">
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary">View</p>
-              <SegmentedControl
-                value={stateFilter}
-                onChange={setStateFilter}
-                options={[
-                  { key: "UNREAD", label: "Unread" },
-                  { key: "ALL", label: "All items" },
-                  { key: "READ", label: "Read" },
-                ]}
-                columns="grid-cols-3"
-              />
-            </div>
-
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary">Source</p>
-              <SegmentedControl
-                value={sourceFilter}
-                onChange={setSourceFilter}
-                options={[
-                  { key: "ALL", label: "All" },
-                  { key: "RSS", label: "RSS" },
-                  { key: "REDDIT", label: "Reddit" },
-                  { key: "YOUTUBE", label: "YouTube" },
-                ]}
-                columns="grid-cols-4"
-              />
-            </div>
-
-            {me.data && me.data.navigation.feeds.length > 1 ? (
-              <label className="block">
-                <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary">
-                  Feed
-                </span>
-                <select
-                  value={feedFilter ?? ""}
-                  onChange={(event) => setFeedFilter(event.target.value || null)}
-                  className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] px-4 text-sm text-[var(--text-primary)]"
-                >
-                  <option value="">All feeds</option>
-                  {me.data.navigation.feeds.map((feed) => (
-                    <option key={feed.id} value={feed.id}>
-                      {feed.label || feed.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-          </div>
-        ) : null}
       </section>
+
+      <div className="h-[68px]" />
 
       {items.isLoading ? (
         <LoadingSkeleton />
@@ -223,14 +198,14 @@ export function UnreadScreen() {
               ? "No read items here"
               : stateFilter === "ALL"
                 ? "Nothing in this view"
-                : "Inbox clear"
+              : "Inbox clear"
           }
           body={
             stateFilter === "READ"
               ? "Items you open will appear here so you can revisit them."
               : stateFilter === "ALL"
-                ? "Try changing the feed type or feed filter."
-                : "New items will land here as feeds refresh."
+                ? "Try another feed type or refresh to pull in more items."
+              : "New items will land here as feeds refresh."
           }
           icon={<Bookmark className="size-6" />}
         />
@@ -688,7 +663,7 @@ export function SettingsScreen() {
                 }}
                 className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
                   theme === t
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
                     : "border-subtle bg-[var(--surface-muted)] text-secondary"
                 }`}
               >
@@ -737,11 +712,34 @@ export function SettingsScreen() {
                 onClick={() => settings.mutate({ refreshIntervalMinutes: minutes })}
                 className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
                   me.data?.user.settings.refreshIntervalMinutes === minutes
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
                     : "border-subtle bg-[var(--surface-muted)] text-secondary"
                 }`}
               >
                 {minutes}m
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+          <h3 className="text-sm font-semibold">Storage retention</h3>
+          <p className="mt-2 text-xs leading-relaxed text-secondary">
+            The timeline shows up to 100 items at once. Old read items that are not bookmarked are cleaned up automatically.
+            Unread items and saved items are preserved.
+          </p>
+          <div className="mt-3 flex gap-2">
+            {[30, 90, 180, 365].map((days) => (
+              <button
+                key={days}
+                onClick={() => settings.mutate({ itemRetentionDays: days })}
+                className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+                  me.data?.user.settings.itemRetentionDays === days
+                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
+                    : "border-subtle bg-[var(--surface-muted)] text-secondary"
+                }`}
+              >
+                {days}d
               </button>
             ))}
           </div>
@@ -1050,9 +1048,9 @@ function FolderRow({ folder, folders, index }: { folder: NavFolder; folders: Nav
           </>
         }
       >
-        <Link href={`/app/folders/${folder.id}`} className="flex items-center justify-between gap-3 rounded-[24px] px-3.5 py-3.5">
+        <Link href={`/app/folders/${folder.id}`} className="group flex items-center justify-between gap-3 rounded-[24px] px-3.5 py-3.5">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
               <FolderOpen className="size-5" />
             </div>
             <div className="min-w-0">
@@ -1062,7 +1060,7 @@ function FolderRow({ folder, folders, index }: { folder: NavFolder; folders: Nav
               </p>
             </div>
           </div>
-          <ChevronRight className="size-4 shrink-0 text-secondary" />
+          <ChevronRight className="size-4 shrink-0 text-secondary transition-colors group-hover:text-[var(--accent)]" />
         </Link>
       </SwipeRow>
 
@@ -1135,43 +1133,97 @@ function RefreshButton({
 }) {
   const queryClient = useQueryClient();
   const [queued, setQueued] = useState(false);
+  const [progress, setProgress] = useState(0);
   const mutation = useMutation({
     mutationFn: () => api(endpoint, { method: "POST" }),
     onSuccess: async () => {
       setQueued(true);
+      setProgress(18);
       await queryClient.invalidateQueries({ queryKey: invalidate });
       await queryClient.invalidateQueries({ queryKey: ["me"] });
 
-      const delays = [1500, 4000, 8000];
-      delays.forEach((delay, index) => {
+      const steps = [
+        { delay: 1200, progress: 42 },
+        { delay: 3200, progress: 68 },
+        { delay: 6200, progress: 88 },
+        { delay: 8400, progress: 100 },
+      ];
+      steps.forEach(({ delay, progress: nextProgress }, index) => {
         setTimeout(() => {
+          setProgress(nextProgress);
           void queryClient.invalidateQueries({ queryKey: invalidate });
           void queryClient.invalidateQueries({ queryKey: ["me"] });
-          if (index === delays.length - 1) {
-            setQueued(false);
+          if (index === steps.length - 1) {
+            setTimeout(() => {
+              setQueued(false);
+              setProgress(0);
+            }, 300);
           }
         }, delay);
       });
     },
     onError: () => {
       setQueued(false);
+      setProgress(0);
     },
   });
 
+  const active = mutation.isPending || queued;
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void queryClient.invalidateQueries({ queryKey: invalidate });
+      void queryClient.invalidateQueries({ queryKey: ["me"] });
+    }, 1500);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [active, invalidate, queryClient]);
+
   return (
-    <div className="flex items-center gap-2">
-      {(mutation.isPending || queued) ? (
-        <span className="rounded-full border border-[var(--accent)]/20 bg-[var(--accent-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
-          {mutation.isPending ? "Queueing" : "Refreshing"}
-        </span>
-      ) : null}
+    <>
       <button
         onClick={() => mutation.mutate()}
-        disabled={mutation.isPending || queued}
-        className="rounded-2xl border border-subtle bg-[var(--surface)] p-2.5 text-secondary active:bg-[var(--surface-muted)] disabled:opacity-70"
+        disabled={active}
+        className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] disabled:opacity-70 ${
+          active
+            ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
+            : "border-subtle bg-[var(--surface)] text-secondary"
+        }`}
+        aria-label={active ? "Refreshing feeds" : "Refresh feeds"}
       >
-        <RefreshCcw className={`size-4 ${(mutation.isPending || queued) ? "animate-spin" : ""}`} />
+        <RefreshCcw className={`size-4 ${active ? "animate-spin" : ""}`} />
       </button>
-    </div>
+      {active ? (
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+70px)] z-50 px-5">
+          <div className="mx-auto w-full max-w-md rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-4 py-3 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[12px] font-semibold text-[var(--text-primary)]">
+                  {mutation.isPending ? "Queueing refresh" : "Refreshing feeds"}
+                </p>
+                <p className="mt-0.5 text-[11px] text-secondary">
+                  Pulling in the latest items from your subscriptions.
+                </p>
+              </div>
+              <span className="text-[11px] font-semibold text-[var(--accent)]">
+                {progress}%
+              </span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+              <div
+                className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent)_0%,color-mix(in_srgb,var(--accent)_100%,white_20%)_100%)] transition-[width] duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

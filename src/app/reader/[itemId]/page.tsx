@@ -26,17 +26,37 @@ export default function ReaderPage() {
         method: "POST",
         body: JSON.stringify(body),
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["items"] });
+    onSuccess: async (_result, variables) => {
+      queryClient.setQueriesData({ queryKey: ["items"] }, (current: ItemRecord[] | undefined) =>
+        current?.map((entry) =>
+          entry.id === params.itemId
+            ? {
+                ...entry,
+                read: variables.read ?? entry.read,
+                bookmarked: variables.bookmarked ?? entry.bookmarked,
+              }
+            : entry,
+        ),
+      );
+      queryClient.setQueryData(["reader", params.itemId], (current: ItemRecord | undefined) =>
+        current
+          ? {
+              ...current,
+              read: variables.read ?? current.read,
+              bookmarked: variables.bookmarked ?? current.bookmarked,
+            }
+          : current,
+      );
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      await queryClient.invalidateQueries({ queryKey: ["reader", params.itemId] });
     },
   });
 
   useEffect(() => {
-    state.mutate({ read: true });
+    if (item.data && !item.data.read && !state.isPending) {
+      state.mutate({ read: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [item.data?.id]);
 
   if (item.isLoading) {
     return (
@@ -122,9 +142,21 @@ export default function ReaderPage() {
 
           <div className="mt-3 flex items-center justify-between text-xs text-secondary">
             <span>{new Date(data.publishedAt || 0).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
-            <span className="rounded-full border border-subtle bg-[var(--accent-soft)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent)]">
+            <span className="rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
               {data.feed.sourceType.replaceAll("_", " ")}
             </span>
+          </div>
+
+          <div className="mt-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-full px-4"
+              onClick={() => state.mutate({ read: !data.read })}
+              disabled={state.isPending}
+            >
+              {data.read ? "Mark unread" : "Mark read"}
+            </Button>
           </div>
 
           {data.youtubeVideoId && (

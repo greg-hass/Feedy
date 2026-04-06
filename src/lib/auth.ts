@@ -35,12 +35,14 @@ export async function ensureSingleUser() {
               update: {
                 refreshIntervalMinutes:
                   existing.settings.refreshIntervalMinutes || env.REFRESH_DEFAULT_INTERVAL_MINUTES,
+                itemRetentionDays: existing.settings.itemRetentionDays || 90,
               },
             }
           : {
               create: {
                 theme: ThemePreference.SYSTEM,
                 accentColor: AccentPreference.EMERALD,
+                itemRetentionDays: 90,
                 refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
               },
             },
@@ -59,6 +61,7 @@ export async function ensureSingleUser() {
         create: {
           theme: ThemePreference.SYSTEM,
           accentColor: AccentPreference.EMERALD,
+          itemRetentionDays: 90,
           refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
         },
       },

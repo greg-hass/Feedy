@@ -20,16 +20,18 @@ export const metadata: Metadata = {
   title: "Feedy",
   description: "Mobile-first self-hosted feed reader",
   applicationName: "Feedy",
+  icons: {
+    icon: [
+      { url: "/api/pwa/icon?size=64", sizes: "64x64", type: "image/png" },
+      { url: "/api/pwa/icon?size=192", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/api/pwa/icon?size=180", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/api/pwa/icon?size=64", sizes: "64x64", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     title: "Feedy",
     statusBarStyle: "black-translucent",
-  },
-  icons: {
-    apple: [
-      { url: "/icon-192.png", sizes: "192x192" },
-      { url: "/icon-512.png", sizes: "512x512" },
-    ],
   },
 };
 
