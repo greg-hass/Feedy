@@ -322,7 +322,7 @@ export function EditFeedSheet({
           onClick={() => setIsPinned(!isPinned)}
           className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
             isPinned
-              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
               : "border-subtle text-secondary"
           }`}
         >
@@ -334,7 +334,7 @@ export function EditFeedSheet({
           onClick={() => setExcludeFromTimeline(!excludeFromTimeline)}
           className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
             excludeFromTimeline
-              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
               : "border-subtle text-secondary"
           }`}
         >

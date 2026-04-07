@@ -8,6 +8,7 @@ export const iconQueueName = "icon-fetch";
 export type RefreshJobPayload = {
   feedId: string;
   trigger: "manual" | "auto" | "import";
+  refreshJobId?: string;
 };
 
 export type IconJobPayload = {

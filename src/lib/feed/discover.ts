@@ -20,6 +20,9 @@ const YOUTUBE_CHANNEL_SEARCH_FILTER = "EgIQAg==";
 function normalizeDiscoveryKeyword(keyword: string) {
   return keyword
     .toLowerCase()
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/[\u2010-\u2015]/g, "-")
     .replace(/[@'".,!?()[\]{}:;|/\\-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -316,6 +319,109 @@ function normalizeDiscoveryFeedUrl(feedUrl: string) {
   }
 }
 
+function looksLikeDirectUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return true;
+  }
+
+  return /^[a-z0-9.-]+\.[a-z]{2,}(?:\/|$)/i.test(trimmed);
+}
+
+function normalizeDirectUrlInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function mapValidatedSourceType(
+  sourceType: Awaited<ReturnType<typeof validateFeedUrl>>["sourceType"],
+): DiscoveryResult["sourceType"] {
+  if (sourceType === "REDDIT_RSS") {
+    return "REDDIT_RSS";
+  }
+
+  if (
+    sourceType === "YOUTUBE_RSS" ||
+    sourceType === "YOUTUBE_CHANNEL_RSS" ||
+    sourceType === "YOUTUBE_PLAYLIST_RSS"
+  ) {
+    return "YOUTUBE_RSS";
+  }
+
+  return "RSS";
+}
+
+function sourceFilterAllowsResult(
+  sourceFilter: DiscoverySourceFilter,
+  sourceType: DiscoveryResult["sourceType"],
+) {
+  if (sourceFilter === "ALL") {
+    return true;
+  }
+
+  if (sourceFilter === "RSS") {
+    return sourceType === "RSS";
+  }
+
+  if (sourceFilter === "REDDIT") {
+    return sourceType === "REDDIT_RSS";
+  }
+
+  return sourceType === "YOUTUBE_RSS";
+}
+
+async function discoverDirectInput(
+  keyword: string,
+  sourceFilter: DiscoverySourceFilter,
+): Promise<DiscoveryResult[]> {
+  const directUrl = normalizeDirectUrlInput(keyword);
+  if (!directUrl) {
+    return [];
+  }
+
+  const results: DiscoveryResult[] = [];
+
+  const youtube = normalizeYoutubeFeed(directUrl);
+  if (youtube && sourceFilterAllowsResult(sourceFilter, youtube.sourceType)) {
+    results.push(youtube);
+  }
+
+  const reddit = normalizeRedditFeed(directUrl);
+  if (reddit && sourceFilterAllowsResult(sourceFilter, reddit.sourceType)) {
+    results.push(reddit);
+  }
+
+  try {
+    const validated = await validateFeedUrl(directUrl);
+    const mappedSourceType = mapValidatedSourceType(validated.sourceType);
+    if (sourceFilterAllowsResult(sourceFilter, mappedSourceType)) {
+      results.push({
+        title: validated.title,
+        description: validated.description,
+        siteName: validated.siteUrl ? new URL(validated.siteUrl).hostname : null,
+        favicon: validated.iconUrl,
+        feedUrl: normalizeDiscoveryFeedUrl(validated.feedUrl),
+        siteUrl: validated.siteUrl,
+        sourceType: mappedSourceType,
+      });
+    }
+  } catch {
+    if (sourceFilter === "ALL" || sourceFilter === "RSS") {
+      results.push(...(await discoverFromWebsite(directUrl)));
+    }
+  }
+
+  return dedupeRankedResults(results, keyword);
+}
+
 function buildCommonFeedCandidates(url: string) {
   try {
     const parsed = new URL(url);
@@ -324,6 +430,32 @@ function buildCommonFeedCandidates(url: string) {
   } catch {
     return [];
   }
+}
+
+function buildWebsiteKeywordGuesses(keyword: string) {
+  const normalized = normalizeDiscoveryKeyword(keyword);
+  if (!normalized) {
+    return [];
+  }
+
+  const compact = compactDiscoveryKeyword(keyword);
+  const hyphenated = normalized.replace(/\s+/g, "-");
+  const guesses = new Set<string>();
+
+  for (const host of [compact, hyphenated]) {
+    if (!host || host.length < 3) {
+      continue;
+    }
+
+    guesses.add(`https://${host}.com/`);
+    guesses.add(`https://www.${host}.com/`);
+    guesses.add(`https://${host}.org/`);
+    guesses.add(`https://www.${host}.org/`);
+    guesses.add(`https://${host}.net/`);
+    guesses.add(`https://www.${host}.net/`);
+  }
+
+  return Array.from(guesses);
 }
 
 function buildKeywordGuesses(keyword: string): DiscoveryResult[] {
@@ -614,8 +746,19 @@ export async function discoverFeeds(
     return [];
   }
 
+  if (looksLikeDirectUrl(trimmedKeyword)) {
+    const directMatches = await discoverDirectInput(trimmedKeyword, sourceFilter);
+    if (directMatches.length > 0) {
+      return directMatches.slice(0, 12);
+    }
+  }
+
   const rawUrls = new Set<string>();
   if (sourceFilter === "ALL" || sourceFilter === "RSS") {
+    for (const guessedUrl of buildWebsiteKeywordGuesses(trimmedKeyword)) {
+      rawUrls.add(guessedUrl);
+    }
+
     for (const query of buildDiscoverySearchQueries(trimmedKeyword, 5)) {
       const searchResults = await searchDuckDuckGo(`${query} rss`);
       for (const url of searchResults.slice(0, 6)) {

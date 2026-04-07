@@ -238,7 +238,7 @@ function EditFeedModal({
           onClick={() => setExcludeFromTimeline(!excludeFromTimeline)}
           className={`mt-3 flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
             excludeFromTimeline
-              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
               : "border-subtle text-secondary"
           }`}
         >

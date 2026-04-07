@@ -13,13 +13,36 @@ function isWeakIconSource(sourceUrl?: string | null) {
   }
 
   const lower = sourceUrl.toLowerCase();
+  const looksLikeRealIcon =
+    lower.includes("favicon") ||
+    lower.includes("apple-touch") ||
+    lower.includes("android-chrome") ||
+    lower.includes("mask-icon") ||
+    lower.includes("logo") ||
+    lower.includes("avatar") ||
+    lower.includes("yt3.") ||
+    lower.includes("googleusercontent.com") ||
+    lower.includes("gravatar.com") ||
+    lower.includes("wp.com");
+  const looksLikePromoImage =
+    lower.endsWith(".webp") ||
+    lower.includes(".webp?") ||
+    lower.endsWith(".jpg") ||
+    lower.includes(".jpg?") ||
+    lower.endsWith(".jpeg") ||
+    lower.includes(".jpeg?") ||
+    lower.includes("/content/images/") ||
+    lower.includes("opengraph") ||
+    lower.includes("open-graph");
+
   return (
     lower.includes("youtube.com/favicon") ||
     lower.includes("fit=32") ||
     lower.includes("w=32") ||
     lower.includes("h=32") ||
     lower.includes("sz=32") ||
-    lower.includes("s32-")
+    lower.includes("s32-") ||
+    (looksLikePromoImage && !looksLikeRealIcon)
   );
 }
 

@@ -36,12 +36,7 @@ async function scheduleDueFeeds() {
       continue;
     }
 
-    const queued = await enqueueFeedRefresh({ feedId: feed.id, trigger: "auto" });
-    if (!queued.enqueued) {
-      continue;
-    }
-
-    await prisma.refreshJob.create({
+    const refreshJob = await prisma.refreshJob.create({
       data: {
         userId: user.id,
         feedId: feed.id,
@@ -49,6 +44,14 @@ async function scheduleDueFeeds() {
         status: JobStatus.QUEUED,
       },
     });
+    const queued = await enqueueFeedRefresh({
+      feedId: feed.id,
+      trigger: "auto",
+      refreshJobId: refreshJob.id,
+    });
+    if (!queued.enqueued) {
+      await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
+    }
   }
 }
 
@@ -78,6 +81,7 @@ async function boot() {
         await refreshFeed(
           job.data.feedId,
           job.data.trigger === "auto" ? JobTrigger.AUTO : JobTrigger.MANUAL,
+          job.data.refreshJobId,
         );
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown refresh error";

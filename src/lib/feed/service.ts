@@ -76,16 +76,21 @@ async function createValidatedFeedForUser(
   }
 
   if (options?.queueInitialRefresh !== false) {
-    const refresh = await enqueueFeedRefresh({ feedId: feed.id, trigger: "manual" });
-    if (refresh.enqueued) {
-      await prisma.refreshJob.create({
-        data: {
-          userId,
-          feedId: feed.id,
-          trigger: JobTrigger.MANUAL,
-          status: JobStatus.QUEUED,
-        },
-      });
+    const refreshJob = await prisma.refreshJob.create({
+      data: {
+        userId,
+        feedId: feed.id,
+        trigger: JobTrigger.MANUAL,
+        status: JobStatus.QUEUED,
+      },
+    });
+    const refresh = await enqueueFeedRefresh({
+      feedId: feed.id,
+      trigger: "manual",
+      refreshJobId: refreshJob.id,
+    });
+    if (!refresh.enqueued) {
+      await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
     }
   }
 
@@ -123,21 +128,23 @@ export async function createFeedForUser(
 
 export { createValidatedFeedForUser };
 
-export async function refreshFeed(feedId: string, trigger: JobTrigger) {
+export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJobId?: string) {
   const feed = await prisma.feed.findUnique({ where: { id: feedId } });
   if (!feed) {
     throw new Error("Feed not found");
   }
 
-  const refreshJob = await prisma.refreshJob.findFirst({
-    where: {
-      feedId,
-      status: JobStatus.QUEUED,
-    },
-    orderBy: {
-      requestedAt: "desc",
-    },
-  });
+  const refreshJob = refreshJobId
+    ? await prisma.refreshJob.findUnique({ where: { id: refreshJobId } })
+    : await prisma.refreshJob.findFirst({
+        where: {
+          feedId,
+          status: JobStatus.QUEUED,
+        },
+        orderBy: {
+          requestedAt: "desc",
+        },
+      });
 
   if (refreshJob) {
     await prisma.refreshJob.update({
@@ -233,7 +240,12 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger) {
         data: {
           status: JobStatus.SUCCEEDED,
           completedAt: freshAt,
-          metadata: { trigger, processedItems: upserts.length, newItems: newItemsCount },
+          metadata: {
+            ...(refreshJob.metadata && typeof refreshJob.metadata === "object" ? refreshJob.metadata : {}),
+            trigger,
+            processedItems: upserts.length,
+            newItems: newItemsCount,
+          },
         },
       });
     }

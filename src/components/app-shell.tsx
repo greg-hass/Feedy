@@ -61,8 +61,9 @@ export function MobileShell({
     <div className="app-shell screen-enter">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
         {/* Premium Header - Solid Background */}
-        <header className="sticky top-0 z-40 px-5 pb-3 pt-[max(16px,env(safe-area-inset-top))]" style={{ backgroundColor: 'var(--app-bg)' }}>
-          <div className="flex items-start justify-between gap-3">
+        <header className="fixed inset-x-0 top-0 z-40" style={{ backgroundColor: 'var(--app-bg)' }}>
+          <div className="mx-auto max-w-md px-5 pb-3 pt-[max(16px,env(safe-area-inset-top))]">
+            <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between">
                 <div className="flex h-6 items-center rounded-full px-2.5" style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}>
@@ -81,23 +82,24 @@ export function MobileShell({
                 <p className="mt-1.5 text-[15px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
               ) : null}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {actions}
-              <button
-                onClick={() => logout.mutate()}
-                className="flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-secondary)' }}
-                aria-label="Sign out"
-              >
-                <LogOut className="size-[18px]" />
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {actions}
+                <button
+                  onClick={() => logout.mutate()}
+                  className="flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-secondary)' }}
+                  aria-label="Sign out"
+                >
+                  <LogOut className="size-[18px]" />
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
         {/* Main Content */}
         <div className="px-5">
-          <main key={pathname} className="flex-1 pb-28">
+          <main key={pathname} className="flex-1 pb-28 pt-[108px]">
             {children}
           </main>
         </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Bookmark, Check, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
@@ -14,6 +14,19 @@ export function ItemCard({ item }: { item: ItemRecord }) {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [playInline, setPlayInline] = useState(false);
+  const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
+  const rememberTimelineAnchor = () => {
+    window.sessionStorage.setItem("feedy-timeline-anchor-item", item.id);
+  };
+
+  useEffect(() => {
+    if (!bookmarkAnimating) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setBookmarkAnimating(false), 320);
+    return () => window.clearTimeout(timeout);
+  }, [bookmarkAnimating]);
 
   const updateState = useMutation({
     mutationFn: (body: { read?: boolean; bookmarked?: boolean }) =>
@@ -36,7 +49,10 @@ export function ItemCard({ item }: { item: ItemRecord }) {
   const itemTitle = decodeHtmlEntities(item.title);
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-subtle bg-surface transition-all duration-300 hover:border-[var(--accent)]/20 hover:shadow-lg">
+    <article
+      data-timeline-item-id={item.id}
+      className="group overflow-hidden rounded-2xl border border-subtle bg-surface transition-all duration-300 hover:border-[var(--accent)]/20 hover:shadow-lg"
+    >
       {/* Thumbnail */}
       {thumbnailUrl && (
         isYouTube && item.youtubeVideoId ? (
@@ -88,7 +104,7 @@ export function ItemCard({ item }: { item: ItemRecord }) {
             )}
           </div>
         ) : (
-          <Link href={`/reader/${item.id}`} className="relative block overflow-hidden">
+          <Link href={`/reader/${item.id}`} onClick={rememberTimelineAnchor} className="relative block overflow-hidden">
             <div className="aspect-video w-full bg-surface-muted">
               <img
                 src={thumbnailUrl}
@@ -122,7 +138,7 @@ export function ItemCard({ item }: { item: ItemRecord }) {
         </div>
 
         {/* Title */}
-        <Link href={`/reader/${item.id}`}>
+        <Link href={`/reader/${item.id}`} onClick={rememberTimelineAnchor}>
           <h3 className="mt-2 text-[17px] font-semibold leading-[1.35] tracking-[-0.01em] line-clamp-2 transition-colors duration-200 group-hover:text-[var(--accent)]">
             {itemTitle}
           </h3>
@@ -149,10 +165,17 @@ export function ItemCard({ item }: { item: ItemRecord }) {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => updateState.mutate({ bookmarked: !item.bookmarked })}
+              onClick={() => {
+                if (!item.bookmarked) {
+                  setBookmarkAnimating(true);
+                }
+                updateState.mutate({ bookmarked: !item.bookmarked });
+              }}
               className={`interactive flex h-9 w-9 items-center justify-center rounded-full border ${
                 item.bookmarked
-                  ? "border-[var(--accent)] bg-[var(--accent-dim)] text-[var(--accent)]"
+                  ? `border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.22)] ${
+                      bookmarkAnimating ? "bookmark-pop" : ""
+                    }`
                   : "border-subtle bg-surface-muted text-secondary"
               }`}
               aria-label={item.bookmarked ? "Remove bookmark" : "Bookmark"}
@@ -160,7 +183,7 @@ export function ItemCard({ item }: { item: ItemRecord }) {
               <Bookmark className="h-4 w-4" fill={item.bookmarked ? "currentColor" : "none"} />
             </button>
 
-            <Link href={`/reader/${item.id}`}>
+            <Link href={`/reader/${item.id}`} onClick={rememberTimelineAnchor}>
               {item.read ? (
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_8px_18px_rgba(245,158,11,0.3)]">
                   <Check className="h-4 w-4" strokeWidth={3} />

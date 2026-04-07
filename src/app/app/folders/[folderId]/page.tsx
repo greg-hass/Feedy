@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, FolderOpen, RefreshCcw } from "lucide-react";
+import { ArrowLeft, EyeOff, FolderOpen, MoreHorizontal, RefreshCcw, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { FeedAvatar } from "@/components/feed-avatar";
+import { EditFeedSheet } from "@/components/forms";
 import { ItemCard } from "@/components/item-card";
 import { Button } from "@/components/ui/button";
 import { MobileShell, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
@@ -125,28 +126,7 @@ export default function FolderDetailPage() {
             </div>
             <div className="space-y-2">
               {folderFeeds.map((feed) => (
-                <Link
-                  key={feed.id}
-                  href={`/app/feeds/${feed.id}`}
-                  className="flex items-center gap-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]/20"
-                >
-                  <FeedAvatar feedId={feed.id} title={decodeHtmlEntities(feed.label || feed.title)} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">
-                        {decodeHtmlEntities(feed.label || feed.title)}
-                      </p>
-                      {feed.counts.unreadCount > 0 ? (
-                        <span className="shrink-0 rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
-                          {feed.counts.unreadCount}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-secondary">
-                      <span>{feed.sourceType.replaceAll("_RSS", "").replaceAll("_", " ")}</span>
-                    </div>
-                  </div>
-                </Link>
+                <FolderFeedRow key={feed.id} feed={feed} />
               ))}
             </div>
           </section>
@@ -180,6 +160,137 @@ export default function FolderDetailPage() {
             />
           )}
         </main>
+      </div>
+    </div>
+  );
+}
+
+function FolderFeedRow({ feed }: { feed: NavFeed }) {
+  const queryClient = useQueryClient();
+  const [showEdit, setShowEdit] = useState(false);
+
+  const deleteFeed = useMutation({
+    mutationFn: () => api(`/api/feeds/${feed.id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      await queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+
+  return (
+    <>
+      <SwipeRow
+        actions={
+          <>
+            <button
+              onClick={() => {
+                if (confirm(`Delete ${feed.label || feed.title}?`)) {
+                  deleteFeed.mutate();
+                }
+              }}
+              disabled={deleteFeed.isPending}
+              className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[16px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
+              aria-label={`Delete ${feed.label || feed.title}`}
+            >
+              <Trash2 className="size-4" />
+            </button>
+            <button
+              onClick={() => setShowEdit(true)}
+              className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[16px] bg-[var(--surface-muted)] text-secondary"
+              aria-label={`Edit ${feed.label || feed.title}`}
+            >
+              <MoreHorizontal className="size-4" />
+            </button>
+          </>
+        }
+      >
+        <Link
+          href={`/app/feeds/${feed.id}`}
+          className="flex items-center gap-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]/20"
+        >
+          <FeedAvatar feedId={feed.id} title={decodeHtmlEntities(feed.label || feed.title)} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-sm font-medium text-[var(--text-primary)]">
+                {decodeHtmlEntities(feed.label || feed.title)}
+              </p>
+              {feed.counts.unreadCount > 0 ? (
+                <span className="shrink-0 rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
+                  {feed.counts.unreadCount}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-secondary">
+              <span>{feed.sourceType.replaceAll("_RSS", "").replaceAll("_", " ")}</span>
+              {feed.excludeFromTimeline ? (
+                <>
+                  <span>·</span>
+                  <span
+                    className="inline-flex items-center text-rose-300"
+                    aria-label="Hidden from Timeline"
+                    title="Hidden from Timeline"
+                  >
+                    <EyeOff className="size-3.5" />
+                  </span>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </Link>
+      </SwipeRow>
+
+      {showEdit ? (
+        <EditFeedSheet
+          feed={feed}
+          onClose={() => setShowEdit(false)}
+          onDelete={() => deleteFeed.mutate()}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function SwipeRow({
+  children,
+  actions,
+}: {
+  children: React.ReactNode;
+  actions: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchDeltaX = useRef(0);
+
+  return (
+    <div className="relative overflow-hidden rounded-[18px]">
+      <div className="absolute inset-y-[5px] right-[5px] flex items-center gap-2">
+        {actions}
+      </div>
+      <div
+        className={`relative z-10 transition-transform duration-200 ease-out ${open ? "-translate-x-[132px]" : "translate-x-0"}`}
+        onTouchStart={(event) => {
+          touchStartX.current = event.touches[0]?.clientX ?? null;
+          touchDeltaX.current = 0;
+        }}
+        onTouchMove={(event) => {
+          if (touchStartX.current === null) return;
+          touchDeltaX.current = (event.touches[0]?.clientX ?? 0) - touchStartX.current;
+        }}
+        onTouchEnd={() => {
+          if (touchDeltaX.current < -36) setOpen(true);
+          if (touchDeltaX.current > 36) setOpen(false);
+          touchStartX.current = null;
+          touchDeltaX.current = 0;
+        }}
+        onClickCapture={(event) => {
+          if (open) {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen(false);
+          }
+        }}
+      >
+        {children}
       </div>
     </div>
   );

@@ -68,6 +68,7 @@ export type MeResponse = {
         | "INDIGO"
         | "VIOLET"
         | "PINK"
+        | "ROSE"
         | "ORANGE"
         | "AMBER"
         | "LIME"

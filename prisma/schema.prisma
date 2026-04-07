@@ -63,6 +63,7 @@ enum AccentPreference {
   INDIGO
   VIOLET
   PINK
+  ROSE
   ORANGE
   AMBER
   LIME

@@ -83,6 +83,15 @@
   --accent-contrast: #fff1f2;
 }
 
+:root[data-accent="ROSE"] {
+  --accent: #fb7185;
+  --accent-strong: #e11d48;
+  --accent-soft: #ffe4e6;
+  --accent-dim: rgba(251, 113, 133, 0.18);
+  --accent-rgb: 251, 113, 133;
+  --accent-contrast: #fff1f2;
+}
+
 :root[data-accent="ORANGE"] {
   --accent: #ff7a18;
   --accent-strong: #ea580c;
@@ -225,6 +234,10 @@ select {
   animation: screen-enter 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.bookmark-pop {
+  animation: bookmark-pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @keyframes screen-fade {
   from {
     opacity: 0;
@@ -247,6 +260,21 @@ select {
   }
 }
 
+@keyframes bookmark-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.14);
+  }
+  65% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .screen-fade,
   .screen-enter {
@@ -261,6 +289,18 @@ select {
 .reader-content {
   line-height: 1.7;
   font-size: 0.9375rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.reader-content * {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .reader-content h1,
@@ -285,9 +325,12 @@ select {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .reader-content img {
+  display: block;
   max-width: 100%;
   height: auto;
   border-radius: 16px;
@@ -306,7 +349,10 @@ select {
   border-radius: 12px;
   padding: 1em;
   overflow-x: auto;
+  max-width: 100%;
   font-size: 0.85em;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .reader-content code {
@@ -314,6 +360,8 @@ select {
   padding: 0.15em 0.4em;
   border-radius: 6px;
   font-size: 0.9em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .reader-content ul,
@@ -324,6 +372,21 @@ select {
 
 .reader-content li {
   margin-bottom: 0.25em;
+}
+
+.reader-content iframe,
+.reader-content video,
+.reader-content table,
+.reader-content figure,
+.reader-content div,
+.reader-content section {
+  max-width: 100%;
+}
+
+.reader-content table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
 }
 
 .line-clamp-2 {

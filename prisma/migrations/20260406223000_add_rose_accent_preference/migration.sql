@@ -1,0 +1,1 @@
+ALTER TYPE "AccentPreference" ADD VALUE IF NOT EXISTS 'ROSE';

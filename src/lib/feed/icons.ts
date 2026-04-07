@@ -82,11 +82,12 @@ async function discoverPageIcons(siteUrl?: string | null) {
       .map((href) => new URL(href!, siteUrl).toString());
 
     const ogImage = $('meta[property="og:image"]').attr("content");
+    const candidates = [...links];
     if (ogImage) {
-      links.unshift(new URL(ogImage, siteUrl).toString());
+      candidates.push(new URL(ogImage, siteUrl).toString());
     }
 
-    return [...new Set(links)];
+    return [...new Set(candidates)];
   } catch {
     return [];
   }

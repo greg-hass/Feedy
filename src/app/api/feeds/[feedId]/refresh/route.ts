@@ -14,18 +14,23 @@ export async function POST(_request: Request, context: { params: Params }) {
     const batchStartedAt = new Date();
     const batchId = randomUUID();
     const { feedId } = await context.params;
-    const queued = await enqueueFeedRefresh({ feedId, trigger: "manual" });
-    if (queued.enqueued) {
-      await prisma.refreshJob.create({
-        data: {
-          userId: user.id,
-          feedId,
-          trigger: JobTrigger.MANUAL,
-          status: JobStatus.QUEUED,
-          requestedAt: batchStartedAt,
-          metadata: { batchId },
-        },
-      });
+    const refreshJob = await prisma.refreshJob.create({
+      data: {
+        userId: user.id,
+        feedId,
+        trigger: JobTrigger.MANUAL,
+        status: JobStatus.QUEUED,
+        requestedAt: batchStartedAt,
+        metadata: { batchId },
+      },
+    });
+    const queued = await enqueueFeedRefresh({
+      feedId,
+      trigger: "manual",
+      refreshJobId: refreshJob.id,
+    });
+    if (!queued.enqueued) {
+      await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
     }
     return NextResponse.json({
       ok: true,

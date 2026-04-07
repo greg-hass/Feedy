@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Share2 } from "lucide-react";
+import { ArrowLeft, Bookmark, ExternalLink, Share2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FeedAvatar } from "@/components/feed-avatar";
@@ -14,6 +14,7 @@ export default function ReaderPage() {
   const params = useParams<{ itemId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
 
   const item = useQuery({
     queryKey: ["reader", params.itemId],
@@ -58,6 +59,15 @@ export default function ReaderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.data?.id]);
 
+  useEffect(() => {
+    if (!bookmarkAnimating) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setBookmarkAnimating(false), 320);
+    return () => window.clearTimeout(timeout);
+  }, [bookmarkAnimating]);
+
   if (item.isLoading) {
     return (
       <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(16px,env(safe-area-inset-top))]">
@@ -90,7 +100,10 @@ export default function ReaderPage() {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(12px,env(safe-area-inset-top))]">
-      <header className="sticky top-0 z-40 -mx-4 px-4 pb-3 pt-1" style={{ backgroundColor: "var(--app-bg)" }}>
+      <header
+        className="sticky top-0 z-40 -mx-4 px-4 pb-4 pt-1"
+        style={{ backgroundColor: "var(--app-bg)" }}
+      >
         <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface-strong)_92%,black_8%)] px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.24)] backdrop-blur-xl">
           <div className="flex items-center justify-between">
             <button onClick={() => router.back()} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary">
@@ -98,14 +111,21 @@ export default function ReaderPage() {
             </button>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => state.mutate({ bookmarked: !data.bookmarked })}
-                className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
+                onClick={() => {
+                  if (!data.bookmarked) {
+                    setBookmarkAnimating(true);
+                  }
+                  state.mutate({ bookmarked: !data.bookmarked });
+                }}
+                className={`rounded-xl border p-2 ${
+                  data.bookmarked
+                    ? `border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.22)] ${
+                        bookmarkAnimating ? "bookmark-pop" : ""
+                      }`
+                    : "border-subtle bg-[var(--surface-muted)] text-secondary"
+                }`}
               >
-                {data.bookmarked ? (
-                  <BookmarkCheck className="size-5 text-[var(--accent)]" />
-                ) : (
-                  <Bookmark className="size-5" />
-                )}
+                <Bookmark className="size-5" fill={data.bookmarked ? "currentColor" : "none"} />
               </button>
               {data.canonicalUrl && (
                 <>
@@ -129,7 +149,7 @@ export default function ReaderPage() {
         </div>
       </header>
 
-      <div className="screen-enter overflow-hidden rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+      <div className="screen-enter mt-1 overflow-hidden rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
         <div className="px-5 pt-4">
           <div className="flex items-center gap-2">
             <FeedAvatar feedId={data.feed.id} title={data.feed.label || data.feed.title} />

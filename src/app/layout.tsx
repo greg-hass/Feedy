@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
 
 import { Providers } from "@/components/providers";
@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   title: "Feedy",
   description: "Mobile-first self-hosted feed reader",
   applicationName: "Feedy",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/icon-64.png", sizes: "64x64", type: "image/png" },
@@ -33,6 +34,14 @@ export const metadata: Metadata = {
     title: "Feedy",
     statusBarStyle: "black-translucent",
   },
+};
+
+export const viewport: Viewport = {
+  colorScheme: "dark light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export default function RootLayout({
