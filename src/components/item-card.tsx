@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { Bookmark, Check, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
+import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord } from "@/types/app";
 
-export function ItemCard({ item }: { item: ItemRecord }) {
+export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [playInline, setPlayInline] = useState(false);
@@ -34,10 +35,10 @@ export function ItemCard({ item }: { item: ItemRecord }) {
         method: "POST",
         body: JSON.stringify(body),
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["items"] });
+    onSuccess: async (_result, variables) => {
+      updateItemStateCaches(queryClient, item.id, variables);
+      updateReaderStateCache(queryClient, item.id, variables);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      await queryClient.invalidateQueries({ queryKey: ["reader", item.id] });
     },
   });
 
@@ -52,6 +53,7 @@ export function ItemCard({ item }: { item: ItemRecord }) {
     <article
       data-timeline-item-id={item.id}
       className="group overflow-hidden rounded-2xl border border-subtle bg-surface transition-all duration-300 hover:border-[var(--accent)]/20 hover:shadow-lg"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "420px" }}
     >
       {/* Thumbnail */}
       {thumbnailUrl && (
@@ -210,4 +212,4 @@ export function ItemCard({ item }: { item: ItemRecord }) {
       </div>
     </article>
   );
-}
+});

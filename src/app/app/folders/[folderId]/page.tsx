@@ -24,6 +24,7 @@ export default function FolderDetailPage() {
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => api<{ navigation: { folders: NavFolder[]; feeds: NavFeed[] } }>("/api/me"),
+    staleTime: 30_000,
   });
 
   const folder = me.data?.navigation.folders.find((f) => f.id === params.folderId);
@@ -32,17 +33,9 @@ export default function FolderDetailPage() {
 
   const items = useQuery({
     queryKey: ["items", "folder", params.folderId],
-    queryFn: async () => {
-      const allItems: ItemRecord[] = [];
-      for (const feed of folderFeeds) {
-        const feedItems = await api<ItemRecord[]>(`/api/items?feedId=${feed.id}`);
-        allItems.push(...feedItems);
-      }
-      return allItems
-        .sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime())
-        .slice(0, 100);
-    },
+    queryFn: () => api<ItemRecord[]>(`/api/items?folderId=${params.folderId}`),
     enabled: !!folderFeeds.length,
+    staleTime: 15_000,
   });
 
   const refresh = useMutation({

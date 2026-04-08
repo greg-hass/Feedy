@@ -21,7 +21,7 @@ export function useMe() {
   return useQuery({
     queryKey: ["me"],
     queryFn: () => api<MeResponse>("/api/me"),
-    staleTime: 10_000,
+    staleTime: 30_000,
   });
 }
 

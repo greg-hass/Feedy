@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, Trash2, Upload, X } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -130,7 +130,6 @@ function SegmentedControl<T extends string>({
 function useRefreshController(endpoint: string, invalidate: string[]) {
   const queryClient = useQueryClient();
   const [trackedBatchId, setTrackedBatchId] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
   const refreshStatus = useQuery({
     queryKey: ["refresh-status", endpoint, trackedBatchId],
     queryFn: () =>
@@ -151,16 +150,12 @@ function useRefreshController(endpoint: string, invalidate: string[]) {
     mutationFn: () =>
       api<{ batchId?: string; batchStartedAt?: string; queued?: number }>(endpoint, { method: "POST" }),
     onSuccess: async (data) => {
-      setProgress(8);
       setTrackedBatchId(data.batchId ?? null);
-      await queryClient.invalidateQueries({ queryKey: invalidate });
       await queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
       await queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
     },
     onError: () => {
       setTrackedBatchId(null);
-      setProgress(0);
     },
   });
 
@@ -174,28 +169,32 @@ function useRefreshController(endpoint: string, invalidate: string[]) {
       return;
     }
 
-    const total = Math.max(status.total, 1);
-    const nextProgress =
-      status.active > 0
-        ? Math.min(94, Math.max(12, Math.round((status.completed / total) * 100)))
-        : 100;
-
-    setProgress(nextProgress);
-
-    void queryClient.invalidateQueries({ queryKey: invalidate });
     void queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
-    void queryClient.invalidateQueries({ queryKey: ["me"] });
     void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
 
     if (status.total > 0 && status.active === 0) {
       const timeout = window.setTimeout(() => {
         setTrackedBatchId(null);
-        setProgress(0);
       }, 500);
 
       return () => window.clearTimeout(timeout);
     }
   }, [invalidate, queryClient, refreshStatus.data, trackedBatchId]);
+
+  const progress = (() => {
+    if (!trackedBatchId) {
+      return 0;
+    }
+
+    if (!refreshStatus.data) {
+      return 8;
+    }
+
+    const total = Math.max(refreshStatus.data.total, 1);
+    return refreshStatus.data.active > 0
+      ? Math.min(94, Math.max(12, Math.round((refreshStatus.data.completed / total) * 100)))
+      : 100;
+  })();
 
   return {
     active: mutation.isPending || !!trackedBatchId,
@@ -240,6 +239,7 @@ export function UnreadScreen() {
   const items = useQuery({
     queryKey: ["items", "timeline", stateFilter, sourceFilter],
     queryFn: () => api<ItemRecord[]>(itemsUrl),
+    staleTime: 15_000,
   });
   const refresh = useRefreshController("/api/refresh/all", ["items"]);
   const queryClient = useQueryClient();
@@ -300,9 +300,8 @@ export function UnreadScreen() {
     }
 
     void items.refetch();
-    void queryClient.invalidateQueries({ queryKey: ["me"] });
     void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
-  }, [items, queryClient, refresh.active, refresh.status?.completed, refresh.status?.failed, refresh.status?.succeeded]);
+  }, [items.refetch, queryClient, refresh.active, refresh.status?.completed, refresh.status?.failed, refresh.status?.succeeded]);
 
   useEffect(() => {
     const isStandalone =
@@ -359,9 +358,8 @@ export function UnreadScreen() {
       if (dragging && latestDistance >= 56 && !refresh.active) {
         refresh.start();
       } else if (dragging && !refresh.active) {
-        void queryClient.invalidateQueries({ queryKey: ["items"] });
-        void queryClient.refetchQueries({ queryKey: ["items"], type: "active" });
-        void queryClient.invalidateQueries({ queryKey: ["me"] });
+        void items.refetch();
+        void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
       }
 
       startY = null;
@@ -381,7 +379,7 @@ export function UnreadScreen() {
       window.removeEventListener("touchend", finishDrag);
       window.removeEventListener("touchcancel", finishDrag);
     };
-  }, [queryClient, refresh]);
+  }, [items.refetch, queryClient, refresh.active, refresh.start]);
 
   return (
     <MobileShell
@@ -479,23 +477,20 @@ export function FeedsScreen() {
   const [showBulkMove, setShowBulkMove] = useState(false);
   const [query, setQuery] = useState("");
   const [healthFilter, setHealthFilter] = useState<"ALL" | "HEALTHY" | "ISSUES">("ALL");
-  const [showSwipeHint, setShowSwipeHint] = useState(false);
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const dismissed = window.localStorage.getItem("feedy-swipe-hint-dismissed");
-    if (!dismissed) {
-      setShowSwipeHint(true);
+  const [showSwipeHint, setShowSwipeHint] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
     }
-  }, []);
 
-  if (me.isLoading) return <MobileShell title="Feeds"><LoadingSkeleton /></MobileShell>;
-  if (me.error) return <MobileShell title="Feeds"><ErrorState message={me.error.message} onRetry={() => me.refetch()} /></MobileShell>;
+    return !window.localStorage.getItem("feedy-swipe-hint-dismissed");
+  });
+  const queryClient = useQueryClient();
+  const deferredQuery = useDeferredValue(query);
 
   const feeds = me.data?.navigation.feeds ?? [];
   const folders = me.data?.navigation.folders ?? [];
 
-  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedQuery = deferredQuery.trim().toLowerCase();
   const matchesHealth = (feed: NavFeed) =>
     healthFilter === "ALL" ||
     (healthFilter === "HEALTHY" ? feed.healthStatus === "HEALTHY" : feed.healthStatus !== "HEALTHY");
@@ -509,8 +504,9 @@ export function FeedsScreen() {
   const pinnedFeeds = feeds.filter((f) => f.isPinned && matchesFeed(f));
   const uncategorizedFeeds = feeds.filter((f) => !f.folderId && !f.isPinned && matchesFeed(f));
   const matchingFeeds = feeds.filter(matchesFeed);
-  const selectedSet = new Set(selectedFeedIds);
-  const selectedCount = selectedFeedIds.length;
+  const effectiveSelectedFeedIds = selectedFeedIds.filter((id) => matchingFeeds.some((feed) => feed.id === id));
+  const selectedSet = new Set(effectiveSelectedFeedIds);
+  const selectedCount = effectiveSelectedFeedIds.length;
   const folderNameById = new Map(folders.map((folder) => [folder.id, folder.title]));
   const visibleFolders = folders
     .map((folder) => {
@@ -529,21 +525,10 @@ export function FeedsScreen() {
     })
     .filter((folder) => folder.visible);
 
-  useEffect(() => {
-    if (!selectionMode) {
-      setSelectedFeedIds([]);
-      setShowBulkMove(false);
-    }
-  }, [selectionMode]);
-
-  useEffect(() => {
-    setSelectedFeedIds((current) => current.filter((id) => matchingFeeds.some((feed) => feed.id === id)));
-  }, [matchingFeeds]);
-
   const moveFeeds = useMutation({
     mutationFn: async (folderId: string | null) => {
       await Promise.all(
-        selectedFeedIds.map((feedId) =>
+        effectiveSelectedFeedIds.map((feedId) =>
           api(`/api/feeds/${feedId}`, {
             method: "PATCH",
             body: JSON.stringify({ folderId }),
@@ -560,6 +545,9 @@ export function FeedsScreen() {
     },
   });
 
+  if (me.isLoading) return <MobileShell title="Feeds"><LoadingSkeleton /></MobileShell>;
+  if (me.error) return <MobileShell title="Feeds"><ErrorState message={me.error.message} onRetry={() => me.refetch()} /></MobileShell>;
+
   return (
     <MobileShell
       title="Feeds"
@@ -569,7 +557,11 @@ export function FeedsScreen() {
           {selectionMode ? (
             <>
               <button
-                onClick={() => setSelectionMode(false)}
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedFeedIds([]);
+                  setShowBulkMove(false);
+                }}
                 className="rounded-2xl border border-subtle bg-[var(--surface)] px-3 py-2 text-xs font-semibold text-secondary"
               >
                 Cancel
@@ -837,6 +829,7 @@ export function SavedScreen() {
   const items = useQuery({
     queryKey: ["items", "saved"],
     queryFn: () => api<ItemRecord[]>("/api/items?saved=true"),
+    staleTime: 15_000,
   });
 
   return (
@@ -866,25 +859,30 @@ export function DiscoverScreen() {
   const [query, setQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"ALL" | "RSS" | "REDDIT" | "YOUTUBE">("ALL");
   const [recentlyAdded, setRecentlyAdded] = useState<Record<string, true>>({});
+  const deferredQuery = useDeferredValue(query);
   const searchParams = new URLSearchParams({
-    q: query,
+    q: deferredQuery,
     sourceFilter,
   });
   const local = useQuery({
-    queryKey: ["search", query, sourceFilter],
+    queryKey: ["search", deferredQuery, sourceFilter],
     queryFn: () =>
       api<Array<{ id: string; title: string; label: string | null; description: string | null; sourceType: string; sourceUrl: string }>>(
         `/api/search?${searchParams.toString()}`,
       ),
-    enabled: query.trim().length > 0,
+    enabled: deferredQuery.trim().length > 0,
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
   });
   const discover = useQuery({
-    queryKey: ["discover", query, sourceFilter],
+    queryKey: ["discover", deferredQuery, sourceFilter],
     queryFn: () =>
       api<Array<{ title: string; description?: string | null; siteName?: string | null; favicon?: string | null; feedUrl: string; sourceType: string }>>(
         `/api/discover?${searchParams.toString()}`,
       ),
-    enabled: query.trim().length > 1,
+    enabled: deferredQuery.trim().length > 1,
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
   });
   const queryClient = useQueryClient();
   const addFeed = useMutation({
@@ -955,7 +953,11 @@ export function DiscoverScreen() {
             <div className="space-y-2">
               {local.isLoading && <p className="text-sm text-secondary">Searching...</p>}
               {local.data?.map((feed) => (
-                <div key={feed.id} className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+                <div
+                  key={feed.id}
+                  className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]"
+                  style={{ contentVisibility: "auto", containIntrinsicSize: "104px" }}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <FeedAvatar feedId={feed.id} title={feed.label || feed.title} />
@@ -997,7 +999,11 @@ export function DiscoverScreen() {
                   addFeed.isPending && addFeed.variables?.sourceUrl === result.feedUrl;
 
                 return (
-                <div key={result.feedUrl} className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+                <div
+                  key={result.feedUrl}
+                  className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]"
+                  style={{ contentVisibility: "auto", containIntrinsicSize: "112px" }}
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <DiscoveryAvatar
@@ -1435,7 +1441,10 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
           </>
         }
       >
-        <div className="flex min-w-0 items-center gap-3 rounded-[20px] px-3 py-3">
+        <div
+          className="flex min-w-0 items-center gap-3 rounded-[20px] px-3 py-3"
+          style={{ contentVisibility: "auto", containIntrinsicSize: "92px" }}
+        >
           <Link href={`/app/feeds/${feed.id}`} className="flex min-w-0 flex-1 items-center gap-3">
             <FeedAvatar feedId={feed.id} title={feed.label || feed.title} />
             <div className="min-w-0 flex-1">
@@ -1527,6 +1536,7 @@ function SelectableFeedRow({
           ? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
           : "border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)]"
       }`}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "92px" }}
     >
       <div
         className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
@@ -1788,7 +1798,11 @@ function FolderRow({ folder, folders, index }: { folder: NavFolder; folders: Nav
           </>
         }
       >
-        <Link href={`/app/folders/${folder.id}`} className="group flex items-center justify-between gap-3 rounded-[24px] px-3.5 py-3.5">
+        <Link
+          href={`/app/folders/${folder.id}`}
+          className="group flex items-center justify-between gap-3 rounded-[24px] px-3.5 py-3.5"
+          style={{ contentVisibility: "auto", containIntrinsicSize: "86px" }}
+        >
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
               <FolderOpen className="size-5" />
@@ -1883,7 +1897,8 @@ function RefreshButton({
   endpoint?: string;
   invalidate?: string[];
 }) {
-  const refresh = controller ?? useRefreshController(endpoint ?? "/api/refresh/all", invalidate ?? ["items"]);
+  const fallbackController = useRefreshController(endpoint ?? "/api/refresh/all", invalidate ?? ["items"]);
+  const refresh = controller || fallbackController;
 
   return (
     <>

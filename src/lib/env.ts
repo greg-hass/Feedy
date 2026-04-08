@@ -12,6 +12,8 @@ const envSchema = z.object({
   REFRESH_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(24).default(8),
   ICON_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(12).default(4),
   DISCOVERY_SEARCH_PROVIDER: z.string().default("duckduckgo"),
+  PERF_LOGGING: z.enum(["true", "false"]).default("true"),
+  PERF_SLOW_MS: z.coerce.number().int().min(50).max(10_000).default(250),
   DATA_DIR: z.string().default("./data"),
 });
 
@@ -27,6 +29,8 @@ export const env = envSchema.parse({
   REFRESH_WORKER_CONCURRENCY: process.env.REFRESH_WORKER_CONCURRENCY ?? "8",
   ICON_WORKER_CONCURRENCY: process.env.ICON_WORKER_CONCURRENCY ?? "4",
   DISCOVERY_SEARCH_PROVIDER: process.env.DISCOVERY_SEARCH_PROVIDER ?? "duckduckgo",
+  PERF_LOGGING: process.env.PERF_LOGGING ?? "true",
+  PERF_SLOW_MS: process.env.PERF_SLOW_MS ?? "250",
   DATA_DIR: process.env.DATA_DIR ?? "./data",
 });
 

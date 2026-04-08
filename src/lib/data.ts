@@ -17,14 +17,65 @@ type FolderCountRow = {
   unreadCount: bigint;
 };
 
+const navigationFolderSelect = {
+  id: true,
+  title: true,
+  position: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.FolderSelect;
+
+const navigationFeedSelect = {
+  id: true,
+  title: true,
+  label: true,
+  description: true,
+  sourceUrl: true,
+  siteUrl: true,
+  sourceType: true,
+  isPinned: true,
+  excludeFromTimeline: true,
+  position: true,
+  lastRefreshedAt: true,
+  lastSuccessfulRefreshAt: true,
+  lastFailureAt: true,
+  lastError: true,
+  healthStatus: true,
+  folderId: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.FeedSelect;
+
+const timelineItemSelect = {
+  id: true,
+  title: true,
+  summary: true,
+  readabilityHtml: true,
+  contentHtml: true,
+  canonicalUrl: true,
+  commentsUrl: true,
+  mediaUrl: true,
+  publishedAt: true,
+  youtubeVideoId: true,
+  redditPermalink: true,
+  feed: {
+    select: {
+      id: true,
+      title: true,
+      label: true,
+      sourceType: true,
+    },
+  },
+  bookmarks: {
+    select: { id: true },
+  },
+  readStates: {
+    select: { id: true },
+  },
+} satisfies Prisma.ItemSelect;
+
 type TimelineItemRecord = Prisma.ItemGetPayload<{
-  include: {
-    feed: {
-      include: { icon: true; folder: true };
-    };
-    bookmarks: true;
-    readStates: true;
-  };
+  select: typeof timelineItemSelect;
 }>;
 
 export async function getFeedCounts(userId: string) {
@@ -84,11 +135,12 @@ export async function getNavigationData(userId: string) {
     await Promise.all([
       prisma.folder.findMany({
         where: { userId },
+        select: navigationFolderSelect,
         orderBy: { position: "asc" },
       }),
       prisma.feed.findMany({
         where: { userId },
-        include: { icon: true, folder: true },
+        select: navigationFeedSelect,
         orderBy: [{ isPinned: "desc" }, { position: "asc" }, { createdAt: "asc" }],
       }),
       getFeedCounts(userId),
@@ -145,6 +197,7 @@ export async function getTimelineItems(
   userId: string,
   options?: {
     feedId?: string;
+    folderId?: string;
     saved?: boolean;
     sourceFilter?: TimelineSourceFilter;
     stateFilter?: TimelineStateFilter;
@@ -174,26 +227,25 @@ export async function getTimelineItems(
           ? {}
           : { readStates: { none: { userId } } };
 
-  const query: Prisma.ItemFindManyArgs = {
+  const query = {
     where: {
       feed: {
         userId,
         ...(options?.feedId ? { id: options.feedId } : {}),
-        ...(!options?.feedId ? { excludeFromTimeline: false } : {}),
+        ...(options?.folderId ? { folderId: options.folderId } : {}),
+        ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
         ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
       },
       ...stateWhere,
     },
-    include: {
-      feed: {
-        include: { icon: true, folder: true },
-      },
-      bookmarks: { where: { userId } },
-      readStates: { where: { userId } },
-    },
     orderBy: [{ publishedAt: "desc" }, { discoveredAt: "desc" }],
     take: 100,
-  };
+    select: {
+      ...timelineItemSelect,
+      bookmarks: { where: { userId }, select: { id: true } },
+      readStates: { where: { userId }, select: { id: true } },
+    },
+  } satisfies Prisma.ItemFindManyArgs;
 
   return prisma.item.findMany(query) as Promise<TimelineItemRecord[]>;
 }
@@ -234,7 +286,14 @@ export async function getFeedSearch(
         { sourceUrl: { contains: query, mode: "insensitive" } },
       ],
     },
-    include: { icon: true, folder: true },
+    select: {
+      id: true,
+      title: true,
+      label: true,
+      description: true,
+      sourceType: true,
+      sourceUrl: true,
+    },
     orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
     take: 20,
   });
@@ -246,15 +305,21 @@ export async function getReaderItem(userId: string, itemId: string) {
       id: itemId,
       feed: { userId },
     },
-    include: {
+    select: {
+      ...timelineItemSelect,
+      author: true,
+      discoveredAt: true,
+      fetchedAt: true,
       feed: {
-        include: {
-          icon: true,
-          folder: true,
+        select: {
+          id: true,
+          title: true,
+          label: true,
+          sourceType: true,
         },
       },
-      bookmarks: { where: { userId } },
-      readStates: { where: { userId } },
+      bookmarks: { where: { userId }, select: { id: true } },
+      readStates: { where: { userId }, select: { id: true } },
     },
   });
 }

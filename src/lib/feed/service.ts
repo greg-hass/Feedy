@@ -2,6 +2,7 @@ import { Prisma, JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndParseFeed, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
+import { logPerf } from "@/lib/perf";
 import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
 import type { FeedValidationResult } from "@/lib/feed/types";
 
@@ -129,6 +130,7 @@ export async function createFeedForUser(
 export { createValidatedFeedForUser };
 
 export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJobId?: string) {
+  const refreshStartedAt = performance.now();
   const feed = await prisma.feed.findUnique({ where: { id: feedId } });
   if (!feed) {
     throw new Error("Feed not found");
@@ -165,7 +167,10 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
   });
 
   try {
+    const parseStartedAt = performance.now();
     const result = await fetchAndParseFeed(feed.sourceUrl, feed.id);
+    const parseDurationMs = performance.now() - parseStartedAt;
+    const dedupeLookupStartedAt = performance.now();
     const existingKeys = new Set(
       (
         await prisma.item.findMany({
@@ -178,6 +183,8 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
         })
       ).map((item) => item.uniqueKey),
     );
+    const dedupeLookupDurationMs = performance.now() - dedupeLookupStartedAt;
+    const upsertStartedAt = performance.now();
     const operations = result.items.map((item) =>
       prisma.item.upsert({
         where: { uniqueKey: item.uniqueKey },
@@ -214,9 +221,11 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     );
 
     const upserts = await prisma.$transaction(operations);
+    const upsertDurationMs = performance.now() - upsertStartedAt;
     const newItemsCount = result.items.filter((item) => !existingKeys.has(item.uniqueKey)).length;
     const freshAt = new Date();
 
+    const finalizeStartedAt = performance.now();
     await prisma.feed.update({
       where: { id: feed.id },
       data: {
@@ -259,8 +268,25 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
         metadata: { trigger },
       },
     });
+    const finalizeDurationMs = performance.now() - finalizeStartedAt;
 
     await enqueueIconFetch({ feedId: feed.id }).catch(() => null);
+
+    logPerf(
+      "worker.refreshFeed",
+      performance.now() - refreshStartedAt,
+      {
+        feedId,
+        trigger,
+        itemCount: result.items.length,
+        newItems: newItemsCount,
+        parseMs: Math.round(parseDurationMs),
+        dedupeMs: Math.round(dedupeLookupDurationMs),
+        upsertMs: Math.round(upsertDurationMs),
+        finalizeMs: Math.round(finalizeDurationMs),
+      },
+      false,
+    );
 
     return newItemsCount;
   } catch (error) {
@@ -291,11 +317,23 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
         },
       });
     }
+    logPerf(
+      "worker.refreshFeed",
+      performance.now() - refreshStartedAt,
+      {
+        feedId,
+        trigger,
+        failed: true,
+        error: message,
+      },
+      true,
+    );
     throw error;
   }
 }
 
 export async function ensureReaderContent(itemId: string) {
+  const startedAt = performance.now();
   const item = await prisma.item.findUnique({ where: { id: itemId } });
   if (!item?.canonicalUrl) {
     return item;
@@ -310,11 +348,20 @@ export async function ensureReaderContent(itemId: string) {
     return item;
   }
 
-  return prisma.item.update({
+  const updated = await prisma.item.update({
     where: { id: item.id },
     data: {
       readabilityHtml: readable.content,
       summary: item.summary || readable.excerpt,
     },
   });
+
+  logPerf(
+    "worker.readerExtract",
+    performance.now() - startedAt,
+    { itemId, cached: false },
+    false,
+  );
+
+  return updated;
 }

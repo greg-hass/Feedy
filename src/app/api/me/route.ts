@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiUser } from "@/lib/api";
 import { getNavigationData } from "@/lib/data";
+import { measurePerf } from "@/lib/perf";
 
 export async function GET() {
   const user = await requireApiUser();
@@ -9,7 +10,11 @@ export async function GET() {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  const navigation = await getNavigationData(user.id);
+  const navigation = await measurePerf(
+    "api.me",
+    () => getNavigationData(user.id),
+    { userId: user.id },
+  );
 
   return NextResponse.json({
     authenticated: true,

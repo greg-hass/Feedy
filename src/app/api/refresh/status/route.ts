@@ -4,6 +4,7 @@ import { Queue } from "bullmq";
 
 import { apiError, assertApiUser, parseQuery } from "@/lib/api";
 import { prisma } from "@/lib/db";
+import { measurePerf } from "@/lib/perf";
 import { refreshQueueName } from "@/lib/queue";
 import { getRedis } from "@/lib/redis";
 
@@ -22,21 +23,26 @@ export async function GET(request: Request) {
     const staleThreshold = Date.now() - 60_000;
     const inFlightStates = new Set(["waiting", "active", "delayed", "prioritized", "waiting-children"]);
 
-    const initialJobs = await prisma.refreshJob.findMany({
-      where: {
-        userId: user.id,
-        metadata: {
-          path: ["batchId"],
-          equals: query.batchId,
-        },
-      },
-      select: {
-        id: true,
-        feedId: true,
-        status: true,
-        requestedAt: true,
-      },
-    });
+    const initialJobs = await measurePerf(
+      "api.refreshStatus.initialJobs",
+      () =>
+        prisma.refreshJob.findMany({
+          where: {
+            userId: user.id,
+            metadata: {
+              path: ["batchId"],
+              equals: query.batchId,
+            },
+          },
+          select: {
+            id: true,
+            feedId: true,
+            status: true,
+            requestedAt: true,
+          },
+        }),
+      { userId: user.id, batchId: query.batchId },
+    );
 
     const staleJobs = initialJobs.filter(
       (job) =>
@@ -61,18 +67,23 @@ export async function GET(request: Request) {
 
     await queue.close();
 
-    const jobs = await prisma.refreshJob.findMany({
-      where: {
-        userId: user.id,
-        metadata: {
-          path: ["batchId"],
-          equals: query.batchId,
-        },
-      },
-      select: {
-        status: true,
-      },
-    });
+    const jobs = await measurePerf(
+      "api.refreshStatus.summaryJobs",
+      () =>
+        prisma.refreshJob.findMany({
+          where: {
+            userId: user.id,
+            metadata: {
+              path: ["batchId"],
+              equals: query.batchId,
+            },
+          },
+          select: {
+            status: true,
+          },
+        }),
+      { userId: user.id, batchId: query.batchId },
+    );
 
     const total = jobs.length;
     const queued = jobs.filter((job) => job.status === "QUEUED").length;

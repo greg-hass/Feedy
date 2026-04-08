@@ -16,7 +16,11 @@ export async function requireApiUser() {
 
   return prisma.user.findUnique({
     where: { id: session.userId },
-    include: { settings: true },
+    select: {
+      id: true,
+      username: true,
+      settings: true,
+    },
   });
 }
 

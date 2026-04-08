@@ -23,6 +23,7 @@ export default function FeedDetailPage() {
   const items = useQuery({
     queryKey: ["items", "feed", params.feedId],
     queryFn: () => api<ItemRecord[]>(`/api/items?feedId=${params.feedId}`),
+    staleTime: 15_000,
   });
 
   const me = useQuery({
@@ -31,6 +32,7 @@ export default function FeedDetailPage() {
       import("@/lib/client").then(({ api }) =>
         api<{ navigation: { feeds: NavFeed[] } }>("/api/me"),
       ),
+    staleTime: 30_000,
   });
 
   const feed = me.data?.navigation.feeds.find((f) => f.id === params.feedId);

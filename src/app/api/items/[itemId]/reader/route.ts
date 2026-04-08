@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { apiError, assertApiUser } from "@/lib/api";
 import { getReaderItem } from "@/lib/data";
 import { ensureReaderContent } from "@/lib/feed/service";
+import { measurePerf } from "@/lib/perf";
 import { serializeItem } from "@/lib/serializers";
 
 type Params = Promise<{ itemId: string }>;
@@ -11,8 +12,16 @@ export async function GET(_request: Request, context: { params: Params }) {
   try {
     const user = await assertApiUser();
     const { itemId } = await context.params;
-    await ensureReaderContent(itemId);
-    const item = await getReaderItem(user.id, itemId);
+    await measurePerf(
+      "api.reader.ensureContent",
+      () => ensureReaderContent(itemId),
+      { userId: user.id, itemId },
+    );
+    const item = await measurePerf(
+      "api.reader.load",
+      () => getReaderItem(user.id, itemId),
+      { userId: user.id, itemId },
+    );
     if (!item) {
       return apiError("Item not found", 404);
     }

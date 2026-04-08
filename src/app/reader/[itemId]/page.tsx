@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
+import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
 import type { ItemRecord } from "@/types/app";
 
 export default function ReaderPage() {
@@ -28,26 +29,8 @@ export default function ReaderPage() {
         body: JSON.stringify(body),
       }),
     onSuccess: async (_result, variables) => {
-      queryClient.setQueriesData({ queryKey: ["items"] }, (current: ItemRecord[] | undefined) =>
-        current?.map((entry) =>
-          entry.id === params.itemId
-            ? {
-                ...entry,
-                read: variables.read ?? entry.read,
-                bookmarked: variables.bookmarked ?? entry.bookmarked,
-              }
-            : entry,
-        ),
-      );
-      queryClient.setQueryData(["reader", params.itemId], (current: ItemRecord | undefined) =>
-        current
-          ? {
-              ...current,
-              read: variables.read ?? current.read,
-              bookmarked: variables.bookmarked ?? current.bookmarked,
-            }
-          : current,
-      );
+      updateItemStateCaches(queryClient, params.itemId, variables);
+      updateReaderStateCache(queryClient, params.itemId, variables);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });

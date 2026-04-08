@@ -148,6 +148,8 @@ model Feed {
   @@unique([userId, sourceUrl])
   @@index([userId, folderId, position])
   @@index([userId, isPinned, position])
+  @@index([userId, siteUrl])
+  @@index([userId, excludeFromTimeline, sourceType])
   @@index([lastRefreshedAt])
 }
 
@@ -188,7 +190,7 @@ model Item {
   readStates     ReadState[]
   bookmarks      Bookmark[]
 
-  @@index([feedId, publishedAt(sort: Desc)])
+  @@index([feedId, publishedAt(sort: Desc), discoveredAt(sort: Desc)])
   @@index([discoveredAt(sort: Desc)])
 }
 
@@ -203,6 +205,7 @@ model ReadState {
   item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
+  @@index([itemId, userId])
   @@index([userId, lastReadAt(sort: Desc)])
 }
 
@@ -217,6 +220,7 @@ model Bookmark {
   item         Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
+  @@index([itemId, userId])
   @@index([userId, bookmarkedAt(sort: Desc)])
 }
 
@@ -235,6 +239,7 @@ model RefreshJob {
   feed         Feed?      @relation(fields: [feedId], references: [id], onDelete: SetNull)
 
   @@index([feedId, requestedAt(sort: Desc)])
+  @@index([userId, status, requestedAt(sort: Desc)])
 }
 
 model RefreshLog {
