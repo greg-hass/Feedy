@@ -1,6 +1,6 @@
 import { Prisma, JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { fetchAndParseFeed, validateFeedUrl } from "@/lib/feed/parse";
+import { fetchAndParseFeedConditionally, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
 import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
@@ -168,8 +168,73 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
 
   try {
     const parseStartedAt = performance.now();
-    const result = await fetchAndParseFeed(feed.sourceUrl, feed.id);
+    const result = await fetchAndParseFeedConditionally(feed.sourceUrl, feed.id, {
+      etag: feed.etag,
+      lastModified: feed.lastModified,
+    });
     const parseDurationMs = performance.now() - parseStartedAt;
+    const freshAt = new Date();
+
+    if (result.notModified) {
+      const finalizeStartedAt = performance.now();
+
+      await prisma.feed.update({
+        where: { id: feed.id },
+        data: {
+          etag: result.etag,
+          lastModified: result.lastModified,
+          lastRefreshedAt: freshAt,
+          lastSuccessfulRefreshAt: freshAt,
+          lastError: null,
+          healthStatus: "HEALTHY",
+        },
+      });
+
+      if (refreshJob) {
+        await prisma.refreshJob.update({
+          where: { id: refreshJob.id },
+          data: {
+            status: JobStatus.SUCCEEDED,
+            completedAt: freshAt,
+            metadata: {
+              ...(refreshJob.metadata && typeof refreshJob.metadata === "object" ? refreshJob.metadata : {}),
+              trigger,
+              processedItems: 0,
+              newItems: 0,
+              notModified: true,
+            },
+          },
+        });
+      }
+
+      await prisma.refreshLog.update({
+        where: { id: log.id },
+        data: {
+          status: JobStatus.SUCCEEDED,
+          finishedAt: freshAt,
+          newItems: 0,
+          metadata: { trigger, notModified: true },
+        },
+      });
+
+      logPerf(
+        "worker.refreshFeed",
+        performance.now() - refreshStartedAt,
+        {
+          feedId,
+          trigger,
+          itemCount: 0,
+          newItems: 0,
+          notModified: true,
+          parseMs: Math.round(parseDurationMs),
+          finalizeMs: Math.round(performance.now() - finalizeStartedAt),
+        },
+        false,
+      );
+
+      return 0;
+    }
+
     const dedupeLookupStartedAt = performance.now();
     const existingKeys = new Set(
       (
@@ -223,7 +288,6 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     const upserts = await prisma.$transaction(operations);
     const upsertDurationMs = performance.now() - upsertStartedAt;
     const newItemsCount = result.items.filter((item) => !existingKeys.has(item.uniqueKey)).length;
-    const freshAt = new Date();
 
     const finalizeStartedAt = performance.now();
     await prisma.feed.update({

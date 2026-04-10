@@ -49,4 +49,5 @@ export const settingsSchema = z.object({
   refreshIntervalMinutes: z.number().int().min(5).max(1440).optional(),
   autoRefreshEnabled: z.boolean().optional(),
   readerOpenOriginalByDefault: z.boolean().optional(),
+  keepScreenAwake: z.boolean().optional(),
 });

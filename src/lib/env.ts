@@ -14,6 +14,7 @@ const envSchema = z.object({
   DISCOVERY_SEARCH_PROVIDER: z.string().default("duckduckgo"),
   PERF_LOGGING: z.enum(["true", "false"]).default("true"),
   PERF_SLOW_MS: z.coerce.number().int().min(50).max(10_000).default(250),
+  PERF_SLOW_FEED_MS: z.coerce.number().int().min(200).max(30_000).default(1200),
   DATA_DIR: z.string().default("./data"),
 });
 
@@ -31,6 +32,7 @@ export const env = envSchema.parse({
   DISCOVERY_SEARCH_PROVIDER: process.env.DISCOVERY_SEARCH_PROVIDER ?? "duckduckgo",
   PERF_LOGGING: process.env.PERF_LOGGING ?? "true",
   PERF_SLOW_MS: process.env.PERF_SLOW_MS ?? "250",
+  PERF_SLOW_FEED_MS: process.env.PERF_SLOW_FEED_MS ?? "1200",
   DATA_DIR: process.env.DATA_DIR ?? "./data",
 });
 

@@ -66,16 +66,46 @@ function buildDiscoverySearchQueries(keyword: string, maxQueries = 5) {
 }
 
 function buildYoutubeSearchQueries(keyword: string) {
-  const baseQueries = buildDiscoverySearchQueries(keyword, 5);
-  const expanded = new Set<string>(baseQueries);
+  const baseQueries = buildDiscoverySearchQueries(keyword, 4);
+  const prioritized: string[] = [];
+  const seen = new Set<string>();
+  const normalized = normalizeDiscoveryKeyword(keyword);
+  const tokens = normalized.split(" ").filter(Boolean);
+  const add = (value: string | null | undefined) => {
+    const trimmed = value?.trim();
+    if (!trimmed || seen.has(trimmed)) {
+      return;
+    }
+    seen.add(trimmed);
+    prioritized.push(trimmed);
+  };
 
-  for (const query of baseQueries) {
-    expanded.add(`${query} youtube`);
-    expanded.add(`${query} channel`);
-    expanded.add(`${query} youtube channel`);
+  if (tokens.length > 1) {
+    const first = tokens[0]!;
+    const last = tokens[tokens.length - 1]!;
+    const lastInitial = last[0];
+    const firstPlusInitial = `${first}${lastInitial}`;
+    const separatedInitial = `${first} ${lastInitial}`;
+
+    add(firstPlusInitial);
+    add(`@${firstPlusInitial}`);
+    add(compactDiscoveryKeyword(keyword));
+    add(keyword);
+    add(separatedInitial);
+    add(`${keyword} channel`);
+    add(`${separatedInitial} channel`);
+  } else {
+    add(compactDiscoveryKeyword(keyword));
+    add(keyword);
+    add(`${keyword} channel`);
   }
 
-  return Array.from(expanded).slice(0, 10);
+  for (const query of baseQueries) {
+    add(query);
+    add(`${query} channel`);
+  }
+
+  return prioritized.slice(0, 6);
 }
 
 function normalizeYoutubeIdentity(value: string) {
@@ -617,8 +647,9 @@ async function discoverYoutubeByKeyword(keyword: string): Promise<DiscoveryResul
   const queries = buildYoutubeSearchQueries(keyword);
   const results = new Map<string, DiscoveryResult>();
   const keywordTokens = normalizeDiscoveryKeyword(keyword).split(" ").filter(Boolean);
+  const normalizedKeyword = compactDiscoveryKeyword(keyword);
 
-  for (const query of queries) {
+  const runQuery = async (query: string) => {
     const params = new URLSearchParams({
       search_query: query,
       sp: YOUTUBE_CHANNEL_SEARCH_FILTER,
@@ -631,18 +662,19 @@ async function discoverYoutubeByKeyword(keyword: string): Promise<DiscoveryResul
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
         },
       },
-      10_000,
+      6_000,
     );
     if (!response.ok) {
-      continue;
+      return [] as DiscoveryResult[];
     }
 
     const html = await response.text();
     const data = extractYouTubeInitialData(html);
     if (!data) {
-      continue;
+      return [] as DiscoveryResult[];
     }
 
+    const queryResults: DiscoveryResult[] = [];
     const candidates = findYouTubeChannelCandidates(data);
     for (const candidate of candidates.slice(0, 8)) {
       const siteUrl = candidate.handle
@@ -657,7 +689,7 @@ async function discoverYoutubeByKeyword(keyword: string): Promise<DiscoveryResul
       }
 
       const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${candidate.channelId}`;
-      results.set(feedUrl, {
+      queryResults.push({
         title: candidate.title,
         description: `${candidate.title} on YouTube`,
         siteName: "YouTube",
@@ -669,9 +701,36 @@ async function discoverYoutubeByKeyword(keyword: string): Promise<DiscoveryResul
         sourceType: "YOUTUBE_RSS",
       });
     }
+
+    return queryResults;
+  };
+
+  const settled = await Promise.allSettled(queries.map((query) => runQuery(query)));
+  for (const outcome of settled) {
+    if (outcome.status !== "fulfilled") {
+      continue;
+    }
+
+    for (const result of outcome.value) {
+      results.set(result.feedUrl, result);
+    }
   }
 
-  return Array.from(results.values());
+  const ordered = rankResults(Array.from(results.values()), keyword);
+  const strongest = ordered.find((result) => {
+    const normalizedTitle = normalizeYoutubeIdentity(result.title);
+    const handle = extractYouTubeHandle(result.siteUrl || "");
+    return (
+      normalizedTitle === normalizedKeyword ||
+      (handle ? compactDiscoveryKeyword(handle) === normalizedKeyword : false)
+    );
+  });
+
+  if (strongest) {
+    return [strongest, ...ordered.filter((result) => result.feedUrl !== strongest.feedUrl)];
+  }
+
+  return ordered;
 }
 
 async function discoverRedditByKeyword(keyword: string): Promise<DiscoveryResult[]> {
@@ -732,6 +791,39 @@ function dedupeRankedResults(results: DiscoveryResult[], keyword: string) {
     for (const key of keys) {
       deduped.set(key, normalizedResult);
     }
+  }
+
+  return finalResults;
+}
+
+function balanceAllSourceResults(results: DiscoveryResult[]) {
+  const finalResults: DiscoveryResult[] = [];
+  const seen = new Set<string>();
+  const preferredSourceOrder: DiscoveryResult["sourceType"][] = ["RSS", "REDDIT_RSS", "YOUTUBE_RSS"];
+
+  for (const sourceType of preferredSourceOrder) {
+    const match = results.find((result) => result.sourceType === sourceType);
+    if (!match) {
+      continue;
+    }
+
+    const key = normalizeDiscoveryFeedUrl(match.feedUrl);
+    if (seen.has(key)) {
+      continue;
+    }
+
+    finalResults.push(match);
+    seen.add(key);
+  }
+
+  for (const result of results) {
+    const key = normalizeDiscoveryFeedUrl(result.feedUrl);
+    if (seen.has(key)) {
+      continue;
+    }
+
+    finalResults.push(result);
+    seen.add(key);
   }
 
   return finalResults;
@@ -799,5 +891,6 @@ export async function discoverFeeds(
     }
   }
 
-  return dedupeRankedResults(results, trimmedKeyword).slice(0, 12);
+  const rankedResults = dedupeRankedResults(results, trimmedKeyword);
+  return (sourceFilter === "ALL" ? balanceAllSourceResults(rankedResults) : rankedResults).slice(0, 12);
 }

@@ -60,28 +60,14 @@ export function MobileShell({
   return (
     <div className="app-shell screen-enter">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
-        {/* Premium Header - Solid Background */}
         <header className="fixed inset-x-0 top-0 z-40" style={{ backgroundColor: 'var(--app-bg)' }}>
-          <div className="mx-auto max-w-md px-5 pb-3 pt-[max(16px,env(safe-area-inset-top))]">
-            <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between">
-                <div className="flex h-6 items-center rounded-full px-2.5" style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--accent)' }}>
-                    Feedy
-                  </span>
-                </div>
-                {/* Unread/Total Feeds Badge */}
-                <div className="flex items-center gap-2 rounded-full px-3 py-1" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{unreadTotal}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>/ {totalFeeds} feeds</span>
-                </div>
+          <div className="mx-auto max-w-md px-5 pb-0 pt-[max(12px,env(safe-area-inset-top))]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex h-6 items-center rounded-full px-2.5" style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--accent)' }}>
+                  Feedy
+                </span>
               </div>
-              <h1 className="mt-2 text-[28px] font-bold leading-[1.05] tracking-[-0.04em]" style={{ color: 'var(--text-primary)' }}>{title}</h1>
-              {subtitle ? (
-                <p className="mt-1.5 text-[15px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
-              ) : null}
-            </div>
               <div className="flex shrink-0 items-center gap-2">
                 {actions}
                 <button
@@ -94,17 +80,42 @@ export function MobileShell({
                 </button>
               </div>
             </div>
+
+            <div className="mt-3 flex min-h-[72px] items-start justify-between gap-3 border-b border-subtle pb-2.5">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-[2rem] font-bold leading-[0.98] tracking-[-0.045em]" style={{ color: 'var(--text-primary)' }}>
+                  {title}
+                </h1>
+                <p
+                  className="mt-1 h-5 max-w-[18rem] truncate text-[14px] leading-[1.4]"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  {subtitle ?? ""}
+                </p>
+              </div>
+              <div
+                className="mt-1 shrink-0 rounded-full px-3 py-1.5"
+                style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}
+              >
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[15px] font-semibold leading-none" style={{ color: 'var(--accent)' }}>
+                    {unreadTotal}
+                  </span>
+                  <span className="text-[11px] leading-none" style={{ color: 'var(--text-secondary)' }}>
+                    / {totalFeeds} feeds
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Main Content */}
         <div className="px-5">
-          <main key={pathname} className="flex-1 pb-28 pt-[108px]">
+          <main key={pathname} className="flex-1 pb-28 pt-[146px]">
             {children}
           </main>
         </div>
 
-        {/* iOS-style Full-Width Tab Bar - Emerald Accent */}
         <nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(12px,env(safe-area-inset-bottom))]" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
           <div className="mx-auto flex max-w-md items-center justify-around">
             {navItems.map((item) => {

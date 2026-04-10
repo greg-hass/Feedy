@@ -36,6 +36,16 @@ export default function ReaderPage() {
   });
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [params.itemId]);
+
+  useEffect(() => {
     if (item.data && !item.data.read && !state.isPending) {
       state.mutate({ read: true });
     }
@@ -84,7 +94,7 @@ export default function ReaderPage() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(12px,env(safe-area-inset-top))]">
       <header
-        className="sticky top-0 z-40 -mx-4 px-4 pb-4 pt-1"
+        className="sticky top-0 z-40 -mx-4 px-4 pb-3 pt-1"
         style={{ backgroundColor: "var(--app-bg)" }}
       >
         <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface-strong)_92%,black_8%)] px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.24)] backdrop-blur-xl">
@@ -165,9 +175,10 @@ export default function ReaderPage() {
           {data.youtubeVideoId && (
             <div className="mt-4 overflow-hidden rounded-[20px] border border-subtle">
               <iframe
-                src={`https://www.youtube.com/embed/${data.youtubeVideoId}`}
+                src={`https://www.youtube.com/embed/${data.youtubeVideoId}?playsinline=1&rel=0`}
                 title={data.title}
                 className="aspect-video w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
               />
             </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "feedy-shell-v2";
+const CACHE_NAME = "feedy-shell-v3";
 const SHELL_ROUTES = ["/offline"];
 
 self.addEventListener("install", (event) => {
@@ -26,34 +26,21 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          event.waitUntil(
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => undefined),
-          );
-          return response;
-        })
-        .catch(async () => {
-          return (await caches.match(request)) || caches.match("/offline");
-        }),
+      fetch(request).catch(async () => {
+        return (await caches.match("/offline")) || Response.error();
+      }),
     );
     return;
   }
 
   if (url.pathname.startsWith("/_next/")) {
     event.respondWith(
-      fetch(request).catch(async () => {
-        return caches.match(request);
-      }),
+      fetch(request).catch(async () => caches.match(request)),
     );
     return;
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request);
-    }),
+    fetch(request).catch(async () => caches.match(request)),
   );
 });

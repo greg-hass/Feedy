@@ -14,11 +14,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { accentOptions } from "@/lib/theme";
-import { relativeTime } from "@/lib/utils";
-import type { ItemRecord, NavFeed, NavFolder } from "@/types/app";
+import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
+import type { ItemRecord, MeResponse, NavFeed, NavFolder } from "@/types/app";
 
 function formatSourceType(value: string) {
   return value.replaceAll("_RSS", "").replaceAll("_", " ");
+}
+
+function compareFeedLabels(a: NavFeed, b: NavFeed) {
+  const aLabel = decodeHtmlEntities(a.label || a.title).toLocaleLowerCase();
+  const bLabel = decodeHtmlEntities(b.label || b.title).toLocaleLowerCase();
+  return aLabel.localeCompare(bLabel, undefined, { sensitivity: "base" });
+}
+
+function formatDuration(ms: number | null | undefined) {
+  if (!ms || ms <= 0) {
+    return "n/a";
+  }
+
+  if (ms < 1000) {
+    return `${ms}ms`;
+  }
+
+  return `${(ms / 1000).toFixed(ms >= 10_000 ? 0 : 1)}s`;
+}
+
+function getSuggestedRefreshInterval(
+  currentMinutes: number,
+  performance: NavFeed["performance"],
+) {
+  if (!performance.isSlow) {
+    return null;
+  }
+
+  let targetMinutes: number | null = null;
+
+  if ((performance.latestDurationMs ?? 0) >= 2000 || (performance.averageDurationMs ?? 0) >= 1500 || performance.slowCount24h >= 4) {
+    targetMinutes = 180;
+  } else if ((performance.latestDurationMs ?? 0) >= 1200 || (performance.averageDurationMs ?? 0) >= 1000 || performance.slowCount24h >= 2) {
+    targetMinutes = 60;
+  }
+
+  if (!targetMinutes || currentMinutes >= targetMinutes) {
+    return null;
+  }
+
+  const cadenceSteps = [15, 30, 60, 180, 360, 720, 1440];
+  return cadenceSteps.find((minutes) => minutes >= targetMinutes && minutes > currentMinutes) ?? null;
 }
 
 function getHealthPresentation(status: string) {
@@ -384,56 +426,46 @@ export function UnreadScreen() {
   return (
     <MobileShell
       title="Timeline"
+      subtitle="Your latest reading across every source"
       actions={
         <RefreshButton controller={refresh} />
       }
     >
       {pullDistance > 0 && !refresh.active ? (
-        <div
-          className="fixed inset-x-0 z-30 px-5"
-          style={{ top: `calc(env(safe-area-inset-top) + 112px + ${Math.max(pullDistance - 36, 0)}px)` }}
-        >
-          <div className="mx-auto flex max-w-md items-center justify-center">
-            <div className="rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
-              {pullDistance >= 56 ? "Release to refresh feeds" : "Pull to refresh"}
-            </div>
+        <div className="mb-2 flex items-center justify-center">
+          <div className="rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+            {pullDistance >= 56 ? "Release to refresh feeds" : "Pull to refresh"}
           </div>
         </div>
       ) : null}
-      <section
-        className="fixed inset-x-0 z-30 px-5 pb-3 pt-1"
-        style={{ top: "calc(env(safe-area-inset-top) + 92px)", backgroundColor: "var(--app-bg)" }}
-      >
-        <div className="mx-auto max-w-md grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="sr-only">Timeline state</span>
-            <select
-              value={stateFilter}
-              onChange={(event) => setStateFilter(event.target.value as "UNREAD" | "ALL" | "READ")}
-              className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
-            >
-              <option value="UNREAD">Unread</option>
-              <option value="ALL">All</option>
-              <option value="READ">Read</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className="sr-only">Timeline source</span>
-            <select
-              value={sourceFilter}
-              onChange={(event) => setSourceFilter(event.target.value as "ALL" | "RSS" | "REDDIT" | "YOUTUBE")}
-              className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
-            >
-              <option value="ALL">All feeds</option>
-              <option value="RSS">RSS</option>
-              <option value="REDDIT">Reddit</option>
-              <option value="YOUTUBE">YouTube</option>
-            </select>
-          </label>
-        </div>
-      </section>
 
-      <div className="h-[68px]" />
+      <section className="mb-3 grid w-full grid-cols-2 gap-3">
+        <label className="block">
+          <span className="sr-only">Timeline state</span>
+          <select
+            value={stateFilter}
+            onChange={(event) => setStateFilter(event.target.value as "UNREAD" | "ALL" | "READ")}
+            className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+          >
+            <option value="UNREAD">Unread</option>
+            <option value="ALL">All</option>
+            <option value="READ">Read</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="sr-only">Timeline source</span>
+          <select
+            value={sourceFilter}
+            onChange={(event) => setSourceFilter(event.target.value as "ALL" | "RSS" | "REDDIT" | "YOUTUBE")}
+            className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+          >
+            <option value="ALL">All feeds</option>
+            <option value="RSS">RSS</option>
+            <option value="REDDIT">Reddit</option>
+            <option value="YOUTUBE">YouTube</option>
+          </select>
+        </label>
+      </section>
 
       {items.isLoading ? (
         <LoadingSkeleton />
@@ -475,8 +507,8 @@ export function FeedsScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
   const [showBulkMove, setShowBulkMove] = useState(false);
+  const [showBulkCadence, setShowBulkCadence] = useState(false);
   const [query, setQuery] = useState("");
-  const [healthFilter, setHealthFilter] = useState<"ALL" | "HEALTHY" | "ISSUES">("ALL");
   const [showSwipeHint, setShowSwipeHint] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -489,21 +521,25 @@ export function FeedsScreen() {
 
   const feeds = me.data?.navigation.feeds ?? [];
   const folders = me.data?.navigation.folders ?? [];
+  const healthCounts = {
+    all: feeds.length,
+    healthy: feeds.filter((feed) => feed.healthStatus === "HEALTHY").length,
+    issues: feeds.filter((feed) => feed.healthStatus !== "HEALTHY").length,
+    slow: feeds.filter((feed) => feed.performance.isSlow).length,
+  };
 
   const normalizedQuery = deferredQuery.trim().toLowerCase();
-  const matchesHealth = (feed: NavFeed) =>
-    healthFilter === "ALL" ||
-    (healthFilter === "HEALTHY" ? feed.healthStatus === "HEALTHY" : feed.healthStatus !== "HEALTHY");
   const matchesFeed = (feed: NavFeed) =>
-    matchesHealth(feed) &&
     (!normalizedQuery ||
       [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(normalizedQuery)));
 
-  const pinnedFeeds = feeds.filter((f) => f.isPinned && matchesFeed(f));
-  const uncategorizedFeeds = feeds.filter((f) => !f.folderId && !f.isPinned && matchesFeed(f));
-  const matchingFeeds = feeds.filter(matchesFeed);
+  const pinnedFeeds = feeds.filter((f) => f.isPinned && matchesFeed(f)).sort(compareFeedLabels);
+  const uncategorizedFeeds = feeds
+    .filter((f) => !f.folderId && !f.isPinned && matchesFeed(f))
+    .sort(compareFeedLabels);
+  const matchingFeeds = feeds.filter(matchesFeed).sort(compareFeedLabels);
   const effectiveSelectedFeedIds = selectedFeedIds.filter((id) => matchingFeeds.some((feed) => feed.id === id));
   const selectedSet = new Set(effectiveSelectedFeedIds);
   const selectedCount = effectiveSelectedFeedIds.length;
@@ -511,7 +547,7 @@ export function FeedsScreen() {
   const visibleFolders = folders
     .map((folder) => {
       const folderFeeds = feeds.filter((feed) => feed.folderId === folder.id);
-      const matchingFeeds = folderFeeds.filter(matchesFeed);
+      const matchingFeeds = folderFeeds.filter(matchesFeed).sort(compareFeedLabels);
       const folderMatches = folder.title.toLowerCase().includes(normalizedQuery);
 
       return {
@@ -538,10 +574,29 @@ export function FeedsScreen() {
     },
     onSuccess: async () => {
       setShowBulkMove(false);
+      setShowBulkCadence(false);
       setSelectionMode(false);
       setSelectedFeedIds([]);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+  const updateCadenceForFeeds = useMutation({
+    mutationFn: async (refreshIntervalMinutes: number) => {
+      await Promise.all(
+        effectiveSelectedFeedIds.map((feedId) =>
+          api(`/api/feeds/${feedId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ refreshIntervalMinutes }),
+          }),
+        ),
+      );
+    },
+    onSuccess: async () => {
+      setShowBulkCadence(false);
+      setSelectionMode(false);
+      setSelectedFeedIds([]);
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 
@@ -553,7 +608,7 @@ export function FeedsScreen() {
       title="Feeds"
       subtitle="Manage subscriptions and folders"
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex h-10 items-center gap-2">
           {selectionMode ? (
             <>
               <button
@@ -561,15 +616,23 @@ export function FeedsScreen() {
                   setSelectionMode(false);
                   setSelectedFeedIds([]);
                   setShowBulkMove(false);
+                  setShowBulkCadence(false);
                 }}
-                className="rounded-2xl border border-subtle bg-[var(--surface)] px-3 py-2 text-xs font-semibold text-secondary"
+                className="inline-flex h-10 items-center rounded-2xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
               >
                 Cancel
               </button>
               <button
+                onClick={() => setShowBulkCadence(true)}
+                disabled={!selectedCount}
+                className="inline-flex h-10 items-center rounded-2xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary disabled:opacity-50"
+              >
+                Cadence
+              </button>
+              <button
                 onClick={() => setShowBulkMove(true)}
                 disabled={!selectedCount}
-                className="rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] px-3 py-2 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)] disabled:opacity-50"
+                className="inline-flex h-10 items-center rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] px-3 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)] disabled:opacity-50"
               >
                 Move {selectedCount ? `(${selectedCount})` : ""}
               </button>
@@ -578,20 +641,20 @@ export function FeedsScreen() {
             <>
               <button
                 onClick={() => setSelectionMode(true)}
-                className="rounded-2xl border border-subtle bg-[var(--surface)] px-3 py-2 text-xs font-semibold text-secondary"
+                className="inline-flex h-10 items-center rounded-2xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
               >
                 Select
               </button>
               <button
                 onClick={() => setShowAddFolder(true)}
-                className="rounded-2xl border border-subtle bg-[var(--surface)] p-2.5 text-secondary"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-subtle bg-[var(--surface)] text-secondary"
                 aria-label="Create folder"
               >
                 <FolderPlus className="size-4" />
               </button>
               <button
                 onClick={() => setShowAddFeed(true)}
-                className="rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] p-2.5 text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)]"
                 aria-label="Add feed"
               >
                 <Plus className="size-4" />
@@ -627,16 +690,24 @@ export function FeedsScreen() {
           />
         </div>
         <div className="mt-3">
-          <SegmentedControl
-            value={healthFilter}
-            onChange={setHealthFilter}
-            options={[
-              { key: "ALL", label: "All" },
-              { key: "HEALTHY", label: "Healthy" },
-              { key: "ISSUES", label: "Issues" },
-            ]}
-            columns="grid-cols-3"
-          />
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "All", value: healthCounts.all, tone: "text-[var(--text-primary)]" },
+              { label: "Healthy", value: healthCounts.healthy, tone: "text-emerald-300" },
+              { label: "Issues", value: healthCounts.issues, tone: "text-amber-300" },
+              { label: "Slow", value: healthCounts.slow, tone: "text-amber-200" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3 py-2.5 text-center"
+              >
+                <p className={`text-sm font-semibold ${item.tone}`}>{item.value}</p>
+                <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-secondary">
+                  {item.label}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -670,13 +741,22 @@ export function FeedsScreen() {
                   {selectedCount} selected across {matchingFeeds.length} visible feeds.
                 </p>
               </div>
-              <button
-                onClick={() => setShowBulkMove(true)}
-                disabled={!selectedCount}
-                className="rounded-2xl bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] disabled:opacity-50"
-              >
-                Move
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowBulkCadence(true)}
+                  disabled={!selectedCount}
+                  className="rounded-2xl border border-subtle bg-[var(--surface)] px-3 py-2 text-xs font-semibold text-secondary disabled:opacity-50"
+                >
+                  Cadence
+                </button>
+                <button
+                  onClick={() => setShowBulkMove(true)}
+                  disabled={!selectedCount}
+                  className="rounded-2xl bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] disabled:opacity-50"
+                >
+                  Move
+                </button>
+              </div>
             </div>
           </section>
 
@@ -752,16 +832,10 @@ export function FeedsScreen() {
           />
         )}
 
-        {!!feeds.length && (normalizedQuery || healthFilter !== "ALL") && !pinnedFeeds.length && !visibleFolders.length && !uncategorizedFeeds.length && (
+        {!!feeds.length && normalizedQuery && !pinnedFeeds.length && !visibleFolders.length && !uncategorizedFeeds.length && (
           <EmptyState
-            title={healthFilter === "ISSUES" ? "No feeds with issues" : "No feeds match this search"}
-            body={
-              healthFilter === "ISSUES"
-                ? "Everything visible right now is healthy."
-                : healthFilter === "HEALTHY"
-                  ? "Try another search or switch back to all feeds."
-                  : "Try a feed title, folder name, source URL, or source type."
-            }
+            title="No feeds match this search"
+            body="Try a feed title, folder name, source URL, or source type."
             icon={<Search className="size-6" />}
           />
         )}
@@ -775,6 +849,14 @@ export function FeedsScreen() {
           onClose={() => setShowBulkMove(false)}
           onMove={(folderId) => moveFeeds.mutate(folderId)}
           isPending={moveFeeds.isPending}
+        />
+      ) : null}
+      {showBulkCadence ? (
+        <BulkCadenceSheet
+          selectedCount={selectedCount}
+          onClose={() => setShowBulkCadence(false)}
+          onApply={(refreshIntervalMinutes) => updateCadenceForFeeds.mutate(refreshIntervalMinutes)}
+          isPending={updateCadenceForFeeds.isPending}
         />
       ) : null}
     </MobileShell>
@@ -859,7 +941,15 @@ export function DiscoverScreen() {
   const [query, setQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"ALL" | "RSS" | "REDDIT" | "YOUTUBE">("ALL");
   const [recentlyAdded, setRecentlyAdded] = useState<Record<string, true>>({});
-  const deferredQuery = useDeferredValue(query);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [query]);
+  const deferredQuery = useDeferredValue(debouncedQuery);
   const searchParams = new URLSearchParams({
     q: deferredQuery,
     sourceFilter,
@@ -881,7 +971,6 @@ export function DiscoverScreen() {
         `/api/discover?${searchParams.toString()}`,
       ),
     enabled: deferredQuery.trim().length > 1,
-    placeholderData: (previous) => previous,
     staleTime: 60_000,
   });
   const queryClient = useQueryClient();
@@ -898,6 +987,8 @@ export function DiscoverScreen() {
       await queryClient.invalidateQueries({ queryKey: ["discover"] });
     },
   });
+  const isSearchingLibrary = local.isPending || local.isFetching;
+  const isSearchingDiscover = discover.isPending || discover.isFetching;
 
   return (
     <MobileShell title="Discover" subtitle="Find new feeds by keyword">
@@ -951,7 +1042,7 @@ export function DiscoverScreen() {
               meta={sourceFilter === "ALL" ? undefined : formatSourceType(sourceFilter)}
             />
             <div className="space-y-2">
-              {local.isLoading && <p className="text-sm text-secondary">Searching...</p>}
+              {isSearchingLibrary && <p className="text-sm text-secondary">Searching...</p>}
               {local.data?.map((feed) => (
                 <div
                   key={feed.id}
@@ -973,7 +1064,7 @@ export function DiscoverScreen() {
                   </div>
                 </div>
               ))}
-              {local.data && !local.data.length && (
+              {!isSearchingLibrary && local.data && !local.data.length && (
                 <p className="text-sm text-secondary">No matching feeds in your library.</p>
               )}
             </div>
@@ -992,7 +1083,7 @@ export function DiscoverScreen() {
               }
             />
             <div className="space-y-2">
-              {discover.isLoading && <p className="text-sm text-secondary">Searching...</p>}
+              {isSearchingDiscover && <p className="text-sm text-secondary">Searching...</p>}
               {discover.data?.map((result) => {
                 const justAdded = Boolean(recentlyAdded[result.feedUrl]);
                 const isSubmitting =
@@ -1040,7 +1131,7 @@ export function DiscoverScreen() {
                   </div>
                 </div>
               )})}
-              {discover.data && !discover.data.length && (
+              {!isSearchingDiscover && discover.data && !discover.data.length && (
                 <EmptyState
                   title="No feed matches yet"
                   body="Try a creator name, topic, website, subreddit, or channel keyword."
@@ -1198,6 +1289,39 @@ export function SettingsScreen() {
                 {minutes}m
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+          <h3 className="text-sm font-semibold">Device</h3>
+          <div className="mt-3 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Keep screen awake</p>
+              <p className="mt-1 text-xs leading-relaxed text-secondary">
+                Prevent the screen from dimming while Feedy is open. iPhone may still revoke this in low power mode or the background.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                settings.mutate({
+                  keepScreenAwake: !me.data?.user.settings.keepScreenAwake,
+                })
+              }
+              className={`relative mt-0.5 inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition-colors ${
+                me.data?.user.settings.keepScreenAwake
+                  ? "border-[var(--accent)] bg-[var(--accent)]"
+                  : "border-subtle bg-[var(--surface-muted)]"
+              }`}
+              aria-pressed={Boolean(me.data?.user.settings.keepScreenAwake)}
+              aria-label="Toggle keep screen awake"
+            >
+              <span
+                className={`absolute size-6 rounded-full bg-white shadow-[0_6px_16px_rgba(0,0,0,0.22)] transition-transform ${
+                  me.data?.user.settings.keepScreenAwake ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
           </div>
         </div>
 
@@ -1475,6 +1599,14 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
                     </span>
                   </>
                 ) : null}
+                {feed.performance.isSlow ? (
+                  <>
+                    <span>·</span>
+                    <span className="font-medium text-amber-300">
+                      Slow {formatDuration(feed.performance.latestDurationMs)}
+                    </span>
+                  </>
+                ) : null}
                 <span>·</span>
                 <button
                   type="button"
@@ -1572,6 +1704,14 @@ function SelectableFeedRow({
               </span>
             </>
           ) : null}
+          {feed.performance.isSlow ? (
+            <>
+              <span>·</span>
+              <span className="font-medium text-amber-300">
+                Slow {formatDuration(feed.performance.latestDurationMs)}
+              </span>
+            </>
+          ) : null}
           <span>·</span>
           <span className={`inline-flex items-center ${health.compact ? "" : "gap-1.5"} text-[9px] font-semibold tracking-[0.12em] ${health.className}`}>
             <span className={`size-1.5 rounded-full ${health.dotClassName}`} />
@@ -1657,6 +1797,66 @@ function BulkMoveSheet({
   );
 }
 
+function BulkCadenceSheet({
+  selectedCount,
+  onClose,
+  onApply,
+  isPending,
+}: {
+  selectedCount: number;
+  onClose: () => void;
+  onApply: (refreshIntervalMinutes: number) => void;
+  isPending: boolean;
+}) {
+  const options = [30, 60, 180, 360];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-3 flex justify-center">
+          <div className="h-1.5 w-11 rounded-full bg-[var(--surface-muted)]" />
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-[15px] font-semibold">Adjust refresh cadence</h3>
+            <p className="mt-1 text-xs text-secondary">
+              Set a calmer refresh interval for {selectedCount} selected {selectedCount === 1 ? "feed" : "feeds"}.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {options.map((minutes) => (
+            <button
+              key={minutes}
+              onClick={() => onApply(minutes)}
+              disabled={isPending}
+              className="rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] px-4 py-4 text-left disabled:opacity-50"
+            >
+              <p className="text-sm font-semibold">{minutes} minutes</p>
+              <p className="mt-1 text-xs text-secondary">
+                {minutes >= 180 ? "Best for consistently slow feeds." : "Reduce refresh pressure."}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FeedHealthSheet({
   feed,
   onClose,
@@ -1665,6 +1865,20 @@ function FeedHealthSheet({
   onClose: () => void;
 }) {
   const health = getHealthPresentation(feed.healthStatus);
+  const queryClient = useQueryClient();
+  const me = queryClient.getQueryData<MeResponse>(["me"]);
+  const effectiveRefreshMinutes = feed.refreshIntervalMinutes ?? me?.user.settings.refreshIntervalMinutes ?? 60;
+  const suggestedRefreshMinutes = getSuggestedRefreshInterval(effectiveRefreshMinutes, feed.performance);
+  const updateCadence = useMutation({
+    mutationFn: (refreshIntervalMinutes: number) =>
+      api(`/api/feeds/${feed.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ refreshIntervalMinutes }),
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
 
   return (
     <div
@@ -1711,6 +1925,18 @@ function FeedHealthSheet({
 
         <div className="mt-3 space-y-2">
           <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Refresh cadence</p>
+            <p className="mt-1 text-sm text-[var(--text-primary)]">
+              Every {effectiveRefreshMinutes} minutes
+            </p>
+            <p className="mt-1 text-xs text-secondary">
+              {feed.refreshIntervalMinutes
+                ? "This feed has its own refresh cadence."
+                : "This feed is using your default refresh cadence."}
+            </p>
+          </div>
+
+          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Last refresh</p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
               {feed.lastRefreshedAt ? relativeTime(feed.lastRefreshedAt) : "Never"}
@@ -1730,6 +1956,34 @@ function FeedHealthSheet({
               {feed.lastFailureAt ? relativeTime(feed.lastFailureAt) : "No recent failures"}
             </p>
           </div>
+
+          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Recent refresh speed</p>
+            <p className="mt-1 text-sm text-[var(--text-primary)]">
+              Latest {formatDuration(feed.performance.latestDurationMs)} · Avg {formatDuration(feed.performance.averageDurationMs)}
+            </p>
+            <p className="mt-1 text-xs text-secondary">
+              {feed.performance.slowCount24h > 0
+                ? `${feed.performance.slowCount24h} slow refreshes in the last 24 hours`
+                : "No slow refreshes in the last 24 hours"}
+            </p>
+          </div>
+
+          {suggestedRefreshMinutes ? (
+            <div className="rounded-[18px] border border-amber-500/20 bg-amber-500/10 px-3.5 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-amber-300">Suggested adjustment</p>
+              <p className="mt-1 text-sm leading-relaxed text-amber-50">
+                This feed has been consistently slow. Try refreshing it every {suggestedRefreshMinutes} minutes instead of every {effectiveRefreshMinutes} minutes.
+              </p>
+              <button
+                onClick={() => updateCadence.mutate(suggestedRefreshMinutes)}
+                disabled={updateCadence.isPending}
+                className="mt-3 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] disabled:opacity-60"
+              >
+                {updateCadence.isPending ? "Applying..." : `Use ${suggestedRefreshMinutes}m cadence`}
+              </button>
+            </div>
+          ) : null}
 
           {feed.lastError ? (
             <div className="rounded-[18px] border border-rose-500/20 bg-rose-500/10 px-3.5 py-3">
@@ -1818,6 +2072,14 @@ function FolderRow({ folder, folders, index }: { folder: NavFolder; folders: Nav
                     <span>·</span>
                     <span className="font-medium text-amber-300">
                       {folder.counts.issueCount} issues
+                    </span>
+                  </>
+                ) : null}
+                {folder.counts.slowFeedCount > 0 ? (
+                  <>
+                    <span>·</span>
+                    <span className="font-medium text-amber-300">
+                      {folder.counts.slowFeedCount} slow
                     </span>
                   </>
                 ) : null}

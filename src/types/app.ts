@@ -9,12 +9,19 @@ export type NavFeed = {
   isPinned: boolean;
   excludeFromTimeline: boolean;
   position: number;
+  refreshIntervalMinutes: number | null;
   lastRefreshedAt: string | null;
   lastSuccessfulRefreshAt: string | null;
   lastFailureAt: string | null;
   lastError: string | null;
   healthStatus: string;
   folderId: string | null;
+  performance: {
+    latestDurationMs: number | null;
+    averageDurationMs: number | null;
+    slowCount24h: number;
+    isSlow: boolean;
+  };
   counts: {
     unreadCount: number;
     totalCount: number;
@@ -30,6 +37,7 @@ export type NavFolder = {
     articleCount: number;
     feedCount: number;
     issueCount: number;
+    slowFeedCount: number;
   };
 };
 
@@ -79,6 +87,7 @@ export type MeResponse = {
       refreshIntervalMinutes: number;
       autoRefreshEnabled: boolean;
       readerOpenOriginalByDefault: boolean;
+      keepScreenAwake: boolean;
     };
   };
   navigation: {

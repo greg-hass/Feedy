@@ -3,19 +3,32 @@
 import Link from "next/link";
 import { Bookmark, Check, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord } from "@/types/app";
+import {
+  getSavedYouTubeProgressSeconds,
+  YouTubeInlinePlayer,
+} from "@/components/youtube-inline-player";
+
+function formatResumeTime(seconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
 
 export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [playInline, setPlayInline] = useState(false);
   const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
+  const [resumeSeconds, setResumeSeconds] = useState(0);
+  const markedReadFromPlaybackRef = useRef(false);
   const rememberTimelineAnchor = () => {
     window.sessionStorage.setItem("feedy-timeline-anchor-item", item.id);
   };
@@ -28,6 +41,19 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
     const timeout = window.setTimeout(() => setBookmarkAnimating(false), 320);
     return () => window.clearTimeout(timeout);
   }, [bookmarkAnimating]);
+
+  useEffect(() => {
+    if (!item.youtubeVideoId) {
+      setResumeSeconds(0);
+      return;
+    }
+
+    setResumeSeconds(getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId));
+  }, [item.id, item.youtubeVideoId]);
+
+  useEffect(() => {
+    markedReadFromPlaybackRef.current = item.read;
+  }, [item.read]);
 
   const updateState = useMutation({
     mutationFn: (body: { read?: boolean; bookmarked?: boolean }) =>
@@ -60,15 +86,20 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
         isYouTube && item.youtubeVideoId ? (
           <div className="relative overflow-hidden">
             {playInline ? (
-              <div className="aspect-video w-full bg-black">
-                <iframe
-                  src={`https://www.youtube.com/embed/${item.youtubeVideoId}?autoplay=1&playsinline=1&rel=0`}
-                  title={itemTitle}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              </div>
+              <YouTubeInlinePlayer
+                itemId={item.id}
+                videoId={item.youtubeVideoId}
+                title={itemTitle}
+                onProgressChange={setResumeSeconds}
+                onMeaningfulPlayback={() => {
+                  if (markedReadFromPlaybackRef.current) {
+                    return;
+                  }
+
+                  markedReadFromPlaybackRef.current = true;
+                  updateState.mutate({ read: true });
+                }}
+              />
             ) : (
               <button
                 type="button"
@@ -96,6 +127,11 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
                 <div className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur">
                   Play inline
                 </div>
+                {resumeSeconds > 1 ? (
+                  <div className="absolute bottom-3 left-3 rounded-full bg-[var(--accent)]/92 px-3 py-1.5 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.24)]">
+                    Resume {formatResumeTime(resumeSeconds)}
+                  </div>
+                ) : null}
               </button>
             )}
 

@@ -15,6 +15,12 @@ import { api } from "@/lib/client";
 import { decodeHtmlEntities } from "@/lib/utils";
 import type { ItemRecord, NavFeed, NavFolder } from "@/types/app";
 
+function compareFeedLabels(a: NavFeed, b: NavFeed) {
+  const aLabel = decodeHtmlEntities(a.label || a.title).toLocaleLowerCase();
+  const bLabel = decodeHtmlEntities(b.label || b.title).toLocaleLowerCase();
+  return aLabel.localeCompare(bLabel, undefined, { sensitivity: "base" });
+}
+
 export default function FolderDetailPage() {
   const params = useParams<{ folderId: string }>();
   const router = useRouter();
@@ -28,7 +34,10 @@ export default function FolderDetailPage() {
   });
 
   const folder = me.data?.navigation.folders.find((f) => f.id === params.folderId);
-  const folderFeeds = me.data?.navigation.feeds.filter((f) => f.folderId === params.folderId) ?? [];
+  const folderFeeds =
+    me.data?.navigation.feeds
+      .filter((f) => f.folderId === params.folderId)
+      .sort(compareFeedLabels) ?? [];
   const folderTitle = decodeHtmlEntities(folder?.title || "");
 
   const items = useQuery({
@@ -215,6 +224,14 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
             </div>
             <div className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-secondary">
               <span>{feed.sourceType.replaceAll("_RSS", "").replaceAll("_", " ")}</span>
+              {feed.performance.isSlow ? (
+                <>
+                  <span>·</span>
+                  <span className="font-medium text-amber-300">
+                    Slow {feed.performance.latestDurationMs ? `${Math.max(feed.performance.latestDurationMs / 1000, 0.1).toFixed(feed.performance.latestDurationMs >= 10_000 ? 0 : 1)}s` : ""}
+                  </span>
+                </>
+              ) : null}
               {feed.excludeFromTimeline ? (
                 <>
                   <span>·</span>

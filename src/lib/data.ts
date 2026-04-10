@@ -1,5 +1,6 @@
 import { FeedSourceType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 
 export type TimelineSourceFilter = "RSS" | "REDDIT" | "YOUTUBE";
 export type TimelineStateFilter = "UNREAD" | "READ" | "ALL";
@@ -15,6 +16,13 @@ type FolderCountRow = {
   folderId: string | null;
   totalCount: bigint;
   unreadCount: bigint;
+};
+
+type FeedPerformanceRow = {
+  feedId: string;
+  latestDurationMs: number | null;
+  averageDurationMs: number | null;
+  slowCount24h: bigint;
 };
 
 const navigationFolderSelect = {
@@ -36,6 +44,7 @@ const navigationFeedSelect = {
   isPinned: true,
   excludeFromTimeline: true,
   position: true,
+  refreshIntervalMinutes: true,
   lastRefreshedAt: true,
   lastSuccessfulRefreshAt: true,
   lastFailureAt: true,
@@ -130,8 +139,52 @@ export async function getFolderCounts(userId: string) {
   );
 }
 
+export async function getFeedPerformanceStats(userId: string) {
+  const rows = await prisma.$queryRaw<FeedPerformanceRow[]>(Prisma.sql`
+    WITH recent_logs AS (
+      SELECT
+        rl."feedId",
+        EXTRACT(EPOCH FROM (COALESCE(rl."finishedAt", rl."startedAt") - rl."startedAt")) * 1000 AS "durationMs",
+        rl."startedAt",
+        ROW_NUMBER() OVER (
+          PARTITION BY rl."feedId"
+          ORDER BY rl."startedAt" DESC
+        ) AS "rowNumber"
+      FROM "RefreshLog" rl
+      INNER JOIN "Feed" f ON f.id = rl."feedId"
+      WHERE f."userId" = ${userId}
+        AND rl.status = 'SUCCEEDED'
+        AND rl."finishedAt" IS NOT NULL
+    )
+    SELECT
+      "feedId",
+      MAX(CASE WHEN "rowNumber" = 1 THEN "durationMs" END)::int AS "latestDurationMs",
+      ROUND(AVG(CASE WHEN "rowNumber" <= 10 THEN "durationMs" END))::int AS "averageDurationMs",
+      COUNT(*) FILTER (
+        WHERE "startedAt" >= NOW() - INTERVAL '24 hours'
+          AND "durationMs" >= ${env.PERF_SLOW_FEED_MS}
+      )::bigint AS "slowCount24h"
+    FROM recent_logs
+    GROUP BY "feedId"
+  `);
+
+  return new Map(
+    rows.map((row) => [
+      row.feedId,
+      {
+        latestDurationMs: row.latestDurationMs,
+        averageDurationMs: row.averageDurationMs,
+        slowCount24h: Number(row.slowCount24h),
+        isSlow:
+          (row.latestDurationMs ?? 0) >= env.PERF_SLOW_FEED_MS ||
+          Number(row.slowCount24h) > 0,
+      },
+    ]),
+  );
+}
+
 export async function getNavigationData(userId: string) {
-  const [folders, feeds, feedCounts, folderCounts, unreadTotal, savedCount] =
+  const [folders, feeds, feedCounts, folderCounts, feedPerformanceStats, unreadTotal, savedCount] =
     await Promise.all([
       prisma.folder.findMany({
         where: { userId },
@@ -145,6 +198,7 @@ export async function getNavigationData(userId: string) {
       }),
       getFeedCounts(userId),
       getFolderCounts(userId),
+      getFeedPerformanceStats(userId),
       prisma.item.count({
         where: {
           feed: { userId, excludeFromTimeline: false },
@@ -156,7 +210,7 @@ export async function getNavigationData(userId: string) {
 
   const folderFeedStats = new Map<
     string,
-    { feedCount: number; issueCount: number }
+    { feedCount: number; issueCount: number; slowFeedCount: number }
   >();
 
   for (const feed of feeds) {
@@ -164,10 +218,13 @@ export async function getNavigationData(userId: string) {
       continue;
     }
 
-    const current = folderFeedStats.get(feed.folderId) ?? { feedCount: 0, issueCount: 0 };
+    const current = folderFeedStats.get(feed.folderId) ?? { feedCount: 0, issueCount: 0, slowFeedCount: 0 };
     current.feedCount += 1;
     if (feed.healthStatus !== "HEALTHY") {
       current.issueCount += 1;
+    }
+    if (feedPerformanceStats.get(feed.id)?.isSlow) {
+      current.slowFeedCount += 1;
     }
     folderFeedStats.set(feed.folderId, current);
   }
@@ -180,10 +237,17 @@ export async function getNavigationData(userId: string) {
         unreadCount: folderCounts.get(folder.id)?.unreadCount ?? 0,
         feedCount: folderFeedStats.get(folder.id)?.feedCount ?? 0,
         issueCount: folderFeedStats.get(folder.id)?.issueCount ?? 0,
+        slowFeedCount: folderFeedStats.get(folder.id)?.slowFeedCount ?? 0,
       },
     })),
     feeds: feeds.map((feed) => ({
       ...feed,
+      performance: feedPerformanceStats.get(feed.id) ?? {
+        latestDurationMs: null,
+        averageDurationMs: null,
+        slowCount24h: 0,
+        isSlow: false,
+      },
       counts: feedCounts.get(feed.id) ?? { unreadCount: 0, totalCount: 0 },
     })),
     stats: {

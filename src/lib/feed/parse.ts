@@ -78,7 +78,35 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
 }
 
 export async function fetchAndParseFeed(url: string, feedId: string) {
-  const response = await fetchWithTimeout(url);
+  return fetchAndParseFeedConditionally(url, feedId);
+}
+
+export async function fetchAndParseFeedConditionally(
+  url: string,
+  feedId: string,
+  options?: {
+    etag?: string | null;
+    lastModified?: string | null;
+  },
+) {
+  const requestHeaders: Record<string, string> = {};
+  if (options?.etag) {
+    requestHeaders["if-none-match"] = options.etag;
+  }
+  if (options?.lastModified) {
+    requestHeaders["if-modified-since"] = options.lastModified;
+  }
+
+  const response = await fetchWithTimeout(url, {
+    headers: requestHeaders,
+  });
+  if (response.status === 304) {
+    return {
+      notModified: true as const,
+      etag: response.headers.get("etag") ?? options?.etag ?? null,
+      lastModified: response.headers.get("last-modified") ?? options?.lastModified ?? null,
+    };
+  }
   if (!response.ok) {
     throw new Error(`Feed returned ${response.status}`);
   }
@@ -129,6 +157,7 @@ export async function fetchAndParseFeed(url: string, feedId: string) {
   });
 
   return {
+    notModified: false as const,
     etag: response.headers.get("etag"),
     lastModified: response.headers.get("last-modified"),
     feed: {
