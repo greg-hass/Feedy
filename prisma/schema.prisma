@@ -128,6 +128,7 @@ model Feed {
   position                 Int              @default(0)
   isPinned                 Boolean          @default(false)
   excludeFromTimeline      Boolean          @default(false)
+  muteRules                Json?
   refreshIntervalMinutes   Int?
   lastRefreshedAt          DateTime?
   lastSuccessfulRefreshAt  DateTime?
@@ -182,6 +183,7 @@ model Item {
   mediaUrl       String?
   youtubeVideoId String?
   redditPermalink String?
+  mutedByRule     Boolean   @default(false)
   publishedAt    DateTime?
   discoveredAt   DateTime  @default(now())
   fetchedAt      DateTime  @default(now())

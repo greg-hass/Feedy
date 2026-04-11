@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 
 import { apiError, assertApiUser, parseJson } from "@/lib/api";
 import { prisma } from "@/lib/db";
@@ -11,13 +12,17 @@ export async function PATCH(request: Request, context: { params: Params }) {
     const user = await assertApiUser();
     const { feedId } = await context.params;
     const input = await parseJson(request, updateFeedSchema);
+    const { muteRules, ...rest } = input;
 
     const feed = await prisma.feed.update({
       where: {
         id: feedId,
         userId: user.id,
       },
-      data: input,
+      data: {
+        ...rest,
+        ...(muteRules ? { muteRules: muteRules as Prisma.InputJsonValue } : {}),
+      },
     });
 
     return NextResponse.json(feed);

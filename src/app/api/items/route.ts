@@ -12,6 +12,7 @@ const itemQuerySchema = z.object({
   saved: z.enum(["true", "false"]).optional(),
   sourceFilter: z.enum(["RSS", "REDDIT", "YOUTUBE"]).optional(),
   stateFilter: z.enum(["UNREAD", "READ", "ALL"]).optional(),
+  q: z.string().optional(),
 });
 
 export async function GET(request: Request) {
@@ -27,6 +28,7 @@ export async function GET(request: Request) {
           saved: query.saved === "true",
           sourceFilter: query.sourceFilter,
           stateFilter: query.stateFilter,
+          q: query.q,
         }),
       {
         userId: user.id,
@@ -35,6 +37,7 @@ export async function GET(request: Request) {
         saved: query.saved === "true",
         sourceFilter: query.sourceFilter ?? "ALL",
         stateFilter: query.stateFilter ?? "UNREAD",
+        qLength: query.q?.length ?? 0,
       },
     );
 

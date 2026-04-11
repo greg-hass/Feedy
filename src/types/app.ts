@@ -8,6 +8,12 @@ export type NavFeed = {
   sourceType: string;
   isPinned: boolean;
   excludeFromTimeline: boolean;
+  muteRules: {
+    titlePatterns: string[];
+    authorPatterns: string[];
+    hideFromTimeline: boolean;
+    autoMarkRead: boolean;
+  } | null;
   position: number;
   refreshIntervalMinutes: number | null;
   lastRefreshedAt: string | null;

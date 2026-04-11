@@ -64,7 +64,7 @@ export default function ReaderPage() {
   if (item.isLoading) {
     return (
       <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(16px,env(safe-area-inset-top))]">
-        <div className="animate-pulse rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-5 shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
+        <div className="animate-pulse rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-5 shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
           <div className="h-3 w-20 rounded-full bg-[var(--surface-muted)]" />
           <div className="mt-3 h-8 w-3/4 rounded-full bg-[var(--surface-muted)]" />
           <div className="mt-4 h-5 w-1/2 rounded-full bg-[var(--surface-muted)]" />
@@ -81,7 +81,7 @@ export default function ReaderPage() {
   if (!item.data) {
     return (
       <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(16px,env(safe-area-inset-top))]">
-        <div className="rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-6 text-center shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
+        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-6 text-center shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
           <p className="text-sm text-secondary">Failed to load article.</p>
           <Button onClick={() => router.back()} className="mt-4">Go back</Button>
         </div>
@@ -142,7 +142,7 @@ export default function ReaderPage() {
         </div>
       </header>
 
-      <div className="screen-enter mt-1 overflow-hidden rounded-[28px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+      <div className="screen-enter mt-1 overflow-hidden rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
         <div className="px-5 pt-4">
           <div className="flex items-center gap-2">
             <FeedAvatar feedId={data.feed.id} title={data.feed.label || data.feed.title} />

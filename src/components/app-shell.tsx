@@ -60,10 +60,17 @@ export function MobileShell({
   return (
     <div className="app-shell screen-enter">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
-        <header className="fixed inset-x-0 top-0 z-40" style={{ backgroundColor: 'var(--app-bg)' }}>
+        <header data-mobile-shell-header="true" className="fixed inset-x-0 top-0 z-40" style={{ backgroundColor: 'var(--app-bg)' }}>
           <div className="mx-auto max-w-md px-5 pb-0 pt-[max(12px,env(safe-area-inset-top))]">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex h-6 items-center rounded-full px-2.5" style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}>
+              <div className="flex h-7 items-center gap-1.5 rounded-full px-2.5" style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}>
+                <img
+                  src="/icon-64.png"
+                  alt=""
+                  className="size-3.5 rounded-[4px]"
+                  loading="eager"
+                  decoding="async"
+                />
                 <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--accent)' }}>
                   Feedy
                 </span>
@@ -157,7 +164,7 @@ export function LoadingSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-[24px]"
           style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}
         >
           <div className="aspect-video w-full shimmer" />
@@ -188,7 +195,7 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+    <div className="rounded-[24px] p-6 text-center" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
       <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
         <span className="text-xl">⚠️</span>
       </div>
@@ -218,7 +225,7 @@ export function EmptyState({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl px-6 py-12 text-center" style={{ backgroundColor: 'var(--surface)', border: '1px dashed var(--border)' }}>
+    <div className="rounded-[24px] px-6 py-12 text-center" style={{ backgroundColor: 'var(--surface)', border: '1px dashed var(--border)' }}>
       {icon && (
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'var(--accent-dim)', color: 'var(--accent)' }}>
           {icon}

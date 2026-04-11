@@ -5,6 +5,7 @@ import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
 import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
 import type { FeedValidationResult } from "@/lib/feed/types";
+import { evaluateFeedMuteRules, normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
 
 async function createValidatedFeedForUser(
   userId: string,
@@ -167,6 +168,7 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
   });
 
   try {
+    const muteRules = normalizeFeedMuteRules(feed.muteRules);
     const parseStartedAt = performance.now();
     const result = await fetchAndParseFeedConditionally(feed.sourceUrl, feed.id, {
       etag: feed.etag,
@@ -250,7 +252,15 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     );
     const dedupeLookupDurationMs = performance.now() - dedupeLookupStartedAt;
     const upsertStartedAt = performance.now();
-    const operations = result.items.map((item) =>
+    const evaluatedItems = result.items.map((item) => {
+      const evaluation = evaluateFeedMuteRules(muteRules, item);
+      return {
+        item,
+        evaluation,
+      };
+    });
+
+    const operations = evaluatedItems.map(({ item, evaluation }) =>
       prisma.item.upsert({
         where: { uniqueKey: item.uniqueKey },
         update: {
@@ -263,6 +273,7 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
           mediaUrl: item.mediaUrl,
           youtubeVideoId: item.youtubeVideoId,
           redditPermalink: item.redditPermalink,
+          mutedByRule: evaluation.muteFromTimeline,
           publishedAt: item.publishedAt ?? undefined,
           fetchedAt: new Date(),
         },
@@ -280,12 +291,23 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
           mediaUrl: item.mediaUrl,
           youtubeVideoId: item.youtubeVideoId,
           redditPermalink: item.redditPermalink,
+          mutedByRule: evaluation.muteFromTimeline,
           publishedAt: item.publishedAt ?? undefined,
         },
       }),
     );
 
     const upserts = await prisma.$transaction(operations);
+    const autoMarkReadIds = upserts
+      .filter((upsert, index) => evaluatedItems[index]?.evaluation.autoMarkRead)
+      .map((upsert) => ({ userId: feed.userId, itemId: upsert.id }));
+
+    if (autoMarkReadIds.length > 0) {
+      await prisma.readState.createMany({
+        data: autoMarkReadIds,
+        skipDuplicates: true,
+      });
+    }
     const upsertDurationMs = performance.now() - upsertStartedAt;
     const newItemsCount = result.items.filter((item) => !existingKeys.has(item.uniqueKey)).length;
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "feedy-shell-v3";
+const CACHE_NAME = "feedy-shell-v5";
 const SHELL_ROUTES = ["/offline"];
 
 self.addEventListener("install", (event) => {

@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { accentKeys } from "@/lib/theme";
 
+const feedMuteRulesSchema = z.object({
+  titlePatterns: z.array(z.string().min(1).max(120)).default([]),
+  authorPatterns: z.array(z.string().min(1).max(120)).default([]),
+  hideFromTimeline: z.boolean().default(false),
+  autoMarkRead: z.boolean().default(false),
+});
+
 export const loginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
@@ -28,6 +35,7 @@ export const updateFeedSchema = z.object({
   isPinned: z.boolean().optional(),
   excludeFromTimeline: z.boolean().optional(),
   refreshIntervalMinutes: z.number().int().min(5).max(1440).nullable().optional(),
+  muteRules: feedMuteRulesSchema.optional(),
 });
 
 export const itemStateSchema = z.object({

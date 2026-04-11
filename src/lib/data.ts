@@ -1,6 +1,7 @@
 import { FeedSourceType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
+import { normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
 
 export type TimelineSourceFilter = "RSS" | "REDDIT" | "YOUTUBE";
 export type TimelineStateFilter = "UNREAD" | "READ" | "ALL";
@@ -43,6 +44,7 @@ const navigationFeedSelect = {
   sourceType: true,
   isPinned: true,
   excludeFromTimeline: true,
+  muteRules: true,
   position: true,
   refreshIntervalMinutes: true,
   lastRefreshedAt: true,
@@ -202,6 +204,7 @@ export async function getNavigationData(userId: string) {
       prisma.item.count({
         where: {
           feed: { userId, excludeFromTimeline: false },
+          mutedByRule: false,
           readStates: { none: { userId } },
         },
       }),
@@ -242,6 +245,7 @@ export async function getNavigationData(userId: string) {
     })),
     feeds: feeds.map((feed) => ({
       ...feed,
+      muteRules: normalizeFeedMuteRules(feed.muteRules),
       performance: feedPerformanceStats.get(feed.id) ?? {
         latestDurationMs: null,
         averageDurationMs: null,
@@ -265,6 +269,7 @@ export async function getTimelineItems(
     saved?: boolean;
     sourceFilter?: TimelineSourceFilter;
     stateFilter?: TimelineStateFilter;
+    q?: string;
   },
 ): Promise<TimelineItemRecord[]> {
   const sourceTypeFilter =
@@ -291,6 +296,27 @@ export async function getTimelineItems(
           ? {}
           : { readStates: { none: { userId } } };
 
+  const searchQuery = options?.q?.trim();
+  const searchWhere = searchQuery
+    ? {
+        OR: [
+          { title: { contains: searchQuery, mode: "insensitive" as const } },
+          { summary: { contains: searchQuery, mode: "insensitive" as const } },
+          { contentHtml: { contains: searchQuery, mode: "insensitive" as const } },
+          { readabilityHtml: { contains: searchQuery, mode: "insensitive" as const } },
+          { author: { contains: searchQuery, mode: "insensitive" as const } },
+          {
+            feed: {
+              OR: [
+                { title: { contains: searchQuery, mode: "insensitive" as const } },
+                { label: { contains: searchQuery, mode: "insensitive" as const } },
+              ],
+            },
+          },
+        ],
+      }
+    : {};
+
   const query = {
     where: {
       feed: {
@@ -301,6 +327,8 @@ export async function getTimelineItems(
         ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
       },
       ...stateWhere,
+      ...(!options?.saved && !options?.feedId && !options?.folderId ? { mutedByRule: false } : {}),
+      ...searchWhere,
     },
     orderBy: [{ publishedAt: "desc" }, { discoveredAt: "desc" }],
     take: 100,

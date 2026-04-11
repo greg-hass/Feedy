@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Bookmark, Check, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
@@ -22,15 +22,36 @@ function formatResumeTime(seconds: number) {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
-export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
+function getInlinePlayerStorageKey(itemId: string, videoId: string) {
+  return `feedy-youtube-inline-open:${itemId}:${videoId}`;
+}
+
+export const ItemCard = memo(function ItemCard({
+  item,
+  inlineOpen,
+  onInlineOpenChange,
+}: {
+  item: ItemRecord;
+  inlineOpen?: boolean;
+  onInlineOpenChange?: (open: boolean) => void;
+}) {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [playInline, setPlayInline] = useState(false);
+  const [internalPlayInline, setInternalPlayInline] = useState(false);
   const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
   const [resumeSeconds, setResumeSeconds] = useState(0);
-  const markedReadFromPlaybackRef = useRef(false);
+  const [inlineStartSeconds, setInlineStartSeconds] = useState(0);
+  const playInline = inlineOpen ?? internalPlayInline;
+  const setPlayInline = onInlineOpenChange ?? setInternalPlayInline;
+  const isYouTube = item.feed.sourceType.includes("YOUTUBE");
+
   const rememberTimelineAnchor = () => {
-    window.sessionStorage.setItem("feedy-timeline-anchor-item", item.id);
+    const article = document.querySelector<HTMLElement>(`[data-timeline-item-id="${item.id}"]`);
+    const viewportTop = article ? Math.max(0, Math.round(article.getBoundingClientRect().top)) : 0;
+    window.sessionStorage.setItem(
+      "feedy-timeline-anchor-item",
+      JSON.stringify({ itemId: item.id, viewportTop, scrollY: Math.max(0, Math.round(window.scrollY)) }),
+    );
   };
 
   useEffect(() => {
@@ -45,15 +66,92 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
   useEffect(() => {
     if (!item.youtubeVideoId) {
       setResumeSeconds(0);
+      setInlineStartSeconds(0);
       return;
     }
 
-    setResumeSeconds(getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId));
+    const savedSeconds = getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId);
+    setResumeSeconds(savedSeconds);
+    setInlineStartSeconds(savedSeconds);
   }, [item.id, item.youtubeVideoId]);
 
   useEffect(() => {
-    markedReadFromPlaybackRef.current = item.read;
-  }, [item.read]);
+    if (!item.youtubeVideoId || typeof window === "undefined") {
+      setPlayInline(false);
+      return;
+    }
+  }, [item.id, item.youtubeVideoId]);
+
+  useEffect(() => {
+    if (!item.youtubeVideoId || typeof window === "undefined") {
+      return;
+    }
+
+    const refreshResume = () => {
+      const savedSeconds = getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId!);
+      setResumeSeconds(savedSeconds);
+      if (!playInline) {
+        setInlineStartSeconds(savedSeconds);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshResume();
+      }
+    };
+
+    window.addEventListener("focus", refreshResume);
+    window.addEventListener("pageshow", refreshResume);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", refreshResume);
+      window.removeEventListener("pageshow", refreshResume);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [item.id, item.youtubeVideoId, playInline]);
+
+  useEffect(() => {
+    if (!item.youtubeVideoId || typeof window === "undefined" || playInline) {
+      return;
+    }
+
+    const savedSeconds = getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId);
+    setResumeSeconds(savedSeconds);
+    setInlineStartSeconds(savedSeconds);
+  }, [item.id, item.youtubeVideoId, playInline]);
+
+  useEffect(() => {
+    if (!item.youtubeVideoId || typeof window === "undefined" || !playInline) {
+      return;
+    }
+
+    const collapseInlinePlayer = () => {
+      const savedSeconds = getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId!);
+      setResumeSeconds(savedSeconds);
+      setInlineStartSeconds(savedSeconds);
+      setPlayInline(false);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        collapseInlinePlayer();
+      }
+    };
+
+    const handlePageHide = () => {
+      collapseInlinePlayer();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [item.id, item.youtubeVideoId, playInline, setPlayInline]);
 
   const updateState = useMutation({
     mutationFn: (body: { read?: boolean; bookmarked?: boolean }) =>
@@ -68,7 +166,6 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
     },
   });
 
-  const isYouTube = item.feed.sourceType.includes("YOUTUBE");
   const thumbnailUrl = isYouTube && item.youtubeVideoId
     ? `https://i.ytimg.com/vi/${item.youtubeVideoId}/hqdefault.jpg`
     : item.mediaUrl;
@@ -78,10 +175,13 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
   return (
     <article
       data-timeline-item-id={item.id}
-      className="group overflow-hidden rounded-2xl border border-subtle bg-surface transition-all duration-300 hover:border-[var(--accent)]/20 hover:shadow-lg"
-      style={{ contentVisibility: "auto", containIntrinsicSize: "420px" }}
+      className="group overflow-hidden rounded-[24px] border border-subtle bg-surface transition-all duration-300 hover:border-[var(--accent)]/20 hover:shadow-lg"
+      style={
+        isYouTube && playInline
+          ? undefined
+          : { contentVisibility: "auto", containIntrinsicSize: "420px" }
+      }
     >
-      {/* Thumbnail */}
       {thumbnailUrl && (
         isYouTube && item.youtubeVideoId ? (
           <div className="relative overflow-hidden">
@@ -90,20 +190,23 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
                 itemId={item.id}
                 videoId={item.youtubeVideoId}
                 title={itemTitle}
-                onProgressChange={setResumeSeconds}
+                startSeconds={inlineStartSeconds}
+                onProgressChange={(seconds) => {
+                  setResumeSeconds(seconds);
+                }}
                 onMeaningfulPlayback={() => {
-                  if (markedReadFromPlaybackRef.current) {
-                    return;
+                  if (!item.read) {
+                    updateState.mutate({ read: true });
                   }
-
-                  markedReadFromPlaybackRef.current = true;
-                  updateState.mutate({ read: true });
                 }}
               />
             ) : (
               <button
                 type="button"
-                onClick={() => setPlayInline(true)}
+                onClick={() => {
+                  setInlineStartSeconds(resumeSeconds);
+                  setPlayInline(true);
+                }}
                 className="relative block w-full overflow-hidden text-left"
                 aria-label={`Play ${itemTitle} inline`}
               >
@@ -124,11 +227,8 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
                     <Play className="ml-1 h-6 w-6 text-black" fill="currentColor" />
                   </div>
                 </div>
-                <div className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur">
-                  Play inline
-                </div>
                 {resumeSeconds > 1 ? (
-                  <div className="absolute bottom-3 left-3 rounded-full bg-[var(--accent)]/92 px-3 py-1.5 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.24)]">
+                  <div className="absolute left-3 top-3 rounded-full bg-[var(--accent)]/92 px-3 py-1.5 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.24)]">
                     Resume {formatResumeTime(resumeSeconds)}
                   </div>
                 ) : null}
@@ -165,9 +265,7 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
         )
       )}
 
-      {/* Content */}
       <div className="p-4">
-        {/* Feed Source */}
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
           <p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-secondary">
@@ -175,21 +273,18 @@ export const ItemCard = memo(function ItemCard({ item }: { item: ItemRecord }) {
           </p>
         </div>
 
-        {/* Title */}
         <Link href={`/reader/${item.id}`} onClick={rememberTimelineAnchor}>
           <h3 className="mt-2 text-[17px] font-semibold leading-[1.35] tracking-[-0.01em] line-clamp-2 transition-colors duration-200 group-hover:text-[var(--accent)]">
             {itemTitle}
           </h3>
         </Link>
 
-        {/* Summary */}
         {item.summary && !thumbnailUrl && (
           <p className="mt-2 text-[14px] leading-relaxed text-secondary line-clamp-2">
             {decodeHtmlEntities(item.summary)}
           </p>
         )}
 
-        {/* Footer */}
         <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-tertiary">
             <span>{relativeTime(item.publishedAt)}</span>

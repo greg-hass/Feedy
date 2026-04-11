@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, Trash2, Upload, X } from "lucide-react";
+import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { MobileShell, useMe, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
@@ -252,6 +252,7 @@ export function UnreadScreen() {
   const timelineStateStorageKey = "feedy-timeline-state-v2";
   const timelineSourceStorageKey = "feedy-timeline-source-v2";
   const timelineAnchorStorageKey = "feedy-timeline-anchor-item";
+  const [timelineFixedTop, setTimelineFixedTop] = useState(146);
   const [stateFilter, setStateFilter] = useState<"UNREAD" | "ALL" | "READ">(() => {
     if (typeof window === "undefined") return "ALL";
     const saved = window.sessionStorage.getItem(timelineStateStorageKey);
@@ -262,12 +263,49 @@ export function UnreadScreen() {
     const saved = window.sessionStorage.getItem(timelineSourceStorageKey);
     return saved === "ALL" || saved === "RSS" || saved === "REDDIT" || saved === "YOUTUBE" ? saved : "ALL";
   });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [inlineOpenMap, setInlineOpenMap] = useState<Record<string, boolean>>({});
+  const [query, setQuery] = useState("");
+  const [timelinePanelHeight, setTimelinePanelHeight] = useState(0);
   const restoredScrollRef = useRef(false);
+  const timelinePanelRef = useRef<HTMLElement | null>(null);
+  const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
     window.sessionStorage.setItem(timelineStateStorageKey, stateFilter);
     window.sessionStorage.setItem(timelineSourceStorageKey, sourceFilter);
   }, [sourceFilter, stateFilter, timelineSourceStorageKey, timelineStateStorageKey]);
+
+  useEffect(() => {
+    const clearInlinePlayers = () => {
+      setInlineOpenMap({});
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        clearInlinePlayers();
+      }
+    };
+
+    window.addEventListener("pagehide", clearInlinePlayers);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pagehide", clearInlinePlayers);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      document.getElementById("timeline-search-input")?.focus();
+    });
+  }, [searchOpen]);
 
   const params = new URLSearchParams();
   if (stateFilter !== "UNREAD") {
@@ -276,22 +314,80 @@ export function UnreadScreen() {
   if (sourceFilter !== "ALL") {
     params.set("sourceFilter", sourceFilter);
   }
+  if (deferredQuery.trim()) {
+    params.set("q", deferredQuery.trim());
+  }
   const itemsUrl = `/api/items${params.toString() ? `?${params.toString()}` : ""}`;
 
   const items = useQuery({
-    queryKey: ["items", "timeline", stateFilter, sourceFilter],
+    queryKey: ["items", "timeline", stateFilter, sourceFilter, deferredQuery.trim()],
     queryFn: () => api<ItemRecord[]>(itemsUrl),
     staleTime: 15_000,
   });
   const refresh = useRefreshController("/api/refresh/all", ["items"]);
   const queryClient = useQueryClient();
   const [pullDistance, setPullDistance] = useState(0);
+  const filtersActive = stateFilter !== "ALL" || sourceFilter !== "ALL";
+  const timelinePanelOpen = filtersOpen || searchOpen || !!query.trim();
 
   const scrollStorageKey = `feedy-timeline-scroll:${stateFilter}:${sourceFilter}`;
+  const timelineSectionGap = 12;
+  const timelineControlsTopGap = timelineSectionGap;
+  const timelineControlsBottomGap = timelineSectionGap;
+  const timelineContentPullUp = filtersOpen && !searchOpen && !query.trim() ? 9 : 0;
+  const timelineControlsPanelHeight = timelinePanelOpen ? timelinePanelHeight : 0;
 
   useEffect(() => {
     restoredScrollRef.current = false;
   }, [stateFilter, sourceFilter]);
+
+  useEffect(() => {
+    const updateHeaderOffset = () => {
+      const header = document.querySelector<HTMLElement>("[data-mobile-shell-header='true']");
+      const nextTop = header?.offsetHeight ?? 146;
+      setTimelineFixedTop(nextTop);
+    };
+
+    updateHeaderOffset();
+    window.addEventListener("resize", updateHeaderOffset);
+
+    return () => {
+      window.removeEventListener("resize", updateHeaderOffset);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const updatePanelHeight = () => {
+      const nextHeight = timelinePanelRef.current?.offsetHeight ?? 0;
+      setTimelinePanelHeight(nextHeight);
+    };
+
+    updatePanelHeight();
+    const panelElement = timelinePanelRef.current;
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" && panelElement
+        ? new ResizeObserver(() => updatePanelHeight())
+        : null;
+
+    if (resizeObserver && panelElement) {
+      resizeObserver.observe(panelElement);
+    }
+    window.addEventListener("resize", updatePanelHeight);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updatePanelHeight);
+    };
+  }, [filtersOpen, query, searchOpen]);
+
+  useEffect(() => {
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
 
   useEffect(() => {
     const saveScroll = () => {
@@ -310,21 +406,52 @@ export function UnreadScreen() {
       return;
     }
 
-    const anchorItemId = window.sessionStorage.getItem(timelineAnchorStorageKey);
+    const anchorStateRaw = window.sessionStorage.getItem(timelineAnchorStorageKey);
     const savedScroll = Number(window.sessionStorage.getItem(scrollStorageKey) || "0");
     restoredScrollRef.current = true;
 
     requestAnimationFrame(() => {
-      if (anchorItemId) {
+      if (anchorStateRaw) {
+        let anchorItemId: string | null = null;
+        let viewportTop = timelineFixedTop + timelineControlsPanelHeight;
+        let exactScrollY: number | null = null;
+
+        try {
+          const parsed = JSON.parse(anchorStateRaw) as { itemId?: string; viewportTop?: number; scrollY?: number };
+          anchorItemId = parsed.itemId ?? null;
+          if (typeof parsed.viewportTop === "number") {
+            viewportTop = parsed.viewportTop;
+          }
+          if (typeof parsed.scrollY === "number") {
+            exactScrollY = parsed.scrollY;
+          }
+        } catch {
+          anchorItemId = anchorStateRaw;
+        }
+
+        if (typeof exactScrollY === "number") {
+          const restoreExactScroll = () => {
+            window.scrollTo({
+              top: Math.max(exactScrollY ?? 0, 0),
+              behavior: "auto",
+            });
+          };
+
+          restoreExactScroll();
+          window.requestAnimationFrame(restoreExactScroll);
+          window.setTimeout(restoreExactScroll, 60);
+          window.sessionStorage.removeItem(timelineAnchorStorageKey);
+          return;
+        }
+
         const anchorElement = document.querySelector<HTMLElement>(
           `[data-timeline-item-id="${anchorItemId}"]`,
         );
 
         if (anchorElement) {
           const anchorTop = anchorElement.getBoundingClientRect().top + window.scrollY;
-          const fixedOffset = 190;
           window.scrollTo({
-            top: Math.max(anchorTop - fixedOffset, 0),
+            top: Math.max(anchorTop - viewportTop, 0),
             behavior: "auto",
           });
           window.sessionStorage.removeItem(timelineAnchorStorageKey);
@@ -367,7 +494,7 @@ export function UnreadScreen() {
       }
 
       const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, button, a")) {
+      if (target?.closest("input, textarea, select")) {
         startY = null;
         dragging = false;
         latestDistance = 0;
@@ -426,9 +553,42 @@ export function UnreadScreen() {
   return (
     <MobileShell
       title="Timeline"
-      subtitle="Your latest reading across every source"
+      subtitle="Your latest reading"
       actions={
-        <RefreshButton controller={refresh} />
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              if (searchOpen && !query.trim()) {
+                setSearchOpen(false);
+                return;
+              }
+
+              setSearchOpen(true);
+            }}
+            className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] ${
+              searchOpen || query.trim()
+                ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
+                : "border-subtle bg-[var(--surface)] text-secondary"
+            }`}
+            aria-label={searchOpen || query.trim() ? "Hide article search" : "Search articles"}
+          >
+            <Search className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((current) => !current)}
+            className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] ${
+              filtersOpen || filtersActive
+                ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
+                : "border-subtle bg-[var(--surface)] text-secondary"
+            }`}
+            aria-label={filtersOpen ? "Hide timeline filters" : "Show timeline filters"}
+          >
+            <SlidersHorizontal className="size-4" />
+          </button>
+          <RefreshButton controller={refresh} />
+        </>
       }
     >
       {pullDistance > 0 && !refresh.active ? (
@@ -439,62 +599,138 @@ export function UnreadScreen() {
         </div>
       ) : null}
 
-      <section className="mb-3 grid w-full grid-cols-2 gap-3">
-        <label className="block">
-          <span className="sr-only">Timeline state</span>
-          <select
-            value={stateFilter}
-            onChange={(event) => setStateFilter(event.target.value as "UNREAD" | "ALL" | "READ")}
-            className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+      {timelinePanelOpen ? (
+        <section
+          ref={timelinePanelRef}
+          className="fixed inset-x-0 z-30"
+          style={{
+            top: `${timelineFixedTop}px`,
+            backgroundColor: "var(--app-bg)",
+          }}
+        >
+          <div
+            className="mx-auto w-full max-w-md px-5"
+            style={{ paddingTop: `${timelineControlsTopGap}px`, paddingBottom: `${timelineControlsBottomGap}px` }}
           >
-            <option value="UNREAD">Unread</option>
-            <option value="ALL">All</option>
-            <option value="READ">Read</option>
-          </select>
-        </label>
-        <label className="block">
-          <span className="sr-only">Timeline source</span>
-          <select
-            value={sourceFilter}
-            onChange={(event) => setSourceFilter(event.target.value as "ALL" | "RSS" | "REDDIT" | "YOUTUBE")}
-            className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
-          >
-            <option value="ALL">All feeds</option>
-            <option value="RSS">RSS</option>
-            <option value="REDDIT">Reddit</option>
-            <option value="YOUTUBE">YouTube</option>
-          </select>
-        </label>
-      </section>
+            {filtersOpen ? (
+              <div className="grid w-full grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="sr-only">Timeline state</span>
+                  <select
+                    value={stateFilter}
+                    onChange={(event) => setStateFilter(event.target.value as "UNREAD" | "ALL" | "READ")}
+                    className="h-12 w-full rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+                  >
+                    <option value="UNREAD">Unread</option>
+                    <option value="ALL">All</option>
+                    <option value="READ">Read</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="sr-only">Timeline source</span>
+                  <select
+                    value={sourceFilter}
+                    onChange={(event) => setSourceFilter(event.target.value as "ALL" | "RSS" | "REDDIT" | "YOUTUBE")}
+                    className="h-12 w-full rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+                  >
+                    <option value="ALL">All feeds</option>
+                    <option value="RSS">RSS</option>
+                    <option value="REDDIT">Reddit</option>
+                    <option value="YOUTUBE">YouTube</option>
+                  </select>
+                </label>
+              </div>
+            ) : null}
+
+            {searchOpen || query.trim() ? (
+              <section className={filtersOpen ? "mt-3" : undefined}>
+                <div className="flex items-center gap-3 rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3.5">
+                  <Search className="size-4 shrink-0 text-secondary" />
+                  <Input
+                    id="timeline-search-input"
+                    value={query}
+                    onChange={(event) => {
+                      const nextQuery = event.target.value;
+                      setQuery(nextQuery);
+
+                      if (!nextQuery.trim()) {
+                        setSearchOpen(false);
+                      } else {
+                        setSearchOpen(true);
+                      }
+                    }}
+                    placeholder="Search articles, feeds, people, topics..."
+                    className="h-11 border-0 bg-transparent px-0"
+                  />
+                </div>
+              </section>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      <div style={{ height: `${timelineControlsPanelHeight}px` }} />
 
       {items.isLoading ? (
         <LoadingSkeleton />
       ) : items.error ? (
         <ErrorState message={items.error.message} onRetry={() => items.refetch()} />
       ) : items.data?.length ? (
-        <div className="space-y-3">
+        <div
+          className="space-y-3"
+          style={
+            timelineContentPullUp
+              ? { marginTop: `-${timelineContentPullUp}px`, paddingTop: "1px" }
+              : undefined
+          }
+        >
           {items.data.map((item) => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard
+              key={item.id}
+              item={item}
+              inlineOpen={inlineOpenMap[item.id]}
+              onInlineOpenChange={(open) => {
+                setInlineOpenMap((current) => {
+                  if (open) {
+                    return { ...current, [item.id]: true };
+                  }
+
+                  const next = { ...current };
+                  delete next[item.id];
+                  return next;
+                });
+              }}
+            />
           ))}
         </div>
       ) : (
-        <EmptyState
-          title={
-            stateFilter === "READ"
-              ? "No read items here"
-              : stateFilter === "ALL"
-                ? "Nothing in this view"
-              : "Inbox clear"
+        <div
+          style={
+            timelineContentPullUp
+              ? { marginTop: `-${timelineContentPullUp}px`, paddingTop: "1px" }
+              : undefined
           }
-          body={
-            stateFilter === "READ"
-              ? "Items you open will appear here so you can revisit them."
-              : stateFilter === "ALL"
-                ? "Try another feed type or refresh to pull in more items."
-              : "New items will land here as feeds refresh."
-          }
-          icon={<Bookmark className="size-6" />}
-        />
+        >
+          <EmptyState
+            title={
+              stateFilter === "READ"
+                ? "No read items here"
+                : stateFilter === "ALL"
+                  ? "Nothing in this view"
+                : "Inbox clear"
+            }
+            body={
+              deferredQuery.trim()
+                ? "Try a different phrase, topic, feed name, or source filter."
+                : stateFilter === "READ"
+                ? "Items you open will appear here so you can revisit them."
+                : stateFilter === "ALL"
+                  ? "Try another feed type or refresh to pull in more items."
+                : "New items will land here as feeds refresh."
+            }
+            icon={<Bookmark className="size-6" />}
+          />
+        </div>
       )}
     </MobileShell>
   );
@@ -908,14 +1144,185 @@ export function FoldersScreen() {
 }
 
 export function SavedScreen() {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [inlineOpenMap, setInlineOpenMap] = useState<Record<string, boolean>>({});
+  const [query, setQuery] = useState("");
+  const [pullDistance, setPullDistance] = useState(0);
+  const deferredQuery = useDeferredValue(query);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!searchOpen) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      document.getElementById("saved-search-input")?.focus();
+    });
+  }, [searchOpen]);
+
+  useEffect(() => {
+    const clearInlinePlayers = () => {
+      setInlineOpenMap({});
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        clearInlinePlayers();
+      }
+    };
+
+    window.addEventListener("pagehide", clearInlinePlayers);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pagehide", clearInlinePlayers);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  const params = new URLSearchParams({ saved: "true" });
+  if (deferredQuery.trim()) {
+    params.set("q", deferredQuery.trim());
+  }
   const items = useQuery({
-    queryKey: ["items", "saved"],
-    queryFn: () => api<ItemRecord[]>("/api/items?saved=true"),
+    queryKey: ["items", "saved", deferredQuery.trim()],
+    queryFn: () => api<ItemRecord[]>(`/api/items?${params.toString()}`),
     staleTime: 15_000,
   });
 
+  useEffect(() => {
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+
+    if (!isStandalone) {
+      return;
+    }
+
+    let startY: number | null = null;
+    let dragging = false;
+    let latestDistance = 0;
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (window.scrollY > 4) {
+        startY = null;
+        dragging = false;
+        latestDistance = 0;
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, button, a")) {
+        startY = null;
+        dragging = false;
+        latestDistance = 0;
+        return;
+      }
+
+      startY = event.touches[0]?.clientY ?? null;
+      dragging = false;
+      latestDistance = 0;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (startY == null || window.scrollY > 4) {
+        return;
+      }
+
+      const currentY = event.touches[0]?.clientY ?? startY;
+      const delta = currentY - startY;
+      if (delta <= 0) {
+        return;
+      }
+
+      dragging = true;
+      latestDistance = Math.min(88, Math.round(delta * 0.45));
+      setPullDistance(latestDistance);
+      event.preventDefault();
+    };
+
+    const finishDrag = () => {
+      if (dragging) {
+        void items.refetch();
+        void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
+      }
+
+      startY = null;
+      dragging = false;
+      latestDistance = 0;
+      setPullDistance(0);
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", finishDrag, { passive: true });
+    window.addEventListener("touchcancel", finishDrag, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", finishDrag);
+      window.removeEventListener("touchcancel", finishDrag);
+    };
+  }, [items.refetch, queryClient]);
+
   return (
-    <MobileShell title="Saved" subtitle="Your quiet backlog">
+    <MobileShell
+      title="Saved"
+      subtitle="Your quiet backlog"
+      actions={
+        <button
+          type="button"
+          onClick={() => {
+            if (searchOpen && !query.trim()) {
+              setSearchOpen(false);
+              return;
+            }
+
+            setSearchOpen(true);
+          }}
+          className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] ${
+            searchOpen || query.trim()
+              ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
+              : "border-subtle bg-[var(--surface)] text-secondary"
+          }`}
+          aria-label={searchOpen || query.trim() ? "Hide saved search" : "Search saved items"}
+        >
+          <Search className="size-4" />
+        </button>
+      }
+    >
+      {pullDistance > 0 ? (
+        <div className="mb-2 flex items-center justify-center">
+          <div className="rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+            Pull to refresh saved items
+          </div>
+        </div>
+      ) : null}
+      {searchOpen || query.trim() ? (
+        <section className="mb-3">
+          <div className="flex items-center gap-3 rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3.5">
+            <Search className="size-4 shrink-0 text-secondary" />
+            <Input
+              id="saved-search-input"
+              value={query}
+              onChange={(event) => {
+                const nextQuery = event.target.value;
+                setQuery(nextQuery);
+
+                if (!nextQuery.trim()) {
+                  setSearchOpen(false);
+                } else {
+                  setSearchOpen(true);
+                }
+              }}
+              placeholder="Search saved articles and videos..."
+              className="h-11 border-0 bg-transparent px-0"
+            />
+          </div>
+        </section>
+      ) : null}
       {items.isLoading ? (
         <LoadingSkeleton />
       ) : items.error ? (
@@ -923,13 +1330,32 @@ export function SavedScreen() {
       ) : items.data?.length ? (
         <div className="space-y-3">
           {items.data.map((item) => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard
+              key={item.id}
+              item={item}
+              inlineOpen={inlineOpenMap[item.id]}
+              onInlineOpenChange={(open) => {
+                setInlineOpenMap((current) => {
+                  if (open) {
+                    return { ...current, [item.id]: true };
+                  }
+
+                  const next = { ...current };
+                  delete next[item.id];
+                  return next;
+                });
+              }}
+            />
           ))}
         </div>
       ) : (
         <EmptyState
-          title="Nothing saved yet"
-          body="Bookmark articles, videos, or Reddit posts to keep them close."
+          title={deferredQuery.trim() ? "No saved matches" : "Nothing saved yet"}
+          body={
+            deferredQuery.trim()
+              ? "Try a different phrase, feed name, or keyword."
+              : "Bookmark articles, videos, or Reddit posts to keep them close."
+          }
           icon={<Bookmark className="size-6" />}
         />
       )}
@@ -1143,11 +1569,13 @@ export function DiscoverScreen() {
       )}
 
       {!query.trim() && (
-        <EmptyState
-          title="Search for feeds"
-          body="Type a keyword to search your library and discover new feeds."
-          icon={<Search className="size-6" />}
-        />
+        <div className="mt-4">
+          <EmptyState
+            title="Search for feeds"
+            body="Type a keyword to search your library and discover new feeds."
+            icon={<Search className="size-6" />}
+          />
+        </div>
       )}
     </MobileShell>
   );
