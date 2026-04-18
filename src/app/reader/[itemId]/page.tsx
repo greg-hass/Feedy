@@ -17,11 +17,36 @@ export default function ReaderPage() {
   const queryClient = useQueryClient();
   const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
   const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
+  const readerTopInset = "calc(max(12px, env(safe-area-inset-top)) + 3.5rem)";
 
   const forceScrollTop = () => {
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+  };
+
+  const shareArticle = async (title: string, canonicalUrl: string) => {
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title, url: canonicalUrl });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(canonicalUrl);
+        return;
+      } catch {
+        // Fall through to the manual prompt fallback below.
+      }
+    }
+
+    window.prompt("Copy link", canonicalUrl);
   };
 
   const item = useQuery({
@@ -96,7 +121,7 @@ export default function ReaderPage() {
 
   if (item.isLoading) {
     return (
-      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(16px,env(safe-area-inset-top))]">
+      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
         <div className="animate-pulse rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-5 shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
           <div className="h-3 w-20 rounded-full bg-[var(--surface-muted)]" />
           <div className="mt-3 h-8 w-3/4 rounded-full bg-[var(--surface-muted)]" />
@@ -113,7 +138,7 @@ export default function ReaderPage() {
 
   if (!item.data) {
     return (
-      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(16px,env(safe-area-inset-top))]">
+      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
         <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-6 text-center shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
           <p className="text-sm text-secondary">Failed to load article.</p>
           <Button onClick={() => router.back()} className="mt-4">Go back</Button>
@@ -125,17 +150,17 @@ export default function ReaderPage() {
   const data = item.data;
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(12px,env(safe-area-inset-top))]">
-      <header
-        className="sticky z-40 -mx-4 mb-2 px-4 pb-3 pt-1"
-        style={{
-          top: "max(12px, env(safe-area-inset-top))",
-          backgroundColor: "var(--app-bg)",
-        }}
+    <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
+      <div
+        className="overflow-hidden rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
+        style={{ overflowAnchor: "none" }}
       >
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface-strong)_92%,black_8%)] px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+        <div className="px-5 pt-5">
           <div className="flex items-center justify-between">
-            <button onClick={() => router.back()} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary">
+            <button
+              onClick={() => router.back()}
+              className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
+            >
               <ArrowLeft className="size-5" />
             </button>
             <div className="flex items-center gap-2">
@@ -160,26 +185,11 @@ export default function ReaderPage() {
                 <>
                   <button
                     type="button"
-                    onClick={async () => {
-                      if (navigator.share && data.canonicalUrl) {
-                        try {
-                          await navigator.share({ title: data.title, url: data.canonicalUrl });
-                          return;
-                        } catch {
-                          // Fall through to the copy-link fallback below.
-                        }
+                    onClick={() => {
+                      if (!data.canonicalUrl) {
+                        return;
                       }
-
-                      if (navigator.clipboard?.writeText && data.canonicalUrl) {
-                        try {
-                          await navigator.clipboard.writeText(data.canonicalUrl);
-                          return;
-                        } catch {
-                          // Fall through to the manual prompt fallback below.
-                        }
-                      }
-
-                      window.prompt("Copy link", data.canonicalUrl ?? undefined);
+                      void shareArticle(data.title, data.canonicalUrl);
                     }}
                     className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
                   >
@@ -197,31 +207,24 @@ export default function ReaderPage() {
               )}
             </div>
           </div>
-        </div>
-      </header>
 
-      <div
-        className="overflow-hidden rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
-        style={{ overflowAnchor: "none" }}
-      >
-        <div className="px-5 pt-4">
-          <div className="flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-2">
             <FeedAvatar feedId={data.feed.id} title={data.feed.label || data.feed.title} />
             <p className="text-xs uppercase tracking-[0.18em] text-secondary">
               {data.feed.label || data.feed.title}
             </p>
           </div>
 
-          <h1 className="mt-3 text-[2rem] font-semibold leading-[1.08] tracking-[-0.04em]">{data.title}</h1>
+          <h1 className="mt-2 text-[2rem] font-semibold leading-[1.08] tracking-[-0.04em]">{data.title}</h1>
 
-          <div className="mt-3 flex items-center justify-between text-xs text-secondary">
+          <div className="mt-2 flex items-center justify-between text-xs text-secondary">
             <span>{new Date(data.publishedAt || 0).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
             <span className="rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
               {data.feed.sourceType.replaceAll("_", " ")}
             </span>
           </div>
 
-          <div className="mt-3">
+          <div className="mt-2">
             <Button
               variant="secondary"
               size="sm"

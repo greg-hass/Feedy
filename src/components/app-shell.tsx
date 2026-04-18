@@ -51,11 +51,11 @@ export function MobileShell({
 
   const unreadTotal = me.data?.navigation.stats.unreadTotal ?? 0;
   const totalFeeds = me.data?.navigation.feeds.length ?? 0;
+  const accent = me.data?.user.settings.accentColor ?? "EMERALD";
 
   useEffect(() => {
-    const accent = me.data?.user.settings.accentColor ?? "EMERALD";
     document.documentElement.dataset.accent = accent;
-  }, [me.data?.user.settings.accentColor]);
+  }, [accent]);
 
   return (
     <div className="app-shell screen-enter">
@@ -68,7 +68,7 @@ export function MobileShell({
                 style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}
               >
                 <img
-                  src="/icon-64.png"
+                  src={`/icon-variants/${accent.toLowerCase()}-64.png`}
                   alt=""
                   className="size-5 shrink-0 rounded-[6px]"
                   loading="eager"

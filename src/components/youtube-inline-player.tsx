@@ -34,6 +34,8 @@ type YouTubePlayer = {
   destroy: () => void;
   getCurrentTime: () => number;
   getDuration: () => number;
+  mute: () => void;
+  unMute: () => void;
   pauseVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
 };
@@ -94,18 +96,24 @@ export function YouTubeInlinePlayer({
   title,
   autoplay = true,
   startSeconds = 0,
+  variant = "framed",
+  className,
   onReady,
   onProgressChange,
   onMeaningfulPlayback,
+  onPlaybackStateChange,
 }: {
   itemId: string;
   videoId: string;
   title: string;
   autoplay?: boolean;
   startSeconds?: number;
+  variant?: "framed" | "mount";
+  className?: string;
   onReady?: () => void;
   onProgressChange?: (seconds: number) => void;
   onMeaningfulPlayback?: () => void;
+  onPlaybackStateChange?: (state: "playing" | "paused" | "buffering" | "ended") => void;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -113,12 +121,25 @@ export function YouTubeInlinePlayer({
   const readyCallbackRef = useRef(onReady);
   const progressCallbackRef = useRef(onProgressChange);
   const meaningfulCallbackRef = useRef(onMeaningfulPlayback);
+  const playbackStateCallbackRef = useRef(onPlaybackStateChange);
   const meaningfulPlaybackTriggeredRef = useRef(startSeconds >= 20);
   const lastSavedSecondsRef = useRef(Math.max(0, Math.floor(startSeconds)));
 
-  readyCallbackRef.current = onReady;
-  progressCallbackRef.current = onProgressChange;
-  meaningfulCallbackRef.current = onMeaningfulPlayback;
+  useEffect(() => {
+    readyCallbackRef.current = onReady;
+  }, [onReady]);
+
+  useEffect(() => {
+    progressCallbackRef.current = onProgressChange;
+  }, [onProgressChange]);
+
+  useEffect(() => {
+    meaningfulCallbackRef.current = onMeaningfulPlayback;
+  }, [onMeaningfulPlayback]);
+
+  useEffect(() => {
+    playbackStateCallbackRef.current = onPlaybackStateChange;
+  }, [onPlaybackStateChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -198,6 +219,7 @@ export function YouTubeInlinePlayer({
               lastSavedSecondsRef.current = 0;
               window.localStorage.removeItem(getYouTubeProgressStorageKey(itemId, videoId));
               progressCallbackRef.current?.(0);
+              playbackStateCallbackRef.current?.("ended");
               return;
             }
 
@@ -213,6 +235,14 @@ export function YouTubeInlinePlayer({
               } catch {
                 // Ignore transient player access failures.
               }
+            }
+
+            if (data === window.YT?.PlayerState?.PLAYING) {
+              playbackStateCallbackRef.current?.("playing");
+            } else if (data === window.YT?.PlayerState?.PAUSED) {
+              playbackStateCallbackRef.current?.("paused");
+            } else if (data === window.YT?.PlayerState?.BUFFERING) {
+              playbackStateCallbackRef.current?.("buffering");
             }
 
             startTimer();
@@ -241,8 +271,18 @@ export function YouTubeInlinePlayer({
     };
   }, [autoplay, itemId, startSeconds, videoId]);
 
+  if (variant === "mount") {
+    return (
+      <div
+        ref={mountRef}
+        className={className ?? "h-full w-full"}
+        aria-label={title}
+      />
+    );
+  }
+
   return (
-    <div className="aspect-video w-full bg-black">
+    <div className={`aspect-video w-full bg-black${className ? ` ${className}` : ""}`}>
       <div
         ref={mountRef}
         className="h-full w-full"
