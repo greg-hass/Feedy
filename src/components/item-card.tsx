@@ -22,10 +22,6 @@ function formatResumeTime(seconds: number) {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
-function getInlinePlayerStorageKey(itemId: string, videoId: string) {
-  return `feedy-youtube-inline-open:${itemId}:${videoId}`;
-}
-
 export const ItemCard = memo(function ItemCard({
   item,
   inlineOpen,
@@ -46,11 +42,16 @@ export const ItemCard = memo(function ItemCard({
   const isYouTube = item.feed.sourceType.includes("YOUTUBE");
 
   const rememberTimelineAnchor = () => {
-    const article = document.querySelector<HTMLElement>(`[data-timeline-item-id="${item.id}"]`);
-    const viewportTop = article ? Math.max(0, Math.round(article.getBoundingClientRect().top)) : 0;
     window.sessionStorage.setItem(
       "feedy-timeline-anchor-item",
-      JSON.stringify({ itemId: item.id, viewportTop, scrollY: Math.max(0, Math.round(window.scrollY)) }),
+      JSON.stringify({
+        // Save the clicked item's id so restoration can scroll directly to
+        // the element rather than relying on a pixel offset. Pixel offsets are
+        // fragile because contentVisibility:auto gives the browser a fake page
+        // height on fresh mount, causing scrollTo to land at the wrong place.
+        itemId: item.id,
+        scrollY: Math.max(0, Math.round(window.scrollY)),
+      }),
     );
   };
 
@@ -73,7 +74,7 @@ export const ItemCard = memo(function ItemCard({
     const savedSeconds = getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId);
     setResumeSeconds(savedSeconds);
     setInlineStartSeconds(savedSeconds);
-  }, [item.id, item.youtubeVideoId]);
+  }, [item.id, item.youtubeVideoId, setPlayInline]);
 
   useEffect(() => {
     if (!item.youtubeVideoId || typeof window === "undefined") {
@@ -176,11 +177,9 @@ export const ItemCard = memo(function ItemCard({
     <article
       data-timeline-item-id={item.id}
       className="group overflow-hidden rounded-[24px] border border-subtle bg-surface transition-all duration-300 hover:border-[var(--accent)]/20 hover:shadow-lg"
-      style={
-        isYouTube && playInline
-          ? undefined
-          : { contentVisibility: "auto", containIntrinsicSize: "420px" }
-      }
+      // contentVisibility:auto was removed — its containIntrinsicSize placeholder
+      // gave the browser an inaccurate page height on fresh mount, making pixel-
+      // based scroll restoration unreliable after navigating back from an article.
     >
       {thumbnailUrl && (
         isYouTube && item.youtubeVideoId ? (
@@ -242,7 +241,12 @@ export const ItemCard = memo(function ItemCard({
             )}
           </div>
         ) : (
-          <Link href={`/reader/${item.id}`} onClick={rememberTimelineAnchor} className="relative block overflow-hidden">
+          <Link
+            href={`/reader/${item.id}`}
+            onPointerDown={rememberTimelineAnchor}
+            onClick={rememberTimelineAnchor}
+            className="relative block overflow-hidden"
+          >
             <div className="aspect-video w-full bg-surface-muted">
               <img
                 src={thumbnailUrl}
@@ -273,7 +277,11 @@ export const ItemCard = memo(function ItemCard({
           </p>
         </div>
 
-        <Link href={`/reader/${item.id}`} onClick={rememberTimelineAnchor}>
+        <Link
+          href={`/reader/${item.id}`}
+          onPointerDown={rememberTimelineAnchor}
+          onClick={rememberTimelineAnchor}
+        >
           <h3 className="mt-2 text-[17px] font-semibold leading-[1.35] tracking-[-0.01em] line-clamp-2 transition-colors duration-200 group-hover:text-[var(--accent)]">
             {itemTitle}
           </h3>
@@ -316,7 +324,11 @@ export const ItemCard = memo(function ItemCard({
               <Bookmark className="h-4 w-4" fill={item.bookmarked ? "currentColor" : "none"} />
             </button>
 
-            <Link href={`/reader/${item.id}`} onClick={rememberTimelineAnchor}>
+            <Link
+              href={`/reader/${item.id}`}
+              onPointerDown={rememberTimelineAnchor}
+              onClick={rememberTimelineAnchor}
+            >
               {item.read ? (
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_8px_18px_rgba(245,158,11,0.3)]">
                   <Check className="h-4 w-4" strokeWidth={3} />

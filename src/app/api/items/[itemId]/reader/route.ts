@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { apiError, assertApiUser } from "@/lib/api";
 import { getReaderItem } from "@/lib/data";
-import { ensureReaderContent } from "@/lib/feed/service";
+import { ensureReaderContentForLoadedItem } from "@/lib/feed/service";
 import { measurePerf } from "@/lib/perf";
 import { serializeItem } from "@/lib/serializers";
 
@@ -12,18 +12,28 @@ export async function GET(_request: Request, context: { params: Params }) {
   try {
     const user = await assertApiUser();
     const { itemId } = await context.params;
-    await measurePerf(
-      "api.reader.ensureContent",
-      () => ensureReaderContent(itemId),
-      { userId: user.id, itemId },
-    );
-    const item = await measurePerf(
+    let item = await measurePerf(
       "api.reader.load",
       () => getReaderItem(user.id, itemId),
       { userId: user.id, itemId },
     );
     if (!item) {
       return apiError("Item not found", 404);
+    }
+    const loadedItem = item;
+
+    if (loadedItem.canonicalUrl && !loadedItem.readabilityHtml) {
+      const updated = await measurePerf(
+        "api.reader.ensureContent",
+        () => ensureReaderContentForLoadedItem(loadedItem),
+        { userId: user.id, itemId },
+      );
+      if (updated) {
+        item = {
+          ...loadedItem,
+          ...updated,
+        };
+      }
     }
     return NextResponse.json(serializeItem(item));
   } catch (error) {

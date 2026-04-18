@@ -1,0 +1,2162 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: Feedy
+          - generic [ref=e9]:
+            - button "Search articles" [ref=e10]:
+              - img [ref=e11]
+            - button "Show timeline filters" [ref=e14]:
+              - img [ref=e15]
+            - button "Refresh feeds" [ref=e16]:
+              - img [ref=e17]
+            - button "Sign out" [ref=e22]:
+              - img [ref=e23]
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - heading "Timeline" [level=1] [ref=e28]
+            - paragraph [ref=e29]: Your latest reading
+          - generic [ref=e31]:
+            - generic [ref=e32]: "30332"
+            - generic [ref=e33]: / 239 feeds
+    - main [ref=e35]:
+      - generic [ref=e36]:
+        - article [ref=e37]:
+          - generic [ref=e38]:
+            - paragraph [ref=e41]: r/cachyos
+            - link "Just reinstalled cachyos (for the 7th time already) because of vulkan bugs." [ref=e42] [cursor=pointer]:
+              - /url: /reader/cmo43cmbdwss3pg3wuv2anrux
+              - heading "Just reinstalled cachyos (for the 7th time already) because of vulkan bugs." [level=3] [ref=e43]
+            - paragraph [ref=e44]: "The title pretty much sums it up, but for futher details, cachyos has the one kernel i really want to use because of its latency (miles better than the standart linux-rt kernel offers, and linux-zen doesnt come close), but Vulkan simply refuses to work, i've already reinstalled everything it needs, tried different nvidia package versions, etc. I really want to main cachyos as installing its kernel on endeavouros turned out to be way harder than expected (even harder than when i did the same on Manjaro, it worked flawlessly there) but all of these issues just won't stop popping up one after the other, vkcube and all ways to check if vulkan is correctly works have passed, and everything goes flawlessly... until i want to game. I keep getting vulkan call errors and everything related to that which has sadly led to me going back go my ol' reliable: Manjaro (i know some of yall will hate me for it, but its the one distro that just worked the best for me, even did better than Debian on my laptop). Laptop is an ASUS TUF Gaming f15 FX506HC. CPU: Intel Core i5 11400h GPU: RTX 3050 4gb RAM: 16gb DDR4 @ 3200mhz SSD: 512gb Gen3 micron nvme ssd, 1tb kingston Gen3 nvme ssd. submitted by /u/JuanchoGYT [link] [comments]"
+            - generic [ref=e45]:
+              - generic [ref=e46]:
+                - generic [ref=e47]: 2 minutes ago
+                - generic [ref=e48]: ·
+                - generic [ref=e49]: REDDIT
+              - generic [ref=e50]:
+                - button "Bookmark" [ref=e51]:
+                  - img [ref=e52]
+                - link "Read" [ref=e54] [cursor=pointer]:
+                  - /url: /reader/cmo43cmbdwss3pg3wuv2anrux
+                  - button "Read" [ref=e55]
+                - link [ref=e56] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/cachyos/comments/1sos83q/just_reinstalled_cachyos_for_the_7th_time_already/
+                  - img [ref=e57]
+        - article [ref=e61]:
+          - generic [ref=e62]:
+            - paragraph [ref=e65]: r/claude
+            - link "Got frustrated after Claude doesn't think so created extension for default prompts" [ref=e66] [cursor=pointer]:
+              - /url: /reader/cmo43cmb5wsoxpg3wk0we2tbm
+              - heading "Got frustrated after Claude doesn't think so created extension for default prompts" [level=3] [ref=e67]
+            - paragraph [ref=e68]: "I switched to Claude 2 months back and it was such an improvement from ChatGPT but recently I've realised it has gotten dumb (Opus 4.6). It would not follow the default instructions and wouldn't follow the SKILLS.md file but if I nudge it in the chat then only it would think and follow the instructions that I want it to. So, I created a chrome extension that would send those default prompts by default. You can create different prompt profiles and choose any of those profiles while talking to chrome. Given you wouldn't want it to reason it every time (I think it would stop following that as well after some time) so you can turn those instructions off at one click. You can give it a try and let me know if there are any feedbacks: https://chromewebstore.google.com/detail/claude-deep-think/npalkgfbneagpnndfiambnnfeaeccken https://reddit.com/link/1sos7ze/video/uw1c4gr0wwvg1/player submitted by /u/Glittering_Flan1049 [link] [comments]"
+            - generic [ref=e69]:
+              - generic [ref=e70]:
+                - generic [ref=e71]: 3 minutes ago
+                - generic [ref=e72]: ·
+                - generic [ref=e73]: REDDIT
+              - generic [ref=e74]:
+                - button "Bookmark" [ref=e75]:
+                  - img [ref=e76]
+                - link "Read" [ref=e78] [cursor=pointer]:
+                  - /url: /reader/cmo43cmb5wsoxpg3wk0we2tbm
+                  - button "Read" [ref=e79]
+                - link [ref=e80] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/claude/comments/1sos7ze/got_frustrated_after_claude_doesnt_think_so/
+                  - img [ref=e81]
+        - article [ref=e85]:
+          - link [ref=e86] [cursor=pointer]:
+            - /url: /reader/cmo43cmc6wsudpg3wmco272tb
+          - generic [ref=e88]:
+            - paragraph [ref=e91]: r/iosapps
+            - 'link "Notation: Chess Coach (£1.99 no subscription) Updates and roadmap" [ref=e92] [cursor=pointer]':
+              - /url: /reader/cmo43cmc6wsudpg3wmco272tb
+              - 'heading "Notation: Chess Coach (£1.99 no subscription) Updates and roadmap" [level=3] [ref=e93]'
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - generic [ref=e96]: 9 minutes ago
+                - generic [ref=e97]: ·
+                - generic [ref=e98]: REDDIT
+              - generic [ref=e99]:
+                - button "Bookmark" [ref=e100]:
+                  - img [ref=e101]
+                - link "Read" [ref=e103] [cursor=pointer]:
+                  - /url: /reader/cmo43cmc6wsudpg3wmco272tb
+                  - button "Read" [ref=e104]
+                - link [ref=e105] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iosapps/comments/1sos4gt/notation_chess_coach_199_no_subscription_updates/
+                  - img [ref=e106]
+        - article [ref=e110]:
+          - generic [ref=e111]:
+            - paragraph [ref=e114]: r/vibecoding
+            - link "What did you do with vibe coding, and how long did it take you to achieve it?" [ref=e115] [cursor=pointer]:
+              - /url: /reader/cmo43cn7rwt2xpg3wok6hm7ad
+              - heading "What did you do with vibe coding, and how long did it take you to achieve it?" [level=3] [ref=e116]
+            - paragraph [ref=e117]: What did you do with Vibe coding, and how long did it take you to complete it? submitted by /u/VanessaCarter [link] [comments]
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - generic [ref=e120]: 13 minutes ago
+                - generic [ref=e121]: ·
+                - generic [ref=e122]: REDDIT
+              - generic [ref=e123]:
+                - button "Bookmark" [ref=e124]:
+                  - img [ref=e125]
+                - link "Read" [ref=e127] [cursor=pointer]:
+                  - /url: /reader/cmo43cn7rwt2xpg3wok6hm7ad
+                  - button "Read" [ref=e128]
+                - link [ref=e129] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1sos21w/what_did_you_do_with_vibe_coding_and_how_long_did/
+                  - img [ref=e130]
+        - article [ref=e134]:
+          - generic [ref=e135]:
+            - paragraph [ref=e138]: r/hermesagent
+            - link "Fed up babysitting Hermes Agent, found a more stable alternative" [ref=e139] [cursor=pointer]:
+              - /url: /reader/cmo42umegwm6jpg3wfmidtc4q
+              - heading "Fed up babysitting Hermes Agent, found a more stable alternative" [level=3] [ref=e140]
+            - paragraph [ref=e141]: "Been using Hermes Agent for a few months now. My actual use case: - writing blogs for our projects - cold emailing leads - scraping leads from YC, Twitter, Reddit And I have to babysit every single workflow. Like genuinely. I don't understand how people use this for actual prod stuff. Came from OpenClaw before this had similar issues there so I wasn't new to the frustration. But Hermes Agent's specific problems are different: - it would \"improve\" a skill that was already working and break it - self-evaluation always said it did great even when the output was clearly wrong - still doesn't feel like something I can leave running overnight on real workflows - the self-improving loop concept is genuinely cool in theory, but in practice it's unpredictable At some point I just accepted it wasn't \"set it forget it\". It's more like set it, watch it, fix it, rerun it. A friend mentioned bot0.dev and honestly I went in skeptical. Few things that actually stood out after using it: - uses your real browser with your actual sessions and cookies, so no more turning on the extension and clicking allow For Reddit and Twitter with logged-in accounts this is a real difference - caching actually works the way you'd want it to. First run it figures the workflow out, after that it replays from cache. Token costs dropped noticeably after week one - memory through ctx0 is readable. I can see what it knows and correct it. Less \"I hope it remembers\" energy Stuff I'm still figuring out: - smaller skill ecosystem, nowhere close to what Hermes has - setup took a couple days to wrap my head around - the \"train your own model on your workflows\" thing sounds interesting, haven't gotten there yet - Mac only for now For my lead scraping and outreach workflows it's been the most stable setup so far. Not perfect. But the specific things I was fighting most are genuinely better. submitted by /u/This_Cancel_5950 [link] [comments]"
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - generic [ref=e144]: 18 minutes ago
+                - generic [ref=e145]: ·
+                - generic [ref=e146]: REDDIT
+              - generic [ref=e147]:
+                - button "Bookmark" [ref=e148]:
+                  - img [ref=e149]
+                - link "Read" [ref=e151] [cursor=pointer]:
+                  - /url: /reader/cmo42umegwm6jpg3wfmidtc4q
+                  - button "Read" [ref=e152]
+                - link [ref=e153] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/hermesagent/comments/1soryqm/fed_up_babysitting_hermes_agent_found_a_more/
+                  - img [ref=e154]
+        - article [ref=e158]:
+          - link [ref=e159] [cursor=pointer]:
+            - /url: /reader/cmo42yh6lwn0npg3wy8o7q893
+          - generic [ref=e161]:
+            - paragraph [ref=e164]: r/codex
+            - link "How to stop Codex writing backend stuff in frontend?" [ref=e165] [cursor=pointer]:
+              - /url: /reader/cmo42yh6lwn0npg3wy8o7q893
+              - heading "How to stop Codex writing backend stuff in frontend?" [level=3] [ref=e166]
+            - generic [ref=e167]:
+              - generic [ref=e168]:
+                - generic [ref=e169]: 21 minutes ago
+                - generic [ref=e170]: ·
+                - generic [ref=e171]: REDDIT
+              - generic [ref=e172]:
+                - button "Bookmark" [ref=e173]:
+                  - img [ref=e174]
+                - link "Read" [ref=e176] [cursor=pointer]:
+                  - /url: /reader/cmo42yh6lwn0npg3wy8o7q893
+                  - button "Read" [ref=e177]
+                - link [ref=e178] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/codex/comments/1sorx9a/how_to_stop_codex_writing_backend_stuff_in/
+                  - img [ref=e179]
+        - article [ref=e183]:
+          - generic [ref=e184]:
+            - paragraph [ref=e187]: r/macos
+            - link "Installed Apple Internal software on my Mac by accident, do I reset it via System Settings or do I erase it in recovery?" [ref=e188] [cursor=pointer]:
+              - /url: /reader/cmo4366qwwrizpg3ws5c3ledw
+              - heading "Installed Apple Internal software on my Mac by accident, do I reset it via System Settings or do I erase it in recovery?" [level=3] [ref=e189]
+            - paragraph [ref=e190]: Hi! So for some dumb reason I installed Apple Internal software on my Mac (half relevant) and I want to uninstall it so I am planning to erase my Mac. To get rid of all of the software should I erase it via recovery or system settings? I am hoping system settings. submitted by /u/CamelClear4416 [link] [comments]
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - generic [ref=e193]: 22 minutes ago
+                - generic [ref=e194]: ·
+                - generic [ref=e195]: REDDIT
+              - generic [ref=e196]:
+                - button "Bookmark" [ref=e197]:
+                  - img [ref=e198]
+                - link "Read" [ref=e200] [cursor=pointer]:
+                  - /url: /reader/cmo4366qwwrizpg3ws5c3ledw
+                  - button "Read" [ref=e201]
+                - link [ref=e202] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/MacOS/comments/1sorwgr/installed_apple_internal_software_on_my_mac_by/
+                  - img [ref=e203]
+        - article [ref=e207]:
+          - generic [ref=e208]:
+            - paragraph [ref=e211]: r/rss
+            - link "Best rss reader to keep feeds for more than 30 days" [ref=e212] [cursor=pointer]:
+              - /url: /reader/cmo42um82wm35pg3wvbjdm1eo
+              - heading "Best rss reader to keep feeds for more than 30 days" [level=3] [ref=e213]
+            - paragraph [ref=e214]: submitted by /u/mehdifirefox [link] [comments]
+            - generic [ref=e215]:
+              - generic [ref=e216]:
+                - generic [ref=e217]: 25 minutes ago
+                - generic [ref=e218]: ·
+                - generic [ref=e219]: REDDIT
+              - generic [ref=e220]:
+                - button "Bookmark" [ref=e221]:
+                  - img [ref=e222]
+                - link "Read" [ref=e224] [cursor=pointer]:
+                  - /url: /reader/cmo42um82wm35pg3wvbjdm1eo
+                  - button "Read" [ref=e225]
+                - link [ref=e226] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/rss/comments/1sorv37/best_rss_reader_to_keep_feeds_for_more_than_30/
+                  - img [ref=e227]
+        - article [ref=e231]:
+          - generic [ref=e232]:
+            - paragraph [ref=e235]: r/rss
+            - link "Best rss reader to keep feeds for more than 30 days" [ref=e236] [cursor=pointer]:
+              - /url: /reader/cmo42um82wm37pg3wr0v60pyw
+              - heading "Best rss reader to keep feeds for more than 30 days" [level=3] [ref=e237]
+            - paragraph [ref=e238]: Our internet was down. And I missed a lot of content. Because in 2026, there is no product that keeps rss. Friends, do you know a suitable product? I am using inoreader now submitted by /u/mehdifirefox [link] [comments]
+            - generic [ref=e239]:
+              - generic [ref=e240]:
+                - generic [ref=e241]: 25 minutes ago
+                - generic [ref=e242]: ·
+                - generic [ref=e243]: REDDIT
+              - generic [ref=e244]:
+                - button "Bookmark" [ref=e245]:
+                  - img [ref=e246]
+                - link "Read" [ref=e248] [cursor=pointer]:
+                  - /url: /reader/cmo42um82wm37pg3wr0v60pyw
+                  - button "Read" [ref=e249]
+                - link [ref=e250] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/rss/comments/1soruql/best_rss_reader_to_keep_feeds_for_more_than_30/
+                  - img [ref=e251]
+        - article [ref=e255]:
+          - generic [ref=e256]:
+            - paragraph [ref=e259]: The Decoder
+            - link "Deepseek reportedly seeks outside funding for the first time at $10 billion valuation" [ref=e260] [cursor=pointer]:
+              - /url: /reader/cmo43677rwru5pg3wk3w37no2
+              - heading "Deepseek reportedly seeks outside funding for the first time at $10 billion valuation" [level=3] [ref=e261]
+            - paragraph [ref=e262]: Deepseek is reportedly ready to give up its independence. The Chinese AI startup is seeking outside backers for the first time, aiming to raise at least $300 million. The shift comes after delayed model releases, top researchers being poached by rivals, and mounting pressure from deep-pocketed tech giants. The article Deepseek reportedly seeks outside funding for the first time at $10 billion valuation appeared first on The Decoder.
+            - generic [ref=e263]:
+              - generic [ref=e264]:
+                - generic [ref=e265]: 26 minutes ago
+                - generic [ref=e266]: ·
+                - generic [ref=e267]: RSS
+              - generic [ref=e268]:
+                - button "Bookmark" [ref=e269]:
+                  - img [ref=e270]
+                - link "Read" [ref=e272] [cursor=pointer]:
+                  - /url: /reader/cmo43677rwru5pg3wk3w37no2
+                  - button "Read" [ref=e273]
+                - link [ref=e274] [cursor=pointer]:
+                  - /url: https://the-decoder.com/deepseek-reportedly-seeks-outside-funding-for-the-first-time-at-10-billion-valuation/
+                  - img [ref=e275]
+        - article [ref=e279]:
+          - link [ref=e280] [cursor=pointer]:
+            - /url: /reader/cmo42a1i5wevppg3wj3bykhra
+          - generic [ref=e283]:
+            - paragraph [ref=e286]: r/productivityapps
+            - 'link "Just launched my very first app! Word of Supreme : Bhagavad Gītā" [ref=e287] [cursor=pointer]':
+              - /url: /reader/cmo42a1i5wevppg3wj3bykhra
+              - 'heading "Just launched my very first app! Word of Supreme : Bhagavad Gītā" [level=3] [ref=e288]'
+            - generic [ref=e289]:
+              - generic [ref=e290]:
+                - generic [ref=e291]: 33 minutes ago
+                - generic [ref=e292]: ·
+                - generic [ref=e293]: REDDIT
+              - generic [ref=e294]:
+                - button "Bookmark" [ref=e295]:
+                  - img [ref=e296]
+                - link "Read" [ref=e298] [cursor=pointer]:
+                  - /url: /reader/cmo42a1i5wevppg3wj3bykhra
+                  - button "Read" [ref=e299]
+                - link [ref=e300] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ProductivityApps/comments/1sorq28/just_launched_my_very_first_app_word_of_supreme/
+                  - img [ref=e301]
+        - article [ref=e305]:
+          - link [ref=e306] [cursor=pointer]:
+            - /url: /reader/cmo42a1hbweuppg3wm6ke61hx
+          - generic [ref=e309]:
+            - paragraph [ref=e312]: r/hermesagent
+            - link "Hermes agent infinite looping frequently" [ref=e313] [cursor=pointer]:
+              - /url: /reader/cmo42a1hbweuppg3wm6ke61hx
+              - heading "Hermes agent infinite looping frequently" [level=3] [ref=e314]
+            - generic [ref=e315]:
+              - generic [ref=e316]:
+                - generic [ref=e317]: 33 minutes ago
+                - generic [ref=e318]: ·
+                - generic [ref=e319]: REDDIT
+              - generic [ref=e320]:
+                - button "Bookmark" [ref=e321]:
+                  - img [ref=e322]
+                - link "Read" [ref=e324] [cursor=pointer]:
+                  - /url: /reader/cmo42a1hbweuppg3wm6ke61hx
+                  - button "Read" [ref=e325]
+                - link [ref=e326] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/hermesagent/comments/1sorps0/hermes_agent_infinite_looping_frequently/
+                  - img [ref=e327]
+        - article [ref=e331]:
+          - link [ref=e332] [cursor=pointer]:
+            - /url: /reader/cmo42lltwwkedpg3w6pwt48wu
+          - generic [ref=e335]:
+            - paragraph [ref=e338]: r/macos
+            - link "Iphone doesn’t recognize my MacBook for airdrop?" [ref=e339] [cursor=pointer]:
+              - /url: /reader/cmo42lltwwkedpg3w6pwt48wu
+              - heading "Iphone doesn’t recognize my MacBook for airdrop?" [level=3] [ref=e340]
+            - generic [ref=e341]:
+              - generic [ref=e342]:
+                - generic [ref=e343]: 36 minutes ago
+                - generic [ref=e344]: ·
+                - generic [ref=e345]: REDDIT
+              - generic [ref=e346]:
+                - button "Bookmark" [ref=e347]:
+                  - img [ref=e348]
+                - link "Read" [ref=e350] [cursor=pointer]:
+                  - /url: /reader/cmo42lltwwkedpg3w6pwt48wu
+                  - button "Read" [ref=e351]
+                - link [ref=e352] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/MacOS/comments/1sornzy/iphone_doesnt_recognize_my_macbook_for_airdrop/
+                  - img [ref=e353]
+        - article [ref=e357]:
+          - link [ref=e358] [cursor=pointer]:
+            - /url: /reader/cmo427glrwe3dpg3wegvliv5b
+          - generic [ref=e361]:
+            - paragraph [ref=e364]: r/cachyos
+            - link "My first rice hyprland" [ref=e365] [cursor=pointer]:
+              - /url: /reader/cmo427glrwe3dpg3wegvliv5b
+              - heading "My first rice hyprland" [level=3] [ref=e366]
+            - generic [ref=e367]:
+              - generic [ref=e368]:
+                - generic [ref=e369]: 36 minutes ago
+                - generic [ref=e370]: ·
+                - generic [ref=e371]: REDDIT
+              - generic [ref=e372]:
+                - button "Bookmark" [ref=e373]:
+                  - img [ref=e374]
+                - link "Read" [ref=e376] [cursor=pointer]:
+                  - /url: /reader/cmo427glrwe3dpg3wegvliv5b
+                  - button "Read" [ref=e377]
+                - link [ref=e378] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/cachyos/comments/1sornrb/my_first_rice_hyprland/
+                  - img [ref=e379]
+        - article [ref=e383]:
+          - generic [ref=e384]:
+            - paragraph [ref=e387]: r/ios
+            - link "Home sharing music?" [ref=e388] [cursor=pointer]:
+              - /url: /reader/cmo42llubwkfrpg3wgmjcyju9
+              - heading "Home sharing music?" [level=3] [ref=e389]
+            - paragraph [ref=e390]: Running iOS 26.4.1 on an iPhone 13 and MacOS Tahoe 26.4.1 on a MacBook M2 Air. Home sharing turned on. Since upgrading to iOS 26 a few days ago, when I log into my music library stored on the MacBook from the iPhone, the albums no longer display under “Artists” or “Albums” or “Titles” or “Genres”, but instead are all lumped together under “Recently added”; no album art is visible. Under ”Artists” etc. I instead still see the handful of albums I have stored on the iPhone itself. I have an older iPad running iPadOS 16, and there everything displays as it should, so this looks like an iOS 26 issue. Grateful for any suggestions. submitted by /u/evagre [link] [comments]
+            - generic [ref=e391]:
+              - generic [ref=e392]:
+                - generic [ref=e393]: 38 minutes ago
+                - generic [ref=e394]: ·
+                - generic [ref=e395]: REDDIT
+              - generic [ref=e396]:
+                - button "Bookmark" [ref=e397]:
+                  - img [ref=e398]
+                - link "Read" [ref=e400] [cursor=pointer]:
+                  - /url: /reader/cmo42llubwkfrpg3wgmjcyju9
+                  - button "Read" [ref=e401]
+                - link [ref=e402] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ios/comments/1sormnn/home_sharing_music/
+                  - img [ref=e403]
+        - article [ref=e407]:
+          - generic [ref=e408]:
+            - paragraph [ref=e411]: r/homeassistant
+            - link "New user" [ref=e412] [cursor=pointer]:
+              - /url: /reader/cmo427glgwe1zpg3wlhxclyav
+              - heading "New user" [level=3] [ref=e413]
+            - paragraph [ref=e414]: Hi guys, I’m in UK and about to start my home assistant journey from scratch. Currently I have a Tesla powerwall 3 and expander, a Hypervolt pro 3 ev charger, a Kia ev6 84kwh ev, a cosy 6 heat pump for heating and hot water, a eufy video doorbell, an Orisec home alarm and next month will get 10.5kwh of solar fitted. Is there a standard software package I can start off with or does everyone design their own system from scratch? submitted by /u/Significant-Fly-9697 [link] [comments]
+            - generic [ref=e415]:
+              - generic [ref=e416]:
+                - generic [ref=e417]: 40 minutes ago
+                - generic [ref=e418]: ·
+                - generic [ref=e419]: REDDIT
+              - generic [ref=e420]:
+                - button "Bookmark" [ref=e421]:
+                  - img [ref=e422]
+                - link "Read" [ref=e424] [cursor=pointer]:
+                  - /url: /reader/cmo427glgwe1zpg3wlhxclyav
+                  - button "Read" [ref=e425]
+                - link [ref=e426] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/homeassistant/comments/1sorlv4/new_user/
+                  - img [ref=e427]
+        - article [ref=e431]:
+          - link [ref=e432] [cursor=pointer]:
+            - /url: /reader/cmo427gn1we4tpg3wlj97gocj
+          - generic [ref=e435]:
+            - paragraph [ref=e438]: r/iosapps
+            - 'link "Just launched my very first app! Word of Supreme : Bhagavad Gītā" [ref=e439] [cursor=pointer]':
+              - /url: /reader/cmo427gn1we4tpg3wlj97gocj
+              - 'heading "Just launched my very first app! Word of Supreme : Bhagavad Gītā" [level=3] [ref=e440]'
+            - generic [ref=e441]:
+              - generic [ref=e442]:
+                - generic [ref=e443]: 40 minutes ago
+                - generic [ref=e444]: ·
+                - generic [ref=e445]: REDDIT
+              - generic [ref=e446]:
+                - button "Bookmark" [ref=e447]:
+                  - img [ref=e448]
+                - link "Read" [ref=e450] [cursor=pointer]:
+                  - /url: /reader/cmo427gn1we4tpg3wlj97gocj
+                  - button "Read" [ref=e451]
+                - link [ref=e452] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iosapps/comments/1sorlqg/just_launched_my_very_first_app_word_of_supreme/
+                  - img [ref=e453]
+        - article [ref=e457]:
+          - link [ref=e458] [cursor=pointer]:
+            - /url: /reader/cmo427hg8wefrpg3wqveu2hn2
+          - generic [ref=e461]:
+            - paragraph [ref=e464]: r/vibecoding
+            - link "Vibecoded first mobile app — 440 installs in <24hrs so far!" [ref=e465] [cursor=pointer]:
+              - /url: /reader/cmo427hg8wefrpg3wqveu2hn2
+              - heading "Vibecoded first mobile app — 440 installs in <24hrs so far!" [level=3] [ref=e466]
+            - generic [ref=e467]:
+              - generic [ref=e468]:
+                - generic [ref=e469]: 41 minutes ago
+                - generic [ref=e470]: ·
+                - generic [ref=e471]: REDDIT
+              - generic [ref=e472]:
+                - button "Bookmark" [ref=e473]:
+                  - img [ref=e474]
+                - link "Read" [ref=e476] [cursor=pointer]:
+                  - /url: /reader/cmo427hg8wefrpg3wqveu2hn2
+                  - button "Read" [ref=e477]
+                - link [ref=e478] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1sorlbb/vibecoded_first_mobile_app_440_installs_in_24hrs/
+                  - img [ref=e479]
+        - article [ref=e483]:
+          - generic [ref=e484]:
+            - paragraph [ref=e487]: Planet KDE
+            - link "Hello old new “Projects” directory!" [ref=e488] [cursor=pointer]:
+              - /url: /reader/cmo43a12uws61pg3w25pyvbma
+              - heading "Hello old new “Projects” directory!" [level=3] [ref=e489]
+            - paragraph [ref=e490]: "If you have recently installed a very up-to-date Linux distribution with a desktop environment, or upgraded your system on a rolling-release distribution, you might have noticed that your home directory has a new folder: “Projects” Why? With the recent 0.20 release of xdg-user-dirs we enabled the “Projects” directory by default. Support for this has already existed since 2007, but was never formally enabled. This closes a more than 11 year old bug report that asked for this feature. The purpose of the Projects directory is to give applications a default location to place project files that do not cleanly belong into one of the existing categories (Documents, Music, Pictures, Videos). Examples of this are software engineering projects, scientific projects, 3D printing projects, CAD design or even things like video editing projects, where project files would end up in the “Projects” directory, with output video being more at home in “Videos”. By enabling this by default, and subsequently in the coming months adding support to GLib, Flatpak, desktops and applications that want to make use of it, we hope to give applications that do operate in a “project-centric” manner with mixed media a better default storage location. As of now, those tools either default to the home directory, or will clutter the “Documents” folder, both of which is not ideal. It also gives users a default organization structure, hopefully leading to less clutter overall and better storage layouts. This sucks, I don’t like it! As usual, you are in control and can modify your system’s behavior. If you do not like the “Projects” folder, simply delete it! The xdg-user-dirs utility will not try to create it again, and instead adjust the default location for this directory to your home directory. If you want more control, you can influence exactly what goes where by editing your ~/.config/user-dirs.dirs configuration file. If you are a system administrator or distribution vendor and want to set default locations for the default XDG directories, you can edit the /etc/xdg/user-dirs.defaults file to set global defaults that affect all users on the system (users can still adjust the settings however they like though). What else is new? Besides this change, the 0.20 release of xdg-user-dirs brings full support for the Meson build system (dropping Automake), translation updates, and some robustness improvements to its code. We also fixed the “arbitrary code execution from unsanitized input” bug that the Arch Linux Wiki mentions here for the xdg-user-dirs utility, by replacing the shell script with a C binary. Thanks to everyone who contributed to this release!"
+            - generic [ref=e491]:
+              - generic [ref=e492]:
+                - generic [ref=e493]: 41 minutes ago
+                - generic [ref=e494]: ·
+                - generic [ref=e495]: RSS
+              - generic [ref=e496]:
+                - button "Bookmark" [ref=e497]:
+                  - img [ref=e498]
+                - link "Read" [ref=e500] [cursor=pointer]:
+                  - /url: /reader/cmo43a12uws61pg3w25pyvbma
+                  - button "Read" [ref=e501]
+                - link [ref=e502] [cursor=pointer]:
+                  - /url: https://blog.tenstral.net/2026/04/hello-projects-directory.html
+                  - img [ref=e503]
+        - article [ref=e507]:
+          - generic [ref=e508]:
+            - paragraph [ref=e511]: r/vibecoding
+            - link "I built a \"Food Scientist\" AI Chef that manages your fridge and prevents waste" [ref=e512] [cursor=pointer]:
+              - /url: /reader/cmo427hg9weg7pg3wf6j6kzu3
+              - heading "I built a \"Food Scientist\" AI Chef that manages your fridge and prevents waste" [level=3] [ref=e513]
+            - paragraph [ref=e514]: "Volevo condividere il mio ultimo progetto: FridgeHero (https://fridgehero-ai-antiwaste-chef.base44.app) Ero stanco delle app di ricette di base che suggeriscono ingredienti che non ho o mi dicono di cucinare un intero sacchetto di pasta per una persona. Volevo qualcosa che capisse davvero la fisica e la logica di una cucina professionale e che permetta di risparmiare davvero soldi e cibo Lo stack tecnologico: Costruito interamente su Base44. Nessuna lotta manuale con la sintassi, solo puro prompt architetturale e \"vibrazione\" iterativa con l'IA per ottenere la logica corretta. Cosa lo rende diverso dal tuo generatore di ricette medio? Persistenza intelligente dell'inventario: Tiene traccia esattamente di ciò che c'è nel tuo frigorifero con un sistema di codifica a colori \"Freschezza\" (Rosso per \"Da usare ORA\"). Logica da chef: Non volevo \"Passaggio 1: Mescola\". Ho chiesto all'IA di comportarsi come uno scienziato alimentare. Capisce Termico Inerzia (cottura residua), Osmosi (separazione degli elementi umidi/secchi per evitare che si ammollino) e Geometria Termica (taglio uniforme per una cottura omogenea). Solo unità metriche: Ho bandito le unità imperiali e le \"tazze\" perché le allucinazioni prosperano negli errori di conversione. Solo grammi e millilitri per una precisione matematica del 100%. Il \"Filtro del Palato\": Sa che 10 g di pepe nero in una porzione sono un crimine. Ha dei controlli integrati per i livelli di piccantezza. L'esperienza con Base44: Onestamente, la velocità di iterazione è incredibile. La parte più difficile non è stata il \"codice\", ma perfezionare la \"Personalità dello Chef\" per assicurarsi che non si limitasse a omettere gli ingredienti quando mancavano, ma che passasse effettivamente a una ricetta diversa e completa. Feedback benvenuti! In particolare, sono curioso di sapere: per chi di voi usa Base44 o strumenti simili, come gestite la persistenza di stati complessi per elementi come badge e \"punteggi di impatto\" senza snaturare l'atmosfera? Fatemi sapere cosa ne pensate! submitted by /u/General_Pollution206 [link] [comments]"
+            - generic [ref=e515]:
+              - generic [ref=e516]:
+                - generic [ref=e517]: 41 minutes ago
+                - generic [ref=e518]: ·
+                - generic [ref=e519]: REDDIT
+              - generic [ref=e520]:
+                - button "Bookmark" [ref=e521]:
+                  - img [ref=e522]
+                - link "Read" [ref=e524] [cursor=pointer]:
+                  - /url: /reader/cmo427hg9weg7pg3wf6j6kzu3
+                  - button "Read" [ref=e525]
+                - link [ref=e526] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1sorl7z/i_built_a_food_scientist_ai_chef_that_manages/
+                  - img [ref=e527]
+        - article [ref=e531]:
+          - generic [ref=e532]:
+            - paragraph [ref=e535]: The Decoder
+            - link "Zuckerberg reportedly trades headcount for compute as Meta readies to cut 10 percent of its workforce to fund AI infrastructure" [ref=e536] [cursor=pointer]:
+              - /url: /reader/cmo4211k7wdalpg3w8zjuubkp
+              - heading "Zuckerberg reportedly trades headcount for compute as Meta readies to cut 10 percent of its workforce to fund AI infrastructure" [level=3] [ref=e537]
+            - paragraph [ref=e538]: Meta is preparing to cut around 8,000 jobs on May 20, with a second wave planned for later this year. In total, more than 20 percent of the workforce could be let go as the company moves to offset its massive AI spending. The article Zuckerberg reportedly trades headcount for compute as Meta readies to cut 10 percent of its workforce to fund AI infrastructure appeared first on The Decoder.
+            - generic [ref=e539]:
+              - generic [ref=e540]:
+                - generic [ref=e541]: 41 minutes ago
+                - generic [ref=e542]: ·
+                - generic [ref=e543]: RSS
+              - generic [ref=e544]:
+                - button "Bookmark" [ref=e545]:
+                  - img [ref=e546]
+                - link "Read" [ref=e548] [cursor=pointer]:
+                  - /url: /reader/cmo4211k7wdalpg3w8zjuubkp
+                  - button "Read" [ref=e549]
+                - link [ref=e550] [cursor=pointer]:
+                  - /url: https://the-decoder.com/zuckerberg-reportedly-trades-headcount-for-compute-as-meta-readies-to-cut-10-percent-of-its-workforce-to-fund-ai-infrastructure/
+                  - img [ref=e551]
+        - article [ref=e555]:
+          - generic [ref=e556]:
+            - paragraph [ref=e559]: r/vibecoding
+            - link "need advice related to career path" [ref=e560] [cursor=pointer]:
+              - /url: /reader/cmo427hg8weftpg3w3ljhos8s
+              - heading "need advice related to career path" [level=3] [ref=e561]
+            - paragraph [ref=e562]: I'm eighteen rn and I done c++ basics and object oriented programming and I'm going to be in 2nd year right now my college is so ew it's a basic local govt college so i can't believe in on campus so basically I want someone who can help me to choose path salary and all i don't wanna work in work too much like it's like I wanna work here 1 or 2 year and after that I wanna go abroad for work i wanna do all work by myself if anyone could help me choosing anything right now I was thinking about being a Ai Ml engineer so ya I'm ready to give my everything I just wanna do something and earn alot submitted by /u/imshaul [link] [comments]
+            - generic [ref=e563]:
+              - generic [ref=e564]:
+                - generic [ref=e565]: 43 minutes ago
+                - generic [ref=e566]: ·
+                - generic [ref=e567]: REDDIT
+              - generic [ref=e568]:
+                - button "Bookmark" [ref=e569]:
+                  - img [ref=e570]
+                - link "Read" [ref=e572] [cursor=pointer]:
+                  - /url: /reader/cmo427hg8weftpg3w3ljhos8s
+                  - button "Read" [ref=e573]
+                - link [ref=e574] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1sorjwr/need_advice_related_to_career_path/
+                  - img [ref=e575]
+        - article [ref=e579]:
+          - link [ref=e580] [cursor=pointer]:
+            - /url: /reader/cmo427gn2we4vpg3wledfcqrk
+          - generic [ref=e583]:
+            - paragraph [ref=e586]: r/iosapps
+            - link "I built a simple drawing app for kids to replace passive screen time (no ads, no videos/games)" [ref=e587] [cursor=pointer]:
+              - /url: /reader/cmo427gn2we4vpg3wledfcqrk
+              - heading "I built a simple drawing app for kids to replace passive screen time (no ads, no videos/games)" [level=3] [ref=e588]
+            - generic [ref=e589]:
+              - generic [ref=e590]:
+                - generic [ref=e591]: 44 minutes ago
+                - generic [ref=e592]: ·
+                - generic [ref=e593]: REDDIT
+              - generic [ref=e594]:
+                - button "Bookmark" [ref=e595]:
+                  - img [ref=e596]
+                - link "Read" [ref=e598] [cursor=pointer]:
+                  - /url: /reader/cmo427gn2we4vpg3wledfcqrk
+                  - button "Read" [ref=e599]
+                - link [ref=e600] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iosapps/comments/1sorj10/i_built_a_simple_drawing_app_for_kids_to_replace/
+                  - img [ref=e601]
+        - article [ref=e605]:
+          - button "Play Will Eddie Howe WALK AWAY At The End Of The Season? | Inside The Toon inline" [ref=e607]:
+            - img [ref=e612]
+          - generic [ref=e614]:
+            - paragraph [ref=e617]: talkSPORT
+            - link "Will Eddie Howe WALK AWAY At The End Of The Season? | Inside The Toon" [ref=e618] [cursor=pointer]:
+              - /url: /reader/cmo41xchowcn7pg3wux5kl789
+              - heading "Will Eddie Howe WALK AWAY At The End Of The Season? | Inside The Toon" [level=3] [ref=e619]
+            - generic [ref=e620]:
+              - generic [ref=e622]: 46 minutes ago
+              - generic [ref=e623]:
+                - button "Bookmark" [ref=e624]:
+                  - img [ref=e625]
+                - link "Read" [ref=e627] [cursor=pointer]:
+                  - /url: /reader/cmo41xchowcn7pg3wux5kl789
+                  - button "Read" [ref=e628]
+                - link [ref=e629] [cursor=pointer]:
+                  - /url: https://www.youtube.com/shorts/fQfKB4H3GhA
+                  - img [ref=e630]
+        - article [ref=e634]:
+          - button "Play This Liverpool Team Is Too Soft inline" [ref=e636]:
+            - img [ref=e641]
+          - generic [ref=e643]:
+            - paragraph [ref=e646]: Anfield Index
+            - link "This Liverpool Team Is Too Soft" [ref=e647] [cursor=pointer]:
+              - /url: /reader/cmo42hs97wh83pg3wakamf03g
+              - heading "This Liverpool Team Is Too Soft" [level=3] [ref=e648]
+            - generic [ref=e649]:
+              - generic [ref=e651]: 47 minutes ago
+              - generic [ref=e652]:
+                - button "Bookmark" [ref=e653]:
+                  - img [ref=e654]
+                - link "Read" [ref=e656] [cursor=pointer]:
+                  - /url: /reader/cmo42hs97wh83pg3wakamf03g
+                  - button "Read" [ref=e657]
+                - link [ref=e658] [cursor=pointer]:
+                  - /url: https://www.youtube.com/shorts/5AE5xEOAC_o
+                  - img [ref=e659]
+        - article [ref=e663]:
+          - generic [ref=e664]:
+            - paragraph [ref=e667]: Planet KDE
+            - link "KDE Sprint and Grazer Linuxtage 2026" [ref=e668] [cursor=pointer]:
+              - /url: /reader/cmo43a12uws63pg3w34dhscgb
+              - heading "KDE Sprint and Grazer Linuxtage 2026" [level=3] [ref=e669]
+            - paragraph [ref=e670]: "I spent the last week in Graz, Austria, attending a KDE sprint as well as Grazer Linuxtage. KDE Sprint Just like last year, the Grazer Linuxtage team had made rooms available for KDE people to meet in the week prior to the conference. More than twenty contributors attended, below are a few notes from discussions I have been involved with. Photo by Kieryn Darkwater AppStream release notes We use AppStream application metadata in a number of places currently: The apps.kde.org website. Software stores such as Flathub, F-Droid, Google Play or the Microsoft Store. Software centers such as Discover. In-app application metadata has so far been maintained separately though, using the KAboutData API. With KDE Frameworks 6.26 it will become possible to populate that from AppStream data as well, reducing duplicated data and duplicated translation efforts. We also expanded how we use release notes from AppStream data: Release notes can now also be translated. There’s new API for accessing AppStream release notes inside an application itself. This is meant to avoid duplicated efforts for in-app release notes. The KDE Gear release automation will now handle notes for pre-releases correctly. This means you can add release notes for users of CD builds already, those will get translated and merged into the subsequent stable release notes automatically. There’s a few more things to do here still: We don’t have a Kirigami-based standard component for in-app release notes yet. The metadata converters for F-Droid and Google Play don’t handle release notes yet. LSAN rollout on the CI After Albert had added infrastructure for LeakSanitizer (LSAN) suppressions in the CI, we were able to enable LSAN in several more repositories which had previously been blocked on “unfixable” or intentional “leaks” outside of our control. The increased visibility on actual issues then also helped with identifying and fixing a couple more “real” leaks, e.g. in KGuiAddons and LibKGAPI. Qt 6.11 for Android There has been some progress on the long overdue Qt update for our Android builds. This had been delayed as it’ll imply some rather drastic changes to the supported Android versions and devices. Lacking alternatives we will go ahead with this. In particular, after 26.04.0 is out this means only Android 9 and higher will be supported, and 32bit ARM builds will be discontinued. We prepared Qt 6.11 CI images and applied necessary build fixes to practically all of our apps that have Craft-based Android builds. Initial test looks promising, and some of the annoying input handling glitches seem to have been fixed. Sentry for Android Another Android-related topic we looked into was uploading crash information to KDE’s Sentry instance. Our Linux and Windows builds can do this since some time, and it has been a great help with identifying, prioritizing and fixing crashes. Initial experiments got this to work quickly on Android as well, but it will require more work to do this properly and give users full control over whether they want to upload crash information or not. We explored a few options on how to do that and have a plan now, but that yet has to be implemented. KMime move to KDE Frameworks The long-lasting move of KMime to KDE Frameworks will finally happen early May, after the 26.04 KDE Gear release and in time for the 6.27 KDE Frameworks release. Users of KMime will need a few minor build system adjustments for this. The CMake target name changes from KPim6::Mime to KF6::Mime, and the version number changes from KDE PIM versioning KDE Frameworks versioning. You can either replace this at once, or use the forward-compatibility approach suggested below. The following CMake snippet replaces the previous find_package call for KPim6Mime and will handle both variants from before and after the move. find_package(KF6Mime 6.27 CONFIG) if(NOT TARGET KF6::Mime) find_package(KPim6Mime 6.7.0 CONFIG REQUIRED) add_library(KF6::Mime ALIAS KPim6::Mime) endif() Target names in target_link_library calls can then be switched to the new KF6::Mime already. Once the transition is complete, the above snippet can be simplified to a single find_package call for the new variant again, without needing to touch anything else anymore. Akademy preparations While we were in Graz the dates for this year’s Akademy were announced: September 19-24. Registration as well as the Call for Participation are open as well. As it was already known that Akademy would be in Graz this year, we could use the opportunity to inspect venues, test food options, as well as to review and improve OSM (indoor) mapping of the conference location. Itinerary With a bunch of people traveling to the sprint, Itinerary also got a bit of attention of course: Performance of opening the “My Data” page the first time was improved, by optimizing computing some of the statistics shown on that page. A new way of sharing GraphQL query fragments should simplify maintaining support for the various OpenTripPlanner flavors in KPublicTransport. For some of the backends, the information available for rental bikes/scooters/cars became more detailed as a result of this. Kate’s syntax highlighting got support for IATA SSIM flight schedules. That’s fallout from work on importing such data into Transitous, where it will eventually also benefit Itinerary and KTrip. And more… That’s not all of course, other topics included: Improving the usability of the push services configuration in System Settings. Enabling System Settings to configure notifications from Flatpak apps using KNotificiation. Aligning the different ways currently used to share plain text via Purpose. Fixing some non-obvious issues with the static builds after a recent CI image update. There’s also reports from e.g. Kieryn, Albert and Kristen on Planet KDE with more details and other perspectives. Grazer Linuxtage KDE At Grazer Linuxtage we had a KDE booth again, showing devices running Plasma, Krita and Plasma Mobile, handing out stickers as well as the famous amigurumi Konqis, collecting donations, and of course with a bunch of KDE contributors around to talk to. KDE's booth at Grazer Linuxtage (photo by Kieryn Darkwater) Albert also did a presentation about 30 years of KDE. Transitous Also as part of the conference program I spoke about Transitous and what has been built for that and around that in the past two years. Following the recent discussions about dynamic traffic data, the talk about monitoring vehicle-to-vehicle and vehicle-to-infrastructure messages was particularly interesting. The information shown on opentrafficmap.org is obtained that way, and shows how incredibly detailed this is. There’s current positions of trams, busses, and regular cars, speed, acceleration vectors, status of all external lights, and which pedal gets pressed. Traffic lights report their current state and change timings as well as provide a full machine-readable model of their signal groups and lane relations. All of that in a standardized and (intentionally) unencrypted form. Lots of potential in this, I wasn’t aware this went anywhere after things had gotten a bit quieter around the self-driving cars hype. How you can help! Bringing people together, for a small meeting or a big conference, is extremely useful and productive. The necessary travel and logistics come with costs though, which is where your donations to organizations like KDE e.V. or Grazer Linuxtage help!"
+            - generic [ref=e671]:
+              - generic [ref=e672]:
+                - generic [ref=e673]: 47 minutes ago
+                - generic [ref=e674]: ·
+                - generic [ref=e675]: RSS
+              - generic [ref=e676]:
+                - button "Bookmark" [ref=e677]:
+                  - img [ref=e678]
+                - link "Read" [ref=e680] [cursor=pointer]:
+                  - /url: /reader/cmo43a12uws63pg3w34dhscgb
+                  - button "Read" [ref=e681]
+                - link [ref=e682] [cursor=pointer]:
+                  - /url: https://www.volkerkrause.eu/2026/04/18/kde-sprint-linuxtage-graz-2026.html
+                  - img [ref=e683]
+        - article [ref=e687]:
+          - generic [ref=e688]:
+            - paragraph [ref=e691]: r/iphone
+            - link "." [ref=e692] [cursor=pointer]:
+              - /url: /reader/cmo41tbabw8fvpg3wsy7d8mjt
+              - heading "." [level=3] [ref=e693]
+            - paragraph [ref=e694]: Lost my iphone 8 anyone an iphone 8 to donate it to me. submitted by /u/Crafty_Guava3104 [link] [comments]
+            - generic [ref=e695]:
+              - generic [ref=e696]:
+                - generic [ref=e697]: 48 minutes ago
+                - generic [ref=e698]: ·
+                - generic [ref=e699]: REDDIT
+              - generic [ref=e700]:
+                - button "Bookmark" [ref=e701]:
+                  - img [ref=e702]
+                - link "Read" [ref=e704] [cursor=pointer]:
+                  - /url: /reader/cmo41tbabw8fvpg3wsy7d8mjt
+                  - button "Read" [ref=e705]
+                - link [ref=e706] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iphone/comments/1sorgfs/_/
+                  - img [ref=e707]
+        - article [ref=e711]:
+          - generic [ref=e712]:
+            - paragraph [ref=e715]: LinuxLinks
+            - link "openRuyi – Linux Distribution for RISC-V" [ref=e716] [cursor=pointer]:
+              - /url: /reader/cmo41ph01w7shpg3wqss2kv7t
+              - heading "openRuyi – Linux Distribution for RISC-V" [level=3] [ref=e717]
+            - paragraph [ref=e718]: openRuyi is an open source Linux distribution, initiated and long-term maintained by Institute of Software, Chinese Academy of Sciences The post openRuyi – Linux Distribution for RISC-V appeared first on LinuxLinks.
+            - generic [ref=e719]:
+              - generic [ref=e720]:
+                - generic [ref=e721]: 48 minutes ago
+                - generic [ref=e722]: ·
+                - generic [ref=e723]: RSS
+              - generic [ref=e724]:
+                - button "Bookmark" [ref=e725]:
+                  - img [ref=e726]
+                - link "Read" [ref=e728] [cursor=pointer]:
+                  - /url: /reader/cmo41ph01w7shpg3wqss2kv7t
+                  - button "Read" [ref=e729]
+                - link [ref=e730] [cursor=pointer]:
+                  - /url: https://www.linuxlinks.com/openruyi-linux-distribution-risc-v/
+                  - img [ref=e731]
+        - article [ref=e735]:
+          - link [ref=e736] [cursor=pointer]:
+            - /url: /reader/cmo43a12cws4tpg3w8acxjka6
+          - generic [ref=e739]:
+            - paragraph [ref=e742]: Macworld
+            - link "Test your Mac’s performance using one of these benchmark and speed-test tools" [ref=e743] [cursor=pointer]:
+              - /url: /reader/cmo43a12cws4tpg3w8acxjka6
+              - heading "Test your Mac’s performance using one of these benchmark and speed-test tools" [level=3] [ref=e744]
+            - generic [ref=e745]:
+              - generic [ref=e746]:
+                - generic [ref=e747]: 50 minutes ago
+                - generic [ref=e748]: ·
+                - generic [ref=e749]: RSS
+              - generic [ref=e750]:
+                - button "Bookmark" [ref=e751]:
+                  - img [ref=e752]
+                - link "Read" [ref=e754] [cursor=pointer]:
+                  - /url: /reader/cmo43a12cws4tpg3w8acxjka6
+                  - button "Read" [ref=e755]
+                - link [ref=e756] [cursor=pointer]:
+                  - /url: https://www.macworld.com/article/672457/how-to-benchmark-and-speed-test-a-mac.html
+                  - img [ref=e757]
+        - article [ref=e761]:
+          - link [ref=e762] [cursor=pointer]:
+            - /url: /reader/cmo42a1spwf8xpg3wg51rv4wc
+          - generic [ref=e765]:
+            - paragraph [ref=e768]: r/selfhosted
+            - link "[I built] Offline voice-to-text for Windows — runs Whisper locally, 78 MB, no cloud, no account (Jurryi Speaks)" [ref=e769] [cursor=pointer]:
+              - /url: /reader/cmo42a1spwf8xpg3wg51rv4wc
+              - heading "[I built] Offline voice-to-text for Windows — runs Whisper locally, 78 MB, no cloud, no account (Jurryi Speaks)" [level=3] [ref=e770]
+            - generic [ref=e771]:
+              - generic [ref=e772]:
+                - generic [ref=e773]: 50 minutes ago
+                - generic [ref=e774]: ·
+                - generic [ref=e775]: REDDIT
+              - generic [ref=e776]:
+                - button "Bookmark" [ref=e777]:
+                  - img [ref=e778]
+                - link "Read" [ref=e780] [cursor=pointer]:
+                  - /url: /reader/cmo42a1spwf8xpg3wg51rv4wc
+                  - button "Read" [ref=e781]
+                - link [ref=e782] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/selfhosted/comments/1sorffk/i_built_offline_voicetotext_for_windows_runs/
+                  - img [ref=e783]
+        - article [ref=e787]:
+          - generic [ref=e788]:
+            - paragraph [ref=e791]: r/OpenClawUseCases
+            - link "If OpenClaw has ever reset your session at 4am, burned your tokens in a retry loop, or eaten 3GB of RAM — you're not using it wrong. Side-by-side comparison with Hermes Agent and TEMM1E." [ref=e792] [cursor=pointer]:
+              - /url: /reader/cmo42125dwdebpg3w2rx4juxx
+              - heading "If OpenClaw has ever reset your session at 4am, burned your tokens in a retry loop, or eaten 3GB of RAM — you're not using it wrong. Side-by-side comparison with Hermes Agent and TEMM1E." [level=3] [ref=e793]
+            - paragraph [ref=e794]: submitted by /u/No_Skill_8393 [link] [comments]
+            - generic [ref=e795]:
+              - generic [ref=e796]:
+                - generic [ref=e797]: 55 minutes ago
+                - generic [ref=e798]: ·
+                - generic [ref=e799]: REDDIT
+              - generic [ref=e800]:
+                - button "Bookmark" [ref=e801]:
+                  - img [ref=e802]
+                - link "Read" [ref=e804] [cursor=pointer]:
+                  - /url: /reader/cmo42125dwdebpg3w2rx4juxx
+                  - button "Read" [ref=e805]
+                - link [ref=e806] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/OpenClawUseCases/comments/1sorcgk/if_openclaw_has_ever_reset_your_session_at_4am/
+                  - img [ref=e807]
+        - article [ref=e811]:
+          - link [ref=e812] [cursor=pointer]:
+            - /url: /reader/cmo42lm98wkljpg3wq2aem272
+          - generic [ref=e815]:
+            - paragraph [ref=e818]: r/ClaudeAI
+            - link "Innovative Claude Opus 4.7 math" [ref=e819] [cursor=pointer]:
+              - /url: /reader/cmo42lm98wkljpg3wq2aem272
+              - heading "Innovative Claude Opus 4.7 math" [level=3] [ref=e820]
+            - generic [ref=e821]:
+              - generic [ref=e822]:
+                - generic [ref=e823]: 58 minutes ago
+                - generic [ref=e824]: ·
+                - generic [ref=e825]: REDDIT
+              - generic [ref=e826]:
+                - button "Bookmark" [ref=e827]:
+                  - img [ref=e828]
+                - link "Read" [ref=e830] [cursor=pointer]:
+                  - /url: /reader/cmo42lm98wkljpg3wq2aem272
+                  - button "Read" [ref=e831]
+                - link [ref=e832] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ClaudeAI/comments/1soraam/innovative_claude_opus_47_math/
+                  - img [ref=e833]
+        - article [ref=e837]:
+          - generic [ref=e838]:
+            - paragraph [ref=e841]: r/codex
+            - 'link "To Help With Usage Limits: WAT321 - Claude And Codex Usage Bars built right into your IDE" [ref=e842] [cursor=pointer]':
+              - /url: /reader/cmo41tbiqw8i1pg3wpne3qui7
+              - 'heading "To Help With Usage Limits: WAT321 - Claude And Codex Usage Bars built right into your IDE" [level=3] [ref=e843]'
+            - paragraph [ref=e844]: submitted by /u/DirtyWilly [link] [comments]
+            - generic [ref=e845]:
+              - generic [ref=e846]:
+                - generic [ref=e847]: 60 minutes ago
+                - generic [ref=e848]: ·
+                - generic [ref=e849]: REDDIT
+              - generic [ref=e850]:
+                - button "Bookmark" [ref=e851]:
+                  - img [ref=e852]
+                - link "Read" [ref=e854] [cursor=pointer]:
+                  - /url: /reader/cmo41tbiqw8i1pg3wpne3qui7
+                  - button "Read" [ref=e855]
+                - link [ref=e856] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/codex/comments/1sor96g/to_help_with_usage_limits_wat321_claude_and_codex/
+                  - img [ref=e857]
+        - article [ref=e861]:
+          - generic [ref=e862]:
+            - paragraph [ref=e865]: r/ChatGPTPro
+            - link "How many 5.4 pro requests on the new pro plan?" [ref=e866] [cursor=pointer]:
+              - /url: /reader/cmo41qqt2w8b1pg3wjeffs4oh
+              - heading "How many 5.4 pro requests on the new pro plan?" [level=3] [ref=e867]
+            - paragraph [ref=e868]: How many 5.4 pro requests do i get on the new 100 dollar plan? First time using that model and really love it, but don’t want to use it too much if I only get a certain requests per month submitted by /u/Outrageous-Muffin764 [link] [comments]
+            - generic [ref=e869]:
+              - generic [ref=e870]:
+                - generic [ref=e871]: 1 hour ago
+                - generic [ref=e872]: ·
+                - generic [ref=e873]: REDDIT
+              - generic [ref=e874]:
+                - button "Bookmark" [ref=e875]:
+                  - img [ref=e876]
+                - link "Read" [ref=e878] [cursor=pointer]:
+                  - /url: /reader/cmo41qqt2w8b1pg3wjeffs4oh
+                  - button "Read" [ref=e879]
+                - link [ref=e880] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ChatGPTPro/comments/1sor8tu/how_many_54_pro_requests_on_the_new_pro_plan/
+                  - img [ref=e881]
+        - article [ref=e885]:
+          - generic [ref=e886]:
+            - paragraph [ref=e889]: r/codex
+            - link "Trying to combine my local ollama with Codex, worth the trouble?" [ref=e890] [cursor=pointer]:
+              - /url: /reader/cmo418qzaw17ppg3wf8476a23
+              - heading "Trying to combine my local ollama with Codex, worth the trouble?" [level=3] [ref=e891]
+            - paragraph [ref=e892]: Because token are very limited these days. I am thinking of using my local 16vm machine. My plan is to use codex to do the reasoning and planning to generate a plan, then I use ollama to code it. Research says got-oss 20b is good for coding. But not sure how good? Anyone tried before? I am just a vibe coder. Is my strategy worth trying? Thx a lot in advance. submitted by /u/Puzzleheaded-Bill888 [link] [comments]
+            - generic [ref=e893]:
+              - generic [ref=e894]:
+                - generic [ref=e895]: 1 hour ago
+                - generic [ref=e896]: ·
+                - generic [ref=e897]: REDDIT
+              - generic [ref=e898]:
+                - button "Bookmark" [ref=e899]:
+                  - img [ref=e900]
+                - link "Read" [ref=e902] [cursor=pointer]:
+                  - /url: /reader/cmo418qzaw17ppg3wf8476a23
+                  - button "Read" [ref=e903]
+                - link [ref=e904] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/codex/comments/1sor7sx/trying_to_combine_my_local_ollama_with_codex/
+                  - img [ref=e905]
+        - article [ref=e909]:
+          - link [ref=e910] [cursor=pointer]:
+            - /url: /reader/cmo41mwttw76npg3wy337wtbm
+          - generic [ref=e913]:
+            - paragraph [ref=e916]: r/vibecoding
+            - 'link "yrr: swarms of agents talking via pub/sub/query" [ref=e917] [cursor=pointer]':
+              - /url: /reader/cmo41mwttw76npg3wy337wtbm
+              - 'heading "yrr: swarms of agents talking via pub/sub/query" [level=3] [ref=e918]'
+            - generic [ref=e919]:
+              - generic [ref=e920]:
+                - generic [ref=e921]: 1 hour ago
+                - generic [ref=e922]: ·
+                - generic [ref=e923]: REDDIT
+              - generic [ref=e924]:
+                - button "Bookmark" [ref=e925]:
+                  - img [ref=e926]
+                - link "Read" [ref=e928] [cursor=pointer]:
+                  - /url: /reader/cmo41mwttw76npg3wy337wtbm
+                  - button "Read" [ref=e929]
+                - link [ref=e930] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1sor7rs/yrr_swarms_of_agents_talking_via_pubsubquery/
+                  - img [ref=e931]
+        - article [ref=e935]:
+          - generic [ref=e936]:
+            - paragraph [ref=e939]: r/iphone
+            - link "I need help" [ref=e940] [cursor=pointer]:
+              - /url: /reader/cmo418qghw15jpg3wkwadlpd2
+              - heading "I need help" [level=3] [ref=e941]
+            - paragraph [ref=e942]: submitted by /u/Terrible_Accident979 [link] [comments]
+            - generic [ref=e943]:
+              - generic [ref=e944]:
+                - generic [ref=e945]: 1 hour ago
+                - generic [ref=e946]: ·
+                - generic [ref=e947]: REDDIT
+              - generic [ref=e948]:
+                - button "Bookmark" [ref=e949]:
+                  - img [ref=e950]
+                - link "Read" [ref=e952] [cursor=pointer]:
+                  - /url: /reader/cmo418qghw15jpg3wkwadlpd2
+                  - button "Read" [ref=e953]
+                - link [ref=e954] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iphone/comments/1sor5ya/i_need_help/
+                  - img [ref=e955]
+        - article [ref=e959]:
+          - generic [ref=e960]:
+            - paragraph [ref=e963]: r/vibecoding
+            - link "Can you make a career out of vibecoding apps/games?" [ref=e964] [cursor=pointer]:
+              - /url: /reader/cmo41mwtsw76bpg3wq7xb5tq7
+              - heading "Can you make a career out of vibecoding apps/games?" [level=3] [ref=e965]
+            - paragraph [ref=e966]: "I got into AI-assisted coding a few months ago. At first, I wrote most of the code myself and used ChatGPT to help me understand how to turn my ideas into working code. I started with C# in Unity, and about a week later I discovered Codex through my existing OpenAI plan. Once I set it up, I was amazed by how much faster it was than me and how often it got close to what I wanted. Now, about three months and three abandoned projects later, I’ve gotten much better at prompting, iterating, setting up repos properly, and keeping Codex from drifting. I’ve finally stuck with one project for almost two months, and it’s getting close to a version 1: a playable game I’d genuinely want to play if it were on Steam. One thing I’ve learned is that a huge part of game development isn’t coding at all. UI/UX, visuals, audio, animations, and spritesheets all take a lot of time. As a solo developer, I’ve worked around that by buying asset packs from the Unity Store, which has made things much more efficient without forcing me to learn a bunch of related skills. At the pace I’m going, and with what I know now, I think I could realistically create and publish 2–3 games a year. They wouldn’t have AAA polish, but I think it’s very feasible to make solid, enjoyable mid-tier indie games. I don’t expect anything I make to truly stand out, but I’ve definitely seen worse. So my question is: could someone realistically live off royalties if they consistently released 2–3 mid-tier games a year? Is anyone else in a similar position, or is AI coding still too new for anyone to give a solid answer? submitted by /u/YoungBuckins [link] [comments]"
+            - generic [ref=e967]:
+              - generic [ref=e968]:
+                - generic [ref=e969]: 1 hour ago
+                - generic [ref=e970]: ·
+                - generic [ref=e971]: REDDIT
+              - generic [ref=e972]:
+                - button "Bookmark" [ref=e973]:
+                  - img [ref=e974]
+                - link "Read" [ref=e976] [cursor=pointer]:
+                  - /url: /reader/cmo41mwtsw76bpg3wq7xb5tq7
+                  - button "Read" [ref=e977]
+                - link [ref=e978] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1sor5il/can_you_make_a_career_out_of_vibecoding_appsgames/
+                  - img [ref=e979]
+        - article [ref=e983]:
+          - generic [ref=e984]:
+            - paragraph [ref=e987]: r/macos
+            - link "flickery – the full-featured flickr client for Mac – is now free" [ref=e988] [cursor=pointer]:
+              - /url: /reader/cmo41gg75w5t1pg3w9czaa6nn
+              - heading "flickery – the full-featured flickr client for Mac – is now free" [level=3] [ref=e989]
+            - paragraph [ref=e990]: "Hi everybody, my app flickery for Mac has been around since 2008. But in recent years, I haven't been able to update it much, and SmugMug, despite my hopes, did nothing to further their (otherwise great) flickr APIs, so I've decided to put flickery on “life support” and make it free on the Mac App Store. It continues to work just fine – its UI is a blast from the Mac OS X Leopard past –, and I will try my best to keep it running, but the app will not be receiving substantial updates anymore. That being said, it is still a great way to browse and use flickr, so I hope with it now being free, the app will be of use to those who frequent flickr. Enjoy : ) – Matthias submitted by /u/eternalstorms [link] [comments]"
+            - generic [ref=e991]:
+              - generic [ref=e992]:
+                - generic [ref=e993]: 1 hour ago
+                - generic [ref=e994]: ·
+                - generic [ref=e995]: REDDIT
+              - generic [ref=e996]:
+                - button "Bookmark" [ref=e997]:
+                  - img [ref=e998]
+                - link "Read" [ref=e1000] [cursor=pointer]:
+                  - /url: /reader/cmo41gg75w5t1pg3w9czaa6nn
+                  - button "Read" [ref=e1001]
+                - link [ref=e1002] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/MacOS/comments/1sor3j4/flickery_the_fullfeatured_flickr_client_for_mac/
+                  - img [ref=e1003]
+        - article [ref=e1007]:
+          - generic [ref=e1008]:
+            - paragraph [ref=e1011]: r/openclaw
+            - link "Openclaw or Hermes?" [ref=e1012] [cursor=pointer]:
+              - /url: /reader/cmo414vuhw06dpg3wc7nw7hfg
+              - heading "Openclaw or Hermes?" [level=3] [ref=e1013]
+            - paragraph [ref=e1014]: What is the difference between both. When should I use OC and when Hermes? Can someone explain to me that shortly and for dummies? At the moment I use OpenClaw. submitted by /u/EdenTom [link] [comments]
+            - generic [ref=e1015]:
+              - generic [ref=e1016]:
+                - generic [ref=e1017]: 1 hour ago
+                - generic [ref=e1018]: ·
+                - generic [ref=e1019]: REDDIT
+              - generic [ref=e1020]:
+                - button "Bookmark" [ref=e1021]:
+                  - img [ref=e1022]
+                - link "Read" [ref=e1024] [cursor=pointer]:
+                  - /url: /reader/cmo414vuhw06dpg3wc7nw7hfg
+                  - button "Read" [ref=e1025]
+                - link [ref=e1026] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/openclaw/comments/1sor24y/openclaw_or_hermes/
+                  - img [ref=e1027]
+        - article [ref=e1031]:
+          - generic [ref=e1032]:
+            - paragraph [ref=e1035]: r/macos
+            - 'link "Unpopular opinion: paying a monthly subscription for Mac dictation in 2026 is absurd" [ref=e1036] [cursor=pointer]':
+              - /url: /reader/cmo40vvgrvygnpg3wh9hhywvh
+              - 'heading "Unpopular opinion: paying a monthly subscription for Mac dictation in 2026 is absurd" [level=3] [ref=e1037]'
+            - paragraph [ref=e1038]: I work on SpeakUp (disclosure, on the team) so I'm biased. But I built it because this was driving me crazy. Dictation is a solved problem. Whisper — OpenAI released it open-source in 2022 — runs locally on any M-series Mac in real-time. The model is free. The inference is free. The ongoing cost to a dictation company is basically zero, maybe a landing page. Yet most "pro" Mac dictation apps are $10-15/month subscriptions. Wispr Flow, Superwhisper pro tier, Spokenly, etc. There's no technical reason dictation should be a subscription. Transcription doesn't need a server. It doesn't need continuous updates. Your audio doesn't need to leave your Mac. The subscription model exists because subscriptions print money, not because anything about dictation requires it. The one-time-payment alternatives already exist and work well — Handy (free/open source), carelesswhisper ($19.99 once), Voiceink, and Speakup at €29. There's a good chance the subscription cohort either drops prices or pivots to bolt-on AI features to justify the monthly charge. Anyone still paying a subscription for dictation — what's actually keeping you there? I'm not being rhetorical, I genuinely want to know what the subscriptions offer that a €20-30 one-time app doesn't. submitted by /u/Fit_Statistician2649 [link] [comments]
+            - generic [ref=e1039]:
+              - generic [ref=e1040]:
+                - generic [ref=e1041]: 1 hour ago
+                - generic [ref=e1042]: ·
+                - generic [ref=e1043]: REDDIT
+              - generic [ref=e1044]:
+                - button "Bookmark" [ref=e1045]:
+                  - img [ref=e1046]
+                - link "Read" [ref=e1048] [cursor=pointer]:
+                  - /url: /reader/cmo40vvgrvygnpg3wh9hhywvh
+                  - button "Read" [ref=e1049]
+                - link [ref=e1050] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/MacOS/comments/1sor0nn/unpopular_opinion_paying_a_monthly_subscription/
+                  - img [ref=e1051]
+        - article [ref=e1055]:
+          - generic [ref=e1056]:
+            - paragraph [ref=e1059]: r/openclaw
+            - link "Fed up baby sitting Openclaw, found a better Alternative." [ref=e1060] [cursor=pointer]:
+              - /url: /reader/cmo414vugw05zpg3w8mmkn8td
+              - heading "Fed up baby sitting Openclaw, found a better Alternative." [level=3] [ref=e1061]
+            - paragraph [ref=e1062]: "Been using OpenClaw for a few months now. My actual use case: writing blogs for our projects cold emailing leads scraping leads from YC, Twitter, Reddit And I have to babysit every single workflow. Like genuinely. I don't understand how people use this for actual prod stuff. The main issues I kept hitting: memory just drifts. it forgets constraints I set days ago flows break randomly after working fine last week every update is basically a gamble on \"what broken now?\" the browser extension for Reddit/Twitter is flaky as hell, you can't trust it to run without you staring at it I know the Chrome DevTools MCP thing exists but that allow-connection popup every single time kills any shot at real hands-off automation. At some point I just accepted it wasn't \"set it forget it\". It's more like set it, watch it, fix it, rerun it. Tried Hermes Agent for about a week after that. The concept is genuinely cool, self-improving loop, builds its own skills etc. But in practice: it would \"improve\" a skill that was already working and break it self-evaluation always said it did great even when the output was clearly wrong still didn't feel like something I could leave running overnight on real workflows A friend mentioned bot0.dev and honestly I went in skeptical. Few things that actually stood out after using it: uses your real browser with your actual sessions and cookies for Reddit and Twitter with logged-in accounts this is a real difference caching actually works the way you'd want it to. first run it figures the workflow out, after that it replays from cache. for stuff I run on a schedule the token costs dropped noticeably after week one memory through ctx0 is readable. I can see what it knows and correct it. less \"I hope it remembers\" energy stuff I'm still figuring out: -smaller skill ecosystem compared to OpenClaw, nowhere close to ClawHub -setup took me a couple days to wrap my head around coming from OpenClaw -the \"train your own model on your workflows\" thing sounds interesting, haven't gotten there yet -not available for wider audience, just Mac only For my lead scraping and outreach workflows it's been the most stable setup so far. not perfect. but the specific things I was fighting most are genuinely better. submitted by /u/Ok-Literature-9189 [link] [comments]"
+            - generic [ref=e1063]:
+              - generic [ref=e1064]:
+                - generic [ref=e1065]: 1 hour ago
+                - generic [ref=e1066]: ·
+                - generic [ref=e1067]: REDDIT
+              - generic [ref=e1068]:
+                - button "Bookmark" [ref=e1069]:
+                  - img [ref=e1070]
+                - link "Read" [ref=e1072] [cursor=pointer]:
+                  - /url: /reader/cmo414vugw05zpg3w8mmkn8td
+                  - button "Read" [ref=e1073]
+                - link [ref=e1074] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/openclaw/comments/1sor0cd/fed_up_baby_sitting_openclaw_found_a_better/
+                  - img [ref=e1075]
+        - article [ref=e1079]:
+          - link [ref=e1080] [cursor=pointer]:
+            - /url: /reader/cmo412btxvzutpg3wkty3bnkt
+          - generic [ref=e1083]:
+            - paragraph [ref=e1086]: r/vibecoding
+            - link "I used lovable to make this" [ref=e1087] [cursor=pointer]:
+              - /url: /reader/cmo412btxvzutpg3wkty3bnkt
+              - heading "I used lovable to make this" [level=3] [ref=e1088]
+            - generic [ref=e1089]:
+              - generic [ref=e1090]:
+                - generic [ref=e1091]: 1 hour ago
+                - generic [ref=e1092]: ·
+                - generic [ref=e1093]: REDDIT
+              - generic [ref=e1094]:
+                - button "Bookmark" [ref=e1095]:
+                  - img [ref=e1096]
+                - link "Read" [ref=e1098] [cursor=pointer]:
+                  - /url: /reader/cmo412btxvzutpg3wkty3bnkt
+                  - button "Read" [ref=e1099]
+                - link [ref=e1100] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1soqyhg/i_used_lovable_to_make_this/
+                  - img [ref=e1101]
+        - article [ref=e1105]:
+          - generic [ref=e1106]:
+            - paragraph [ref=e1109]: r/GeminiCLI
+            - link "No previous sessions found for this project (following CLI upgrade)" [ref=e1110] [cursor=pointer]:
+              - /url: /reader/cmo4110wpvzdvpg3wf7sgk831
+              - heading "No previous sessions found for this project (following CLI upgrade)" [level=3] [ref=e1111]
+            - paragraph [ref=e1112]: "TL;DR: Backup .gemini before starting the CLI. Twice this has happened, latest was on updating from 0.38.1 to 0.38.2: gemini -r auto-updates with npm /exit (because it says new version will load on the next run) gemini -r \"No previous sessions found for this project\" I had taken a backup of the .gemini folder (in windows it's under $env:USERPROFILE\\.gemini) so I restored my session by copying back the .gemini\\tmp\\project_name\\{chats,tool-outputs} folders. They were empty, while it apparently still had the right .gemini\\tmp\\project_name\\logs.json. submitted by /u/PilotFlying [link] [comments]"
+            - generic [ref=e1113]:
+              - generic [ref=e1114]:
+                - generic [ref=e1115]: 1 hour ago
+                - generic [ref=e1116]: ·
+                - generic [ref=e1117]: REDDIT
+              - generic [ref=e1118]:
+                - button "Bookmark" [ref=e1119]:
+                  - img [ref=e1120]
+                - link "Read" [ref=e1122] [cursor=pointer]:
+                  - /url: /reader/cmo4110wpvzdvpg3wf7sgk831
+                  - button "Read" [ref=e1123]
+                - link [ref=e1124] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/GeminiCLI/comments/1soqxvm/no_previous_sessions_found_for_this_project/
+                  - img [ref=e1125]
+        - article [ref=e1129]:
+          - link [ref=e1130] [cursor=pointer]:
+            - /url: /reader/cmo40vvihvyjlpg3wqi453trl
+          - generic [ref=e1133]:
+            - paragraph [ref=e1136]: r/fedora
+            - link "Are y'all jealous already?" [ref=e1137] [cursor=pointer]:
+              - /url: /reader/cmo40vvihvyjlpg3wqi453trl
+              - heading "Are y'all jealous already?" [level=3] [ref=e1138]
+            - generic [ref=e1139]:
+              - generic [ref=e1140]:
+                - generic [ref=e1141]: 1 hour ago
+                - generic [ref=e1142]: ·
+                - generic [ref=e1143]: REDDIT
+              - generic [ref=e1144]:
+                - button "Bookmark" [ref=e1145]:
+                  - img [ref=e1146]
+                - link "Read" [ref=e1148] [cursor=pointer]:
+                  - /url: /reader/cmo40vvihvyjlpg3wqi453trl
+                  - button "Read" [ref=e1149]
+                - link [ref=e1150] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/Fedora/comments/1soqx5j/are_yall_jealous_already/
+                  - img [ref=e1151]
+        - article [ref=e1155]:
+          - generic [ref=e1156]:
+            - paragraph [ref=e1159]: r/hermesagent
+            - link "Agentic Testing Small LLM's" [ref=e1160] [cursor=pointer]:
+              - /url: /reader/cmo414vy4w07dpg3w5vj1opy9
+              - heading "Agentic Testing Small LLM's" [level=3] [ref=e1161]
+            - paragraph [ref=e1162]: "I wanted to know which small LLMs might work best for agentic AI for my system, an AMD Ryzen 9 7940HS w/ Radeon 780M Graphics w/64 gb. I vibe-coded an agentic LLM test suite and ran those that I found interesting. If you are interested, you can take a look: https://fancy-rapids-vpen.here.now/ submitted by /u/Kingfish656 [link] [comments]"
+            - generic [ref=e1163]:
+              - generic [ref=e1164]:
+                - generic [ref=e1165]: 1 hour ago
+                - generic [ref=e1166]: ·
+                - generic [ref=e1167]: REDDIT
+              - generic [ref=e1168]:
+                - button "Bookmark" [ref=e1169]:
+                  - img [ref=e1170]
+                - link "Read" [ref=e1172] [cursor=pointer]:
+                  - /url: /reader/cmo414vy4w07dpg3w5vj1opy9
+                  - button "Read" [ref=e1173]
+                - link [ref=e1174] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/hermesagent/comments/1soqwmr/agentic_testing_small_llms/
+                  - img [ref=e1175]
+        - article [ref=e1179]:
+          - generic [ref=e1180]:
+            - paragraph [ref=e1183]: r/openclaw
+            - link "Fed up baby sitting Openclaw, found a better Alternative." [ref=e1184] [cursor=pointer]:
+              - /url: /reader/cmo40kba8vt3bpg3w0b5akew4
+              - heading "Fed up baby sitting Openclaw, found a better Alternative." [level=3] [ref=e1185]
+            - paragraph [ref=e1186]: "Been using OpenClaw for a few months now. My actual use case: - writing blogs for our projects - cold emailing leads - scraping leads from YC, Twitter, Reddit And I have to babysit every single workflow. Like genuinely. I don't understand how people use this for actual prod stuff. The main issues I kept hitting: - memory just drifts. it forgets constraints I set days ago - flows break randomly after working fine last week - every update is basically a gamble on \"what broken now?\" - the browser extension for Reddit/Twitter is flaky as hell, you can't trust it to run without you staring at it I know the Chorme DevTools MCP thing exists but that allow-connection popup every single time kills any shot at real hands-off automation. At some point I just accepted it wasn't \"set it forget it\". It's more like set it, watch it, fix it, rerun it. Tried Hermes Agent for about a week after that. The concept is genuinely cool, self-improving loop, builds its own skills etc. But in practice: - it would \"improve\" a skill that was already working and break it - self-evaluation always said it did great even when the output was clearly wrong - still didn't feel like something I could leave running overnight on real workflows A friend mentioned bot0.dev and honestly I went in skeptical. Few things that actually stood out after using it: - uses your real browser with your actual sessions and cookies. no extension fighting, no permission popups mid-run. for Reddit and Twitter with logged-in accounts this is a real difference - caching actually works the way you'd want it to. first run it figures the workflow out, after that it replays from cache. for stuff I run on a schedule the token costs dropped noticeably after week one - memory through ctx0 is readable. I can see what it knows and correct it. less \"I hope it remembers\" energy stuff I'm still figuring out: - smaller skill ecosystem compared to OpenClaw, nowhere close to ClawHub - setup took me a couple days to wrap my head around coming from OpenClaw - the \"train your own model on your workflows\" thing sounds interesting, haven't gotten there yet For my lead scraping and outreach workflows it's been the most stable setup so far. not perfect. but the specific things I was fighting most are genuinely better. submitted by /u/Ok-Literature-9189 [link] [comments]"
+            - generic [ref=e1187]:
+              - generic [ref=e1188]:
+                - generic [ref=e1189]: 1 hour ago
+                - generic [ref=e1190]: ·
+                - generic [ref=e1191]: REDDIT
+              - generic [ref=e1192]:
+                - button "Bookmark" [ref=e1193]:
+                  - img [ref=e1194]
+                - link [ref=e1196] [cursor=pointer]:
+                  - /url: /reader/cmo40kba8vt3bpg3w0b5akew4
+                  - img [ref=e1198]
+                - link [ref=e1200] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/openclaw/comments/1soqw7k/fed_up_baby_sitting_openclaw_found_a_better/
+                  - img [ref=e1201]
+        - article [ref=e1205]:
+          - generic [ref=e1206]:
+            - paragraph [ref=e1209]: r/ClaudeAI
+            - link "10 Hours of Claude Design - My Thoughts" [ref=e1210] [cursor=pointer]:
+              - /url: /reader/cmo41gh0nw62xpg3w6nuoyhyp
+              - heading "10 Hours of Claude Design - My Thoughts" [level=3] [ref=e1211]
+            - paragraph [ref=e1212]: "I do not come from a design background, but I do come from a software background, and have been a strong user of Claude code for almost a year now. Claude Design is genuinely an extremely powerful tool that has blown me away all day. Its been such a blast making a full design system from scratch, all the way to using that design system to build dashboards, and even videos! (I've attached one if anyone is curious) There is definitely a learning curve, and I am still learning tons every hour. Some tips I've found so far: -Do you first prompt of a chat with Opus 4.7. I know its expensive, but the initial draft of any file in Claude Design is the most important by far. -Once your first prompt is done, use Sonnet 4.6 (or whatever tbh), to make edits -Edits are surprisingly very low tokens usage.. and fast, and honestly fairly accurate -Suggest edits in small, concise prompts, or use the edit button/draw button to select an element or an area. I did go through 0-80% of my weeks usage of Claude Design in 10 hours of constant use, on a 5x plan.. and honestly, I think its pretty fair value. Considering my day to day is actually in Claude code, and this usage (so far) is separated usage, I expect this much usage per week will be sufficient. I still need to actually finish building out the design system in code now! Solid release, can't wait until tomorrow morning when you guys have vibe code fixed a couple minor bugs and added some improvements! submitted by /u/ImNateDogg [link] [comments]"
+            - generic [ref=e1213]:
+              - generic [ref=e1214]:
+                - generic [ref=e1215]: 1 hour ago
+                - generic [ref=e1216]: ·
+                - generic [ref=e1217]: REDDIT
+              - generic [ref=e1218]:
+                - button "Bookmark" [ref=e1219]:
+                  - img [ref=e1220]
+                - link "Read" [ref=e1222] [cursor=pointer]:
+                  - /url: /reader/cmo41gh0nw62xpg3w6nuoyhyp
+                  - button "Read" [ref=e1223]
+                - link [ref=e1224] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ClaudeAI/comments/1soqutr/10_hours_of_claude_design_my_thoughts/
+                  - img [ref=e1225]
+        - article [ref=e1229]:
+          - generic [ref=e1230]:
+            - paragraph [ref=e1233]: r/ios
+            - link "where can i get free to use/open source all purpose apps?" [ref=e1234] [cursor=pointer]:
+              - /url: /reader/cmo40vviivyk9pg3wmmq1hxd4
+              - heading "where can i get free to use/open source all purpose apps?" [level=3] [ref=e1235]
+            - paragraph [ref=e1236]: i never seem to find any new free apps in app store lately now im having a feeling of under utilizing my iphone 16 Pro. it'd be nice if theres any portal or app where i can discover free useful/open source iOS apps. submitted by /u/Towhidabid [link] [comments]
+            - generic [ref=e1237]:
+              - generic [ref=e1238]:
+                - generic [ref=e1239]: 1 hour ago
+                - generic [ref=e1240]: ·
+                - generic [ref=e1241]: REDDIT
+              - generic [ref=e1242]:
+                - button "Bookmark" [ref=e1243]:
+                  - img [ref=e1244]
+                - link "Read" [ref=e1246] [cursor=pointer]:
+                  - /url: /reader/cmo40vviivyk9pg3wmmq1hxd4
+                  - button "Read" [ref=e1247]
+                - link [ref=e1248] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ios/comments/1soqt2g/where_can_i_get_free_to_useopen_source_all/
+                  - img [ref=e1249]
+        - article [ref=e1253]:
+          - generic [ref=e1254]:
+            - paragraph [ref=e1257]: The Decoder
+            - link "OpenAI loses three executives in one swoop as restructuring reshapes its product lineup" [ref=e1258] [cursor=pointer]:
+              - /url: /reader/cmo40vvynvypdpg3wl9o8kd9u
+              - heading "OpenAI loses three executives in one swoop as restructuring reshapes its product lineup" [level=3] [ref=e1259]
+            - paragraph [ref=e1260]: Three high-profile executives are walking away from OpenAI. The departures come as the company restructures and doubles down on coding and enterprise customers. The article OpenAI loses three executives in one swoop as restructuring reshapes its product lineup appeared first on The Decoder.
+            - generic [ref=e1261]:
+              - generic [ref=e1262]:
+                - generic [ref=e1263]: 1 hour ago
+                - generic [ref=e1264]: ·
+                - generic [ref=e1265]: RSS
+              - generic [ref=e1266]:
+                - button "Bookmark" [ref=e1267]:
+                  - img [ref=e1268]
+                - link [ref=e1270] [cursor=pointer]:
+                  - /url: /reader/cmo40vvynvypdpg3wl9o8kd9u
+                  - img [ref=e1272]
+                - link [ref=e1274] [cursor=pointer]:
+                  - /url: https://the-decoder.com/openai-loses-three-executives-in-one-swoop-as-restructuring-reshapes-its-product-lineup/
+                  - img [ref=e1275]
+        - article [ref=e1279]:
+          - link [ref=e1280] [cursor=pointer]:
+            - /url: /reader/cmo40hq99vsebpg3wjvahdqf9
+          - generic [ref=e1283]:
+            - paragraph [ref=e1286]: r/genaiapps
+            - link "Built a 3D fashion design studio for iPhone – create realistic clothes mockups on the go!" [ref=e1287] [cursor=pointer]:
+              - /url: /reader/cmo40hq99vsebpg3wjvahdqf9
+              - heading "Built a 3D fashion design studio for iPhone – create realistic clothes mockups on the go!" [level=3] [ref=e1288]
+            - generic [ref=e1289]:
+              - generic [ref=e1290]:
+                - generic [ref=e1291]: 1 hour ago
+                - generic [ref=e1292]: ·
+                - generic [ref=e1293]: REDDIT
+              - generic [ref=e1294]:
+                - button "Bookmark" [ref=e1295]:
+                  - img [ref=e1296]
+                - link "Read" [ref=e1298] [cursor=pointer]:
+                  - /url: /reader/cmo40hq99vsebpg3wjvahdqf9
+                  - button "Read" [ref=e1299]
+                - link [ref=e1300] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/GenAiApps/comments/1soqsbw/built_a_3d_fashion_design_studio_for_iphone/
+                  - img [ref=e1301]
+        - article [ref=e1305]:
+          - link [ref=e1306] [cursor=pointer]:
+            - /url: /reader/cmo40hqamvsh3pg3wlr8d0le9
+          - generic [ref=e1309]:
+            - paragraph [ref=e1312]: r/iosapps
+            - link "Limited Offer - 3D fashion design studio for iPhone – create realistic clothes mockups on the go" [ref=e1313] [cursor=pointer]:
+              - /url: /reader/cmo40hqamvsh3pg3wlr8d0le9
+              - heading "Limited Offer - 3D fashion design studio for iPhone – create realistic clothes mockups on the go" [level=3] [ref=e1314]
+            - generic [ref=e1315]:
+              - generic [ref=e1316]:
+                - generic [ref=e1317]: 2 hours ago
+                - generic [ref=e1318]: ·
+                - generic [ref=e1319]: REDDIT
+              - generic [ref=e1320]:
+                - button "Bookmark" [ref=e1321]:
+                  - img [ref=e1322]
+                - link "Read" [ref=e1324] [cursor=pointer]:
+                  - /url: /reader/cmo40hqamvsh3pg3wlr8d0le9
+                  - button "Read" [ref=e1325]
+                - link [ref=e1326] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iosapps/comments/1soqp4a/limited_offer_3d_fashion_design_studio_for_iphone/
+                  - img [ref=e1327]
+        - article [ref=e1331]:
+          - link [ref=e1332] [cursor=pointer]:
+            - /url: /reader/cmo403kqgvmnzpg3wsyhissd1
+          - generic [ref=e1335]:
+            - paragraph [ref=e1338]: r/iphone
+            - link "iPhone 18 pro colors revealed" [ref=e1339] [cursor=pointer]:
+              - /url: /reader/cmo403kqgvmnzpg3wsyhissd1
+              - heading "iPhone 18 pro colors revealed" [level=3] [ref=e1340]
+            - generic [ref=e1341]:
+              - generic [ref=e1342]:
+                - generic [ref=e1343]: 2 hours ago
+                - generic [ref=e1344]: ·
+                - generic [ref=e1345]: REDDIT
+              - generic [ref=e1346]:
+                - button "Bookmark" [ref=e1347]:
+                  - img [ref=e1348]
+                - link "Read" [ref=e1350] [cursor=pointer]:
+                  - /url: /reader/cmo403kqgvmnzpg3wsyhissd1
+                  - button "Read" [ref=e1351]
+                - link [ref=e1352] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iphone/comments/1soqnpo/iphone_18_pro_colors_revealed/
+                  - img [ref=e1353]
+        - article [ref=e1357]:
+          - generic [ref=e1358]:
+            - paragraph [ref=e1361]: r/cachyos
+            - link "Upgrading from gnome 49 to 50" [ref=e1362] [cursor=pointer]:
+              - /url: /reader/cmo40hq65vs8lpg3weynoi8a2
+              - heading "Upgrading from gnome 49 to 50" [level=3] [ref=e1363]
+            - paragraph [ref=e1364]: recently after my cachy os update I upgraded from gnome 49 to 50 but it broke many of the gnome extensions that I had and it's not compatible with many of them. can I downgrade to 49 again and lock it somehow so it doesn't upgrade when I do cachy-update. will doing something like this have any issues like will I be falling back on security if I stick with gnome 49 or something? submitted by /u/MinuteIllustrious963 [link] [comments]
+            - generic [ref=e1365]:
+              - generic [ref=e1366]:
+                - generic [ref=e1367]: 2 hours ago
+                - generic [ref=e1368]: ·
+                - generic [ref=e1369]: REDDIT
+              - generic [ref=e1370]:
+                - button "Bookmark" [ref=e1371]:
+                  - img [ref=e1372]
+                - link "Read" [ref=e1374] [cursor=pointer]:
+                  - /url: /reader/cmo40hq65vs8lpg3weynoi8a2
+                  - button "Read" [ref=e1375]
+                - link [ref=e1376] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/cachyos/comments/1soqlvm/upgrading_from_gnome_49_to_50/
+                  - img [ref=e1377]
+        - article [ref=e1381]:
+          - generic [ref=e1382]:
+            - paragraph [ref=e1385]: r/claude
+            - link "Feeling lost in this AI world" [ref=e1386] [cursor=pointer]:
+              - /url: /reader/cmo40hq9svsgvpg3wl1aceffc
+              - heading "Feeling lost in this AI world" [level=3] [ref=e1387]
+            - paragraph [ref=e1388]: I’m a front-end developer, and lately I’ve been feeling lost in this AI world. Everything is moving so fast. New tools, new trends, new expectations every week. Some days it feels exciting, but most days it feels overwhelming. I’m trying to figure out where I fit into all of this. How to learn, how to adapt, and how to actually use what I’ve learned. I’ve taken so many courses and watched so many tutorials, but I still struggle to apply it at work. Our company is fully focused on integrating AI into our day-to-day work. Everyone seems to come up with creative, practical ideas, while I’m just sitting there with theoretical knowledge and no clue how to turn it into something useful. Has anyone else felt like this? How did you get past it? submitted by /u/FilC619 [link] [comments]
+            - generic [ref=e1389]:
+              - generic [ref=e1390]:
+                - generic [ref=e1391]: 2 hours ago
+                - generic [ref=e1392]: ·
+                - generic [ref=e1393]: REDDIT
+              - generic [ref=e1394]:
+                - button "Bookmark" [ref=e1395]:
+                  - img [ref=e1396]
+                - link [ref=e1398] [cursor=pointer]:
+                  - /url: /reader/cmo40hq9svsgvpg3wl1aceffc
+                  - img [ref=e1400]
+                - link [ref=e1402] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/claude/comments/1soqlln/feeling_lost_in_this_ai_world/
+                  - img [ref=e1403]
+        - article [ref=e1407]:
+          - generic [ref=e1408]:
+            - paragraph [ref=e1411]: r/ClaudeAI
+            - link "An old designer’s perspective on claude design." [ref=e1412] [cursor=pointer]:
+              - /url: /reader/cmo40vvtcvyoppg3w2e6dz42x
+              - heading "An old designer’s perspective on claude design." [level=3] [ref=e1413]
+            - paragraph [ref=e1414]: "I started designing websites in 1999, back when there was no figma, no component libraries, it was just you, a bunch of code and a variety of hacks to make Adobe tools made for print work for the web. Over the past two decades i’ve worked in internal teams for big corporates, at large agencies, and now head an agency of my own. Along the way the field has changed, matured, to an incredible degree: design systems, ux standards, atomic design principles have formalized design, codified it into rules and patterns. When i see claude code or google stitch i too see that it’s initial output is slop. That the high definition nature of the output hides how generic and insubstantial it really is. But thats not the point. The point is that we have turned the bulk of design work into pattern reproduction. I’m not talking about the part where we understand users’ needs, or wrangle with conflicting business requirements. I’m talking about the impopular truth that from an economic perspective the vast majority of ux and visual design is maintaining design systems, cobbling together functionality based on pre-existing functionality with very little variation. Small, often inconsequential variations on color palettes or margins. Nobody wants to say this on linkedin or at a conference, but as an industry, only 5% of us are actually developimg brands from scratch or shifting the product design paradigm. The rest are just reading tickets and assembling components together. And the thing about components, atomic design, and patterns, is: it’s structured, logical, formalized, repetitive. Consistency and adherence are the point. It was designed to be automated. It’s simply training data waiting for AI to come along, and now it’s here. The fact that it doesn’t look like much right now doesn’t negate the fact that it is going to be very, very good at it. Everyone who works on a big product team knows that 90% of the work is patterns and systems. Will there be work for designers next to AI? Sure, for 10% of the current workforce - the ones who were doing the client/stakeholder wrangling bit anyway. But if you’re in the other 90% it might as well be as if design as a discipline has ceased to exist. submitted by /u/undeadcrayon [link] [comments]"
+            - generic [ref=e1415]:
+              - generic [ref=e1416]:
+                - generic [ref=e1417]: 2 hours ago
+                - generic [ref=e1418]: ·
+                - generic [ref=e1419]: REDDIT
+              - generic [ref=e1420]:
+                - button "Bookmark" [ref=e1421]:
+                  - img [ref=e1422]
+                - link "Read" [ref=e1424] [cursor=pointer]:
+                  - /url: /reader/cmo40vvtcvyoppg3w2e6dz42x
+                  - button "Read" [ref=e1425]
+                - link [ref=e1426] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ClaudeAI/comments/1soql9c/an_old_designers_perspective_on_claude_design/
+                  - img [ref=e1427]
+        - article [ref=e1431]:
+          - link [ref=e1432] [cursor=pointer]:
+            - /url: /reader/cmo403kqgvmo1pg3wrc9uosps
+          - generic [ref=e1435]:
+            - paragraph [ref=e1438]: r/iphone
+            - link "turning off password to install apps" [ref=e1439] [cursor=pointer]:
+              - /url: /reader/cmo403kqgvmo1pg3wrc9uosps
+              - heading "turning off password to install apps" [level=3] [ref=e1440]
+            - generic [ref=e1441]:
+              - generic [ref=e1442]:
+                - generic [ref=e1443]: 2 hours ago
+                - generic [ref=e1444]: ·
+                - generic [ref=e1445]: REDDIT
+              - generic [ref=e1446]:
+                - button "Bookmark" [ref=e1447]:
+                  - img [ref=e1448]
+                - link "Read" [ref=e1450] [cursor=pointer]:
+                  - /url: /reader/cmo403kqgvmo1pg3wrc9uosps
+                  - button "Read" [ref=e1451]
+                - link [ref=e1452] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iphone/comments/1soqktu/turning_off_password_to_install_apps/
+                  - img [ref=e1453]
+        - article [ref=e1457]:
+          - link [ref=e1458] [cursor=pointer]:
+            - /url: /reader/cmo403kqgvmo3pg3wridore3z
+          - generic [ref=e1461]:
+            - paragraph [ref=e1464]: r/iphone
+            - link "Icloud drive taking over 20gb space locally!" [ref=e1465] [cursor=pointer]:
+              - /url: /reader/cmo403kqgvmo3pg3wridore3z
+              - heading "Icloud drive taking over 20gb space locally!" [level=3] [ref=e1466]
+            - generic [ref=e1467]:
+              - generic [ref=e1468]:
+                - generic [ref=e1469]: 2 hours ago
+                - generic [ref=e1470]: ·
+                - generic [ref=e1471]: REDDIT
+              - generic [ref=e1472]:
+                - button "Bookmark" [ref=e1473]:
+                  - img [ref=e1474]
+                - link "Read" [ref=e1476] [cursor=pointer]:
+                  - /url: /reader/cmo403kqgvmo3pg3wridore3z
+                  - button "Read" [ref=e1477]
+                - link [ref=e1478] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iphone/comments/1soqjzn/icloud_drive_taking_over_20gb_space_locally/
+                  - img [ref=e1479]
+        - article [ref=e1483]:
+          - generic [ref=e1484]:
+            - paragraph [ref=e1487]: r/openclaw
+            - link "I built an OpenClaw compatible Avatar app for iOS, MacOS, and CarPlay" [ref=e1488] [cursor=pointer]:
+              - /url: /reader/cmo3zzq78vlqbpg3w9yi3qngw
+              - heading "I built an OpenClaw compatible Avatar app for iOS, MacOS, and CarPlay" [level=3] [ref=e1489]
+            - paragraph [ref=e1490]: "Hey all, I've been building something for the OpenClaw community (and other local-AI folks) and I'd love feedback from people who actually run their own agents at home. It's called Chitin. Two free iOS apps (Avatar and Phone), a macOS desktop app, and CarPlay support. You connect them to your OpenClaw instance with a QR code and it just… talks to your local model. No account needed for local use. What the apps do: Chitin Avatar (iPhone/iPad) — an animated 3D character you can talk to. Lip sync, facial expressions, full-body animation. Ten personalities to pick from, each with its own voice. If you have an old iPad lying around, you can repurpose it into a permanent desk or wall-mounted avatar for your agent. The app is shipping with six unique avatars, with more to come... a lot more. Chitin Phone (iPhone) — a voice-first orb. Tap, speak, hear a natural-sounding voice answer back. CarPlay is built in, so you can have a conversation with your agent while you drive. We hope to release Apple Watch compatibility soon. Chitin Bridge (macOS menu bar): this is the piece I think OpenClaw users will care most about. It runs quietly in your menu bar on the Mac where OpenClaw lives, and it's what lets the iOS apps reach your home OpenClaw from anywhere. Without it you're limited to talking to OpenClaw on the same network; with it your phone can hit your home instance over an encrypted relay. It also works in a purely local mode where nothing ever leaves your network. No relay, no cloud, your conversations stay entirely between your devices and your OpenClaw instance. Bridge handles onboarding too. Run through the setup wizard, scan the QR code with your phone, and the Chitin apps pair with your OpenClaw instance. No finicky setup or manually typing in IP addresses. Chitin Desktop (macOS): the full Chitin experience on your Mac. Open a window and interact with a Chitin Avatar without a phone or any other device. Why I built it: I was running an agent on my own hardware and the problem wasn't the model, it was the interface. A chat window tethered to a laptop doesn't cut it. I wanted something I could talk to in the car, on the couch, from my phone, on my Mac at my desk, and have it feel like the same entity every time. Not four disconnected chatbots that all happen to share a backend. The other thing that bugged me was that most voice-AI apps want you to route everything through their cloud. If you've gone to the trouble of running your own agents locally, the presentation layer should respect that decision, not quietly ship your conversations off to someone else's server. Chitin was built so the local path is a first-class citizen, not an afterthought. Voices: The apps ship with several built-in voices that sound great out of the box. No API key needed, no extra cost. If you want premium voice quality, you can also bring your own ElevenLabs API key and Chitin will use it for text-to-speech, complete with lip sync on the avatar. The built-in voices are solid for everyday use, but ElevenLabs noticeably raises the bar if you care about voice realism. Memory across surfaces: Your companion carries the same personality, voice, and memory across every Chitin app. Switch from your phone on the walk home to the Mac at your desk to CarPlay on the morning commute, and it's the same conversation continuing. Honest note on the pricing: full memory persistence across devices is part of Chitin Plus ($9.99/mo). Single-surface use against your local OpenClaw is free with a 20-message daily cap. No account means no account. No email, no phone number, just an anonymous device identifier. Relay infrastructure, voice synthesis, and server costs aren't free, but I wanted the core local use case to stay accessible without asking for a credit card or any personal information. A note on latency and model choice: Because Chitin is a voice conversation app, response time matters more than it does in a chat window. If you're running OpenClaw locally, you'll get the best experience with a fast, conversational model (Llama 3.1 8B, Mistral 7B, Qwen3 8B, or Phi-3 Mini on Apple Silicon). Heavier reasoning models will work, but the pause before each response will feel long in a spoken conversation. If your OpenClaw setup uses a larger model for other tasks, consider configuring a lighter model specifically for the Chitin-facing agent. Chitin also supports bring-your-own-key for major cloud providers if you'd rather not run models locally. The same principle applies there: fast conversational models (Gemini Flash, GPT-4o mini, Mistral Small) will feel much better in voice than heavy frontier models. You can also just use Chitin's built-in managed backend, which works out of the box with no API keys at all. Beyond model choice, Chitin is highly configurable. Your agent's system prompt length, context window size, and other settings all affect response time. If things feel slow, there's usually a knob to turn to get it working. What's coming next: Right now the focus is OpenClaw because that's what I use and what I trust the setup flow on. But I'm also working on an open protocol called the Chitin Presentation Protocol (CPP) so that any agent framework can use Chitin as its presentation layer, not just OpenClaw. The goal is for the apps to be framework-agnostic so you can point them at whatever agent stack you run. iOS and Mac are first because those are the devices I use daily; other platforms are on the roadmap. If you've got a framework or platform you'd want supported, leave a comment and I'll prioritize against the list. Some honest caveats: This is a brand new product. There will be bugs. iOS has been a moving target, voice latency varies by network, and I know there are rough edges I haven't hit yet because my household is a small test lab. If you try it and something breaks — the QR pairing, the voice flow, CarPlay, anything — I genuinely want to hear about it. Comments here, DM, or [support@chitin.net](mailto:support@chitin.net) all work. I know there are plenty of voice-AI apps. What I think is actually different is the your agent, any screen framing: OpenClaw is the brain, Chitin is just the body it wears wherever you happen to be. How to try it: iOS apps on the App Store (search \"Chitin Avatar\" or \"Chitin Phone\") Setup guide and QR pairing walkthrough at chitin.net/openclaw (takes ~30 seconds if your OpenClaw instance is already running) Free tier, no account needed, talks straight to your local gateway What I'd love to know from you: What's missing that would make it actually useful in your setup? Is the QR pairing flow clear, or does it fall over somewhere? Anyone tried CarPlay with a local AI yet? I'm especially curious whether driving conversations feel natural or weird. Thanks for reading. Happy to answer anything in the comments, and doubly happy to hear about bugs. Links chitin.net chitin.net/openclaw — setup guide chitin.net/surfaces — all the apps App Store: Chitin Avatar · Chitin Phone submitted by /u/Chitin_Chat [link] [comments]"
+            - generic [ref=e1491]:
+              - generic [ref=e1492]:
+                - generic [ref=e1493]: 2 hours ago
+                - generic [ref=e1494]: ·
+                - generic [ref=e1495]: REDDIT
+              - generic [ref=e1496]:
+                - button "Bookmark" [ref=e1497]:
+                  - img [ref=e1498]
+                - link "Read" [ref=e1500] [cursor=pointer]:
+                  - /url: /reader/cmo3zzq78vlqbpg3w9yi3qngw
+                  - button "Read" [ref=e1501]
+                - link [ref=e1502] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/openclaw/comments/1soqi6l/i_built_an_openclaw_compatible_avatar_app_for_ios/
+                  - img [ref=e1503]
+        - article [ref=e1507]:
+          - generic [ref=e1508]:
+            - paragraph [ref=e1511]: r/openclaw
+            - link "Need help setting up job hunting with openclaw" [ref=e1512] [cursor=pointer]:
+              - /url: /reader/cmo3zzq78vlqdpg3wlf4a6o9w
+              - heading "Need help setting up job hunting with openclaw" [level=3] [ref=e1513]
+            - paragraph [ref=e1514]: I tried creating python scripts and workflow skills for openclaw , gave it some web search api keys however my experience has been bad. It doesnt really work well in terms of job search. I'll apply to them myself however the search part isnt upto the mark. I was wondering if any of you guys created any such use case and made it robust enough so it works well / gives good results. submitted by /u/BESTHARSH004 [link] [comments]
+            - generic [ref=e1515]:
+              - generic [ref=e1516]:
+                - generic [ref=e1517]: 2 hours ago
+                - generic [ref=e1518]: ·
+                - generic [ref=e1519]: REDDIT
+              - generic [ref=e1520]:
+                - button "Bookmark" [ref=e1521]:
+                  - img [ref=e1522]
+                - link "Read" [ref=e1524] [cursor=pointer]:
+                  - /url: /reader/cmo3zzq78vlqdpg3wlf4a6o9w
+                  - button "Read" [ref=e1525]
+                - link [ref=e1526] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/openclaw/comments/1soqhu9/need_help_setting_up_job_hunting_with_openclaw/
+                  - img [ref=e1527]
+        - article [ref=e1531]:
+          - generic [ref=e1532]:
+            - paragraph [ref=e1535]: r/ClaudeCode
+            - link "Got a dream job but have a 0 motivation" [ref=e1536] [cursor=pointer]:
+              - /url: /reader/cmo414wq1w0rzpg3w6goa4ru0
+              - heading "Got a dream job but have a 0 motivation" [level=3] [ref=e1537]
+            - paragraph [ref=e1538]: Hi, Recently i was hired by top tech company in my country. For USA living people comparison is - it is like i am hired for Google or Amazon. I am paid well relative to EU salaries, great benefits and great spot on CV. The issue is, after AI got advanced - I can't imagine what I will do there, I am coding for 4.5 Years and before AI got this good - i had motivation, sleepless nights solving challenges, finding out some solutions , optimizing it and delivering that on for everyone's benefit. Now it's prompting , yeah i have to still review, make architectural decisions but i don't feel this will stay long, so there comes another anxiety source - job security. I feel like anytime it can end. I am not sure when management or CEO gets an idea on his head that okay, we can handle that with 1/2 of team, then what? You are out like nothing. I am sure a lot of devs are going through this, i am a very motivated and hard working person but in today's world, to be honest I feel miserable and old, who is there just on his last days submitted by /u/ElkSubstantial1857 [link] [comments]
+            - generic [ref=e1539]:
+              - generic [ref=e1540]:
+                - generic [ref=e1541]: 2 hours ago
+                - generic [ref=e1542]: ·
+                - generic [ref=e1543]: REDDIT
+              - generic [ref=e1544]:
+                - button "Bookmark" [ref=e1545]:
+                  - img [ref=e1546]
+                - link "Read" [ref=e1548] [cursor=pointer]:
+                  - /url: /reader/cmo414wq1w0rzpg3w6goa4ru0
+                  - button "Read" [ref=e1549]
+                - link [ref=e1550] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ClaudeCode/comments/1soqh4p/got_a_dream_job_but_have_a_0_motivation/
+                  - img [ref=e1551]
+        - article [ref=e1555]:
+          - button "Play Liverpool Are Making SERIOUS Moves! Talks With ROOF & USG Signal A HUGE Summer Ahead inline" [ref=e1557]:
+            - img [ref=e1562]
+          - generic [ref=e1564]:
+            - paragraph [ref=e1567]: Anfield Index
+            - link "Liverpool Are Making SERIOUS Moves! Talks With ROOF & USG Signal A HUGE Summer Ahead" [ref=e1568] [cursor=pointer]:
+              - /url: /reader/cmo407h80vo1rpg3watn0nvsb
+              - heading "Liverpool Are Making SERIOUS Moves! Talks With ROOF & USG Signal A HUGE Summer Ahead" [level=3] [ref=e1569]
+            - generic [ref=e1570]:
+              - generic [ref=e1572]: 2 hours ago
+              - generic [ref=e1573]:
+                - button "Bookmark" [ref=e1574]:
+                  - img [ref=e1575]
+                - link "Read" [ref=e1577] [cursor=pointer]:
+                  - /url: /reader/cmo407h80vo1rpg3watn0nvsb
+                  - button "Read" [ref=e1578]
+                - link [ref=e1579] [cursor=pointer]:
+                  - /url: https://www.youtube.com/watch?v=vTMEbc6zMvw
+                  - img [ref=e1580]
+        - article [ref=e1584]:
+          - button "Play ManLikeHaks has some words for Tottenham’s players ahead of their crucial game against Brighton… inline" [ref=e1586]:
+            - img [ref=e1591]
+          - generic [ref=e1593]:
+            - paragraph [ref=e1596]: talkSPORT
+            - link "ManLikeHaks has some words for Tottenham’s players ahead of their crucial game against Brighton…" [ref=e1597] [cursor=pointer]:
+              - /url: /reader/cmo407nlpvqyhpg3wtc40rymb
+              - heading "ManLikeHaks has some words for Tottenham’s players ahead of their crucial game against Brighton…" [level=3] [ref=e1598]
+            - generic [ref=e1599]:
+              - generic [ref=e1601]: 2 hours ago
+              - generic [ref=e1602]:
+                - button "Bookmark" [ref=e1603]:
+                  - img [ref=e1604]
+                - link "Read" [ref=e1606] [cursor=pointer]:
+                  - /url: /reader/cmo407nlpvqyhpg3wtc40rymb
+                  - button "Read" [ref=e1607]
+                - link [ref=e1608] [cursor=pointer]:
+                  - /url: https://www.youtube.com/shorts/g1VLYgEvzFw
+                  - img [ref=e1609]
+        - article [ref=e1613]:
+          - button "Play This Sunday decides the TITLE!? 👀🏆 inline" [ref=e1615]:
+            - img [ref=e1620]
+          - generic [ref=e1622]:
+            - paragraph [ref=e1625]: The Overlap
+            - link "This Sunday decides the TITLE!? 👀🏆" [ref=e1626] [cursor=pointer]:
+              - /url: /reader/cmo407ioevopfpg3w23nsfun3
+              - heading "This Sunday decides the TITLE!? 👀🏆" [level=3] [ref=e1627]
+            - generic [ref=e1628]:
+              - generic [ref=e1630]: 2 hours ago
+              - generic [ref=e1631]:
+                - button "Bookmark" [ref=e1632]:
+                  - img [ref=e1633]
+                - link "Read" [ref=e1635] [cursor=pointer]:
+                  - /url: /reader/cmo407ioevopfpg3w23nsfun3
+                  - button "Read" [ref=e1636]
+                - link [ref=e1637] [cursor=pointer]:
+                  - /url: https://www.youtube.com/shorts/Z6BWQFKQZt0
+                  - img [ref=e1638]
+        - article [ref=e1642]:
+          - button "Play Union Berlin’s Marie-Louise Eta is a history maker 🇩🇪 inline" [ref=e1644]:
+            - img [ref=e1649]
+          - generic [ref=e1651]:
+            - paragraph [ref=e1654]: The Totally Football Show
+            - link "Union Berlin’s Marie-Louise Eta is a history maker 🇩🇪" [ref=e1655] [cursor=pointer]:
+              - /url: /reader/cmo3zn0dlviu9pg3wt2cq2ip3
+              - heading "Union Berlin’s Marie-Louise Eta is a history maker 🇩🇪" [level=3] [ref=e1656]
+            - generic [ref=e1657]:
+              - generic [ref=e1659]: 2 hours ago
+              - generic [ref=e1660]:
+                - button "Bookmark" [ref=e1661]:
+                  - img [ref=e1662]
+                - link "Read" [ref=e1664] [cursor=pointer]:
+                  - /url: /reader/cmo3zn0dlviu9pg3wt2cq2ip3
+                  - button "Read" [ref=e1665]
+                - link [ref=e1666] [cursor=pointer]:
+                  - /url: https://www.youtube.com/shorts/ZxpfiksOIbg
+                  - img [ref=e1667]
+        - article [ref=e1671]:
+          - button "Play Roy - \"Spurs are staying up!\" ⬆️ inline" [ref=e1673]:
+            - img [ref=e1678]
+          - generic [ref=e1680]:
+            - paragraph [ref=e1683]: The Overlap
+            - link "Roy - \"Spurs are staying up!\" ⬆️" [ref=e1684] [cursor=pointer]:
+              - /url: /reader/cmo3zmxtxvhijpg3wivpwigwo
+              - heading "Roy - \"Spurs are staying up!\" ⬆️" [level=3] [ref=e1685]
+            - generic [ref=e1686]:
+              - generic [ref=e1688]: 2 hours ago
+              - generic [ref=e1689]:
+                - button "Bookmark" [ref=e1690]:
+                  - img [ref=e1691]
+                - link "Read" [ref=e1693] [cursor=pointer]:
+                  - /url: /reader/cmo3zmxtxvhijpg3wivpwigwo
+                  - button "Read" [ref=e1694]
+                - link [ref=e1695] [cursor=pointer]:
+                  - /url: https://www.youtube.com/shorts/RPsv-Czmgow
+                  - img [ref=e1696]
+        - article [ref=e1700]:
+          - link [ref=e1701] [cursor=pointer]:
+            - /url: /reader/cmo3zzqulvm4tpg3wpvlodww0
+          - generic [ref=e1704]:
+            - paragraph [ref=e1707]: TechRadar UK
+            - 'link "World Snooker Championship 2026 live streams: How to watch tournament for FREE, TV channels, preview, seeds" [ref=e1708] [cursor=pointer]':
+              - /url: /reader/cmo3zzqulvm4tpg3wpvlodww0
+              - 'heading "World Snooker Championship 2026 live streams: How to watch tournament for FREE, TV channels, preview, seeds" [level=3] [ref=e1709]'
+            - generic [ref=e1710]:
+              - generic [ref=e1711]:
+                - generic [ref=e1712]: 2 hours ago
+                - generic [ref=e1713]: ·
+                - generic [ref=e1714]: RSS
+              - generic [ref=e1715]:
+                - button "Bookmark" [ref=e1716]:
+                  - img [ref=e1717]
+                - link "Read" [ref=e1719] [cursor=pointer]:
+                  - /url: /reader/cmo3zzqulvm4tpg3wpvlodww0
+                  - button "Read" [ref=e1720]
+                - link [ref=e1721] [cursor=pointer]:
+                  - /url: https://www.techradar.com/how-to-watch/sport/world-snooker-championship-2026-free-live-streams
+                  - img [ref=e1722]
+        - article [ref=e1726]:
+          - link [ref=e1727] [cursor=pointer]:
+            - /url: /reader/cmo3zzqulvm4vpg3wme7us6at
+          - generic [ref=e1730]:
+            - paragraph [ref=e1733]: TechRadar UK
+            - 'link "''No barbell, no special equipment and no gym membership required'': the forward lunge is the best simple move you''re not doing, and it''s vital for over-50s" [ref=e1734] [cursor=pointer]':
+              - /url: /reader/cmo3zzqulvm4vpg3wme7us6at
+              - 'heading "''No barbell, no special equipment and no gym membership required'': the forward lunge is the best simple move you''re not doing, and it''s vital for over-50s" [level=3] [ref=e1735]'
+            - generic [ref=e1736]:
+              - generic [ref=e1737]:
+                - generic [ref=e1738]: 2 hours ago
+                - generic [ref=e1739]: ·
+                - generic [ref=e1740]: RSS
+              - generic [ref=e1741]:
+                - button "Bookmark" [ref=e1742]:
+                  - img [ref=e1743]
+                - link "Read" [ref=e1745] [cursor=pointer]:
+                  - /url: /reader/cmo3zzqulvm4vpg3wme7us6at
+                  - button "Read" [ref=e1746]
+                - link [ref=e1747] [cursor=pointer]:
+                  - /url: https://www.techradar.com/health-fitness/no-barbell-no-special-equipment-and-no-gym-membership-required-the-forward-lunge-is-the-best-simple-move-youre-not-doing-and-its-vital-for-over-50s
+                  - img [ref=e1748]
+        - article [ref=e1752]:
+          - button "Play I HATE To Even Think About This... inline" [ref=e1754]:
+            - img [ref=e1759]
+          - generic [ref=e1761]:
+            - paragraph [ref=e1764]: Anfield Agenda
+            - link "I HATE To Even Think About This..." [ref=e1765] [cursor=pointer]:
+              - /url: /reader/cmo3zmy9fvhqqpg3ws7jiv4pm
+              - heading "I HATE To Even Think About This..." [level=3] [ref=e1766]
+            - generic [ref=e1767]:
+              - generic [ref=e1769]: 2 hours ago
+              - generic [ref=e1770]:
+                - button "Bookmark" [ref=e1771]:
+                  - img [ref=e1772]
+                - link "Read" [ref=e1774] [cursor=pointer]:
+                  - /url: /reader/cmo3zmy9fvhqqpg3ws7jiv4pm
+                  - button "Read" [ref=e1775]
+                - link [ref=e1776] [cursor=pointer]:
+                  - /url: https://www.youtube.com/shorts/RPouFx7Iqow
+                  - img [ref=e1777]
+        - article [ref=e1781]:
+          - link [ref=e1782] [cursor=pointer]:
+            - /url: /reader/cmo3zqprmvk5fpg3wyceuhvvk
+          - generic [ref=e1785]:
+            - paragraph [ref=e1788]: r/macos
+            - link "DualClip v1.2.6 — Stability Fix, Homebrew Tap" [ref=e1789] [cursor=pointer]:
+              - /url: /reader/cmo3zqprmvk5fpg3wyceuhvvk
+              - heading "DualClip v1.2.6 — Stability Fix, Homebrew Tap" [level=3] [ref=e1790]
+            - generic [ref=e1791]:
+              - generic [ref=e1792]:
+                - generic [ref=e1793]: 2 hours ago
+                - generic [ref=e1794]: ·
+                - generic [ref=e1795]: REDDIT
+              - generic [ref=e1796]:
+                - button "Bookmark" [ref=e1797]:
+                  - img [ref=e1798]
+                - link "Read" [ref=e1800] [cursor=pointer]:
+                  - /url: /reader/cmo3zqprmvk5fpg3wyceuhvvk
+                  - button "Read" [ref=e1801]
+                - link [ref=e1802] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/MacOS/comments/1soqczs/dualclip_v126_stability_fix_homebrew_tap/
+                  - img [ref=e1803]
+        - article [ref=e1807]:
+          - generic [ref=e1808]:
+            - paragraph [ref=e1811]: r/claude
+            - link "Alternate Timeline Project. Very fun little project that was interesting to do." [ref=e1812] [cursor=pointer]:
+              - /url: /reader/cmo40hq9svsgxpg3w46ew6ezd
+              - heading "Alternate Timeline Project. Very fun little project that was interesting to do." [level=3] [ref=e1813]
+            - paragraph [ref=e1814]: I spent the last week or so just developing a timeline where the aeolipile was actually seen as a potentially productive tool instead of a party trick and have been talking to Claude about pretty much what it thinks would happen and used it kind of like a choose your own adventure book. It put together a lot of detail in quite a few areas. Honestly if its world history from 60 CE onwards, its still not nearly enough but it is still quite a lot. Have a read if you'd like! submitted by /u/Quiet-Exchange8157 [link] [comments]
+            - generic [ref=e1815]:
+              - generic [ref=e1816]:
+                - generic [ref=e1817]: 2 hours ago
+                - generic [ref=e1818]: ·
+                - generic [ref=e1819]: REDDIT
+              - generic [ref=e1820]:
+                - button "Bookmark" [ref=e1821]:
+                  - img [ref=e1822]
+                - link "Read" [ref=e1824] [cursor=pointer]:
+                  - /url: /reader/cmo40hq9svsgxpg3w46ew6ezd
+                  - button "Read" [ref=e1825]
+                - link [ref=e1826] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/claude/comments/1soqcqm/alternate_timeline_project_very_fun_little/
+                  - img [ref=e1827]
+        - article [ref=e1831]:
+          - link [ref=e1832] [cursor=pointer]:
+            - /url: /reader/cmo3zqqykvkefpg3w50vuytom
+          - generic [ref=e1835]:
+            - paragraph [ref=e1838]: r/OpenClawUseCases
+            - link "I built an OpenClaw compatible Avatar app for iOS, MacOS, and CarPlay" [ref=e1839] [cursor=pointer]:
+              - /url: /reader/cmo3zqqykvkefpg3w50vuytom
+              - heading "I built an OpenClaw compatible Avatar app for iOS, MacOS, and CarPlay" [level=3] [ref=e1840]
+            - generic [ref=e1841]:
+              - generic [ref=e1842]:
+                - generic [ref=e1843]: 2 hours ago
+                - generic [ref=e1844]: ·
+                - generic [ref=e1845]: REDDIT
+              - generic [ref=e1846]:
+                - button "Bookmark" [ref=e1847]:
+                  - img [ref=e1848]
+                - link "Read" [ref=e1850] [cursor=pointer]:
+                  - /url: /reader/cmo3zqqykvkefpg3w50vuytom
+                  - button "Read" [ref=e1851]
+                - link [ref=e1852] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/OpenClawUseCases/comments/1soqbli/i_built_an_openclaw_compatible_avatar_app_for_ios/
+                  - img [ref=e1853]
+        - article [ref=e1857]:
+          - generic [ref=e1858]:
+            - button "Play State Of Self-Hosting Week 35 inline" [ref=e1859]:
+              - img [ref=e1864]
+            - img [ref=e1867]
+          - generic [ref=e1869]:
+            - paragraph [ref=e1872]: ServersatHome
+            - link "State Of Self-Hosting Week 35" [ref=e1873] [cursor=pointer]:
+              - /url: /reader/cmnvogb3wedt9p34dvpzoqdyw
+              - heading "State Of Self-Hosting Week 35" [level=3] [ref=e1874]
+            - generic [ref=e1875]:
+              - generic [ref=e1877]: 2 hours ago
+              - generic [ref=e1878]:
+                - button "Remove bookmark" [ref=e1879]:
+                  - img [ref=e1880]
+                - link "Read" [ref=e1882] [cursor=pointer]:
+                  - /url: /reader/cmnvogb3wedt9p34dvpzoqdyw
+                  - button "Read" [ref=e1883]
+                - link [ref=e1884] [cursor=pointer]:
+                  - /url: https://www.youtube.com/watch?v=v_sxhxFfvqg
+                  - img [ref=e1885]
+        - article [ref=e1889]:
+          - link [ref=e1890] [cursor=pointer]:
+            - /url: /reader/cmo3zzr07vm95pg3wnz2b41fh
+          - generic [ref=e1893]:
+            - paragraph [ref=e1896]: r/ClaudeCode
+            - link "Is this normal? For opus 4.6 it shows as Opus 4.6, but for 4.7 it's showing as Opus 4, even when I ask for its model it's saying 4.7. Are you all seeing 4.7 as Opus 4 in your terminal" [ref=e1897] [cursor=pointer]:
+              - /url: /reader/cmo3zzr07vm95pg3wnz2b41fh
+              - heading "Is this normal? For opus 4.6 it shows as Opus 4.6, but for 4.7 it's showing as Opus 4, even when I ask for its model it's saying 4.7. Are you all seeing 4.7 as Opus 4 in your terminal" [level=3] [ref=e1898]
+            - generic [ref=e1899]:
+              - generic [ref=e1900]:
+                - generic [ref=e1901]: 2 hours ago
+                - generic [ref=e1902]: ·
+                - generic [ref=e1903]: REDDIT
+              - generic [ref=e1904]:
+                - button "Bookmark" [ref=e1905]:
+                  - img [ref=e1906]
+                - link "Read" [ref=e1908] [cursor=pointer]:
+                  - /url: /reader/cmo3zzr07vm95pg3wnz2b41fh
+                  - button "Read" [ref=e1909]
+                - link [ref=e1910] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ClaudeCode/comments/1soqapg/is_this_normal_for_opus_46_it_shows_as_opus_46/
+                  - img [ref=e1911]
+        - article [ref=e1915]:
+          - generic [ref=e1916]:
+            - paragraph [ref=e1919]: r/claude
+            - link "i wasn't believing Opus got dumber twice in a week, so he decided to impress me" [ref=e1920] [cursor=pointer]:
+              - /url: /reader/cmo3zclqmvahvpg3wtar5l4rn
+              - heading "i wasn't believing Opus got dumber twice in a week, so he decided to impress me" [level=3] [ref=e1921]
+            - paragraph [ref=e1922]: the first picture is a translation, thats why the text looks weird. second one is the original submitted by /u/azvd_ [link] [comments]
+            - generic [ref=e1923]:
+              - generic [ref=e1924]:
+                - generic [ref=e1925]: 2 hours ago
+                - generic [ref=e1926]: ·
+                - generic [ref=e1927]: REDDIT
+              - generic [ref=e1928]:
+                - button "Bookmark" [ref=e1929]:
+                  - img [ref=e1930]
+                - link "Read" [ref=e1932] [cursor=pointer]:
+                  - /url: /reader/cmo3zclqmvahvpg3wtar5l4rn
+                  - button "Read" [ref=e1933]
+                - link [ref=e1934] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/claude/comments/1soq9km/i_wasnt_believing_opus_got_dumber_twice_in_a_week/
+                  - img [ref=e1935]
+        - article [ref=e1939]:
+          - button "Play Liverpool Eye Senesi - Bargain or Risk? inline" [ref=e1941]:
+            - img [ref=e1946]
+          - generic [ref=e1948]:
+            - paragraph [ref=e1951]: Anfield Index
+            - link "Liverpool Eye Senesi - Bargain or Risk?" [ref=e1952] [cursor=pointer]:
+              - /url: /reader/cmo2r1qiacxnfpg3wmcmj560q
+              - heading "Liverpool Eye Senesi - Bargain or Risk?" [level=3] [ref=e1953]
+            - generic [ref=e1954]:
+              - generic [ref=e1956]: 2 hours ago
+              - generic [ref=e1957]:
+                - button "Bookmark" [ref=e1958]:
+                  - img [ref=e1959]
+                - link "Read" [ref=e1961] [cursor=pointer]:
+                  - /url: /reader/cmo2r1qiacxnfpg3wmcmj560q
+                  - button "Read" [ref=e1962]
+                - link [ref=e1963] [cursor=pointer]:
+                  - /url: https://www.youtube.com/watch?v=MhMgT6njTZU
+                  - img [ref=e1964]
+        - article [ref=e1968]:
+          - link [ref=e1969] [cursor=pointer]:
+            - /url: /reader/cmo3zzqu1vm3dpg3wc8ab48ti
+          - generic [ref=e1972]:
+            - paragraph [ref=e1975]: r/selfhosted
+            - link "Lightweight Markdown editor with slide support (VSCode alternative)" [ref=e1976] [cursor=pointer]:
+              - /url: /reader/cmo3zzqu1vm3dpg3wc8ab48ti
+              - heading "Lightweight Markdown editor with slide support (VSCode alternative)" [level=3] [ref=e1977]
+            - generic [ref=e1978]:
+              - generic [ref=e1979]:
+                - generic [ref=e1980]: 2 hours ago
+                - generic [ref=e1981]: ·
+                - generic [ref=e1982]: REDDIT
+              - generic [ref=e1983]:
+                - button "Bookmark" [ref=e1984]:
+                  - img [ref=e1985]
+                - link "Read" [ref=e1987] [cursor=pointer]:
+                  - /url: /reader/cmo3zzqu1vm3dpg3wc8ab48ti
+                  - button "Read" [ref=e1988]
+                - link [ref=e1989] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/selfhosted/comments/1soq8ve/lightweight_markdown_editor_with_slide_support/
+                  - img [ref=e1990]
+        - article [ref=e1994]:
+          - link [ref=e1995] [cursor=pointer]:
+            - /url: /reader/cmo3zcndnvar5pg3wryypowjb
+          - generic [ref=e1998]:
+            - paragraph [ref=e2001]: r/vibecoding
+            - link "I finally stopped fighting the code and just started vibing." [ref=e2002] [cursor=pointer]:
+              - /url: /reader/cmo3zcndnvar5pg3wryypowjb
+              - heading "I finally stopped fighting the code and just started vibing." [level=3] [ref=e2003]
+            - generic [ref=e2004]:
+              - generic [ref=e2005]:
+                - generic [ref=e2006]: 2 hours ago
+                - generic [ref=e2007]: ·
+                - generic [ref=e2008]: REDDIT
+              - generic [ref=e2009]:
+                - button "Bookmark" [ref=e2010]:
+                  - img [ref=e2011]
+                - link [ref=e2013] [cursor=pointer]:
+                  - /url: /reader/cmo3zcndnvar5pg3wryypowjb
+                  - img [ref=e2015]
+                - link [ref=e2017] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1soq7yb/i_finally_stopped_fighting_the_code_and_just/
+                  - img [ref=e2018]
+        - article [ref=e2022]:
+          - generic [ref=e2023]:
+            - paragraph [ref=e2026]: r/selfhosted
+            - 'link "Validating a full self-hosted stack on a single Ryzen mini PC before I buy: Immich + HA + Frigate + Ollama (+NAS?) on 32GB" [ref=e2027] [cursor=pointer]':
+              - /url: /reader/cmo3zf86wvcb1pg3wm3zvnvnf
+              - 'heading "Validating a full self-hosted stack on a single Ryzen mini PC before I buy: Immich + HA + Frigate + Ollama (+NAS?) on 32GB" [level=3] [ref=e2028]'
+            - paragraph [ref=e2029]: "Planning to self-host the following on a single mini PC (Ryzen 7 8845HS, Radeon 780M, 32GB DDR5, 2× NVMe — 1TB system + 2TB data). Based in Madrid, Spain. Stack: AdGuard Home (LXC) — whole-network DNS filtering Tailscale (LXC) — remote access, no port forwarding Immich (Docker) — replacing iCloud Photos, ~340 GB photo library. DB on 1TB NVMe, uploads on 2TB NVMe Home Assistant (HAOS VM) — consolidating SmartLife + SmartThings + Alexa. ~20 devices currently Frigate (Docker) — NVR for one Tapo C310 to start, maybe 2–3 cameras eventually Ollama + Open WebUI (Docker/LXC) — local LLM, start with Qwen 2.5 14B Concerns: Immich face recognition and Frigate object detection both want the iGPU. Has anyone run both on the 780M simultaneously? Does ROCm handle this gracefully or do they compete? 32GB feels comfortable on paper (HAOS 4GB + Docker host 10GB + AdGuard/Tailscale 1GB = 15GB allocated, ~17GB headroom). Does Immich's initial indexing of ~23,000 items spike memory enough to cause problems? Any services in this stack you'd split onto a second machine rather than run on the same Proxmox node? Not interested in going full NAS yet, the 2TB NVMe handles my current storage needs, maybe on a later phase? submitted by /u/Pablo_Gates [link] [comments]"
+            - generic [ref=e2030]:
+              - generic [ref=e2031]:
+                - generic [ref=e2032]: 2 hours ago
+                - generic [ref=e2033]: ·
+                - generic [ref=e2034]: REDDIT
+              - generic [ref=e2035]:
+                - button "Bookmark" [ref=e2036]:
+                  - img [ref=e2037]
+                - link "Read" [ref=e2039] [cursor=pointer]:
+                  - /url: /reader/cmo3zf86wvcb1pg3wm3zvnvnf
+                  - button "Read" [ref=e2040]
+                - link [ref=e2041] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/selfhosted/comments/1soq7ok/validating_a_full_selfhosted_stack_on_a_single/
+                  - img [ref=e2042]
+        - article [ref=e2046]:
+          - generic [ref=e2047]:
+            - paragraph [ref=e2050]: r/selfhosted
+            - link "selfhosted software like Figma ?" [ref=e2051] [cursor=pointer]:
+              - /url: /reader/cmo3zf86xvcb3pg3w6r4m9u4f
+              - heading "selfhosted software like Figma ?" [level=3] [ref=e2052]
+            - paragraph [ref=e2053]: Hi community, I have a free Figma account and it is great but i quickly run out of AI tokens . What would be a self-hosted alternative i can point to my ollama/llama.cpp setup ? I have tried penpot but i find it unconvincing. I cannot get the AI to work, and it seems all it woudl do anyway is generate HTML/CCS, whereas on Figma i can simulate click-through dashboards etc as it generates React code thank you submitted by /u/PositiveBusiness8677 [link] [comments]
+            - generic [ref=e2054]:
+              - generic [ref=e2055]:
+                - generic [ref=e2056]: 2 hours ago
+                - generic [ref=e2057]: ·
+                - generic [ref=e2058]: REDDIT
+              - generic [ref=e2059]:
+                - button "Bookmark" [ref=e2060]:
+                  - img [ref=e2061]
+                - link "Read" [ref=e2063] [cursor=pointer]:
+                  - /url: /reader/cmo3zf86xvcb3pg3w6r4m9u4f
+                  - button "Read" [ref=e2064]
+                - link [ref=e2065] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/selfhosted/comments/1soq5rz/selfhosted_software_like_figma/
+                  - img [ref=e2066]
+        - article [ref=e2070]:
+          - generic [ref=e2071]:
+            - paragraph [ref=e2074]: r/vibecoding
+            - link "Anyone finding that almost all models are leaking prompt instructions into output now?" [ref=e2075] [cursor=pointer]:
+              - /url: /reader/cmo3zcndovar7pg3w2r27l8g6
+              - heading "Anyone finding that almost all models are leaking prompt instructions into output now?" [level=3] [ref=e2076]
+            - paragraph [ref=e2077]: The copy text that agents and models produced for interfaces, used to be relevant and somewhat plausible, even if AI-tinted. Now I'm finding that almost all AI agents and browser chatbots are outputting very meta, unusable prompt text into frontend interfaces. While published products require polishing everything and curating output, it seems to be more busy work to refine now. submitted by /u/angry_cactus [link] [comments]
+            - generic [ref=e2078]:
+              - generic [ref=e2079]:
+                - generic [ref=e2080]: 2 hours ago
+                - generic [ref=e2081]: ·
+                - generic [ref=e2082]: REDDIT
+              - generic [ref=e2083]:
+                - button "Bookmark" [ref=e2084]:
+                  - img [ref=e2085]
+                - link "Read" [ref=e2087] [cursor=pointer]:
+                  - /url: /reader/cmo3zcndovar7pg3w2r27l8g6
+                  - button "Read" [ref=e2088]
+                - link [ref=e2089] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1soq5pi/anyone_finding_that_almost_all_models_are_leaking/
+                  - img [ref=e2090]
+        - article [ref=e2094]:
+          - generic [ref=e2095]:
+            - paragraph [ref=e2098]: r/openclaw
+            - link "GLM-5.1 Now Live on NVIDIA API. Free to use." [ref=e2099] [cursor=pointer]:
+              - /url: /reader/cmo3zf5hxvbthpg3wk9cxp9re
+              - heading "GLM-5.1 Now Live on NVIDIA API. Free to use." [level=3] [ref=e2100]
+            - paragraph [ref=e2101]: Zai just dropped GLM-5.1 on NVIDIA NIM. It's downloadable, GPU-ready for agentic workflows, coding, and long-horizon reasoning. Big win for OpenClaw users and devs. Thoughts? What are you planning to build with it? submitted by /u/EnergyRoyal9889 [link] [comments]
+            - generic [ref=e2102]:
+              - generic [ref=e2103]:
+                - generic [ref=e2104]: 2 hours ago
+                - generic [ref=e2105]: ·
+                - generic [ref=e2106]: REDDIT
+              - generic [ref=e2107]:
+                - button "Bookmark" [ref=e2108]:
+                  - img [ref=e2109]
+                - link "Read" [ref=e2111] [cursor=pointer]:
+                  - /url: /reader/cmo3zf5hxvbthpg3wk9cxp9re
+                  - button "Read" [ref=e2112]
+                - link [ref=e2113] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/openclaw/comments/1soq5l0/glm51_now_live_on_nvidia_api_free_to_use/
+                  - img [ref=e2114]
+        - article [ref=e2118]:
+          - generic [ref=e2119]:
+            - paragraph [ref=e2122]: r/claude
+            - link "A Chinese girl was asked by police to delete the Claude app from her phone. The police suspected Claude of being involved in fraud." [ref=e2123] [cursor=pointer]:
+              - /url: /reader/cmo3zclqmvahxpg3wixyk9vt5
+              - heading "A Chinese girl was asked by police to delete the Claude app from her phone. The police suspected Claude of being involved in fraud." [level=3] [ref=e2124]
+            - paragraph [ref=e2125]: "The video shows the following: Police monitored the girl's phone and detected that it had recently accessed overseas websites suspected of fraud. Under the banner of anti-fraud enforcement, they visited her home and inspected her phone. After checking through it, they found nothing suspicious. The police then asked which of the three apps — Claude, Gemini, and ChatGPT — was most likely to be a fraud app. The girl replied that all three were simply AI assistants and had nothing to do with fraud. The police arbitrarily picked one app and demanded that the girl delete Claude. She refused, and the matter was dropped. After the police left, the girl's refusal to delete Claude was criticized by her entire family. Her mother said that anything made by foreigners is no good and that it would only lead to trouble sooner or later — despite the fact that none of her family members had ever used an AI assistant. submitted by /u/LOVE69HOT [link] [comments]"
+            - generic [ref=e2126]:
+              - generic [ref=e2127]:
+                - generic [ref=e2128]: 2 hours ago
+                - generic [ref=e2129]: ·
+                - generic [ref=e2130]: REDDIT
+              - generic [ref=e2131]:
+                - button "Bookmark" [ref=e2132]:
+                  - img [ref=e2133]
+                - link [ref=e2135] [cursor=pointer]:
+                  - /url: /reader/cmo3zclqmvahxpg3wixyk9vt5
+                  - img [ref=e2137]
+                - link [ref=e2139] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/claude/comments/1soq3xl/a_chinese_girl_was_asked_by_police_to_delete_the/
+                  - img [ref=e2140]
+        - article [ref=e2144]:
+          - link [ref=e2145] [cursor=pointer]:
+            - /url: /reader/cmo3yyhytv3shpg3wi4nvtm9r
+          - generic [ref=e2148]:
+            - paragraph [ref=e2151]: r/codex
+            - 'link "Codex App supports `/compact` command now" [ref=e2152] [cursor=pointer]':
+              - /url: /reader/cmo3yyhytv3shpg3wi4nvtm9r
+              - 'heading "Codex App supports `/compact` command now" [level=3] [ref=e2153]'
+            - generic [ref=e2154]:
+              - generic [ref=e2155]:
+                - generic [ref=e2156]: 2 hours ago
+                - generic [ref=e2157]: ·
+                - generic [ref=e2158]: REDDIT
+              - generic [ref=e2159]:
+                - button "Bookmark" [ref=e2160]:
+                  - img [ref=e2161]
+                - link "Read" [ref=e2163] [cursor=pointer]:
+                  - /url: /reader/cmo3yyhytv3shpg3wi4nvtm9r
+                  - button "Read" [ref=e2164]
+                - link [ref=e2165] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/codex/comments/1soq2ht/codex_app_supports_compact_command_now/
+                  - img [ref=e2166]
+        - article [ref=e2170]:
+          - link [ref=e2171] [cursor=pointer]:
+            - /url: /reader/cmo3zcndovar9pg3wjloh1srj
+          - generic [ref=e2174]:
+            - paragraph [ref=e2177]: r/vibecoding
+            - link "[Latest Release v2.1] Your wearables are all dumping data into Apple Health.This app connects the dots across all of them - and actually explains what the numbers mean." [ref=e2178] [cursor=pointer]:
+              - /url: /reader/cmo3zcndovar9pg3wjloh1srj
+              - heading "[Latest Release v2.1] Your wearables are all dumping data into Apple Health.This app connects the dots across all of them - and actually explains what the numbers mean." [level=3] [ref=e2179]
+            - generic [ref=e2180]:
+              - generic [ref=e2181]:
+                - generic [ref=e2182]: 2 hours ago
+                - generic [ref=e2183]: ·
+                - generic [ref=e2184]: REDDIT
+              - generic [ref=e2185]:
+                - button "Bookmark" [ref=e2186]:
+                  - img [ref=e2187]
+                - link "Read" [ref=e2189] [cursor=pointer]:
+                  - /url: /reader/cmo3zcndovar9pg3wjloh1srj
+                  - button "Read" [ref=e2190]
+                - link [ref=e2191] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1soq2b3/latest_release_v21_your_wearables_are_all_dumping/
+                  - img [ref=e2192]
+        - article [ref=e2196]:
+          - generic [ref=e2197]:
+            - paragraph [ref=e2200]: r/codex
+            - link "Code comments and prompts leaking into frontend design? Prompts leaking into output?" [ref=e2201] [cursor=pointer]:
+              - /url: /reader/cmo3yyhytv3slpg3w0j6ubcvr
+              - heading "Code comments and prompts leaking into frontend design? Prompts leaking into output?" [level=3] [ref=e2202]
+            - paragraph [ref=e2203]: I'm often finding that my requirements for a website will leak into the copy text with lots of extra cards like "Beneficial for users, modular design signals dynamic usage. Extra flow added to sidebar, echoes expanded functionality. Static site standalone for low dependency output." Prompts didn't previously leak into output like this? I know Lorem ipsum was common, but early AI site generation had relevant copy text, even if tinted with AI grammar and word choice. The agent's getting even better at instruction following, but when you give it enough instructions, those instructions leak into the output if the output is supposed to be presentable. I kind of like this from an industry standpoint, as it means there's human busywork cleaning stuff up at the end instead of instantly finished product, but from a efficiency standpoint it's not as good. submitted by /u/angry_cactus [link] [comments]
+            - generic [ref=e2204]:
+              - generic [ref=e2205]:
+                - generic [ref=e2206]: 2 hours ago
+                - generic [ref=e2207]: ·
+                - generic [ref=e2208]: REDDIT
+              - generic [ref=e2209]:
+                - button "Bookmark" [ref=e2210]:
+                  - img [ref=e2211]
+                - link "Read" [ref=e2213] [cursor=pointer]:
+                  - /url: /reader/cmo3yyhytv3slpg3w0j6ubcvr
+                  - button "Read" [ref=e2214]
+                - link [ref=e2215] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/codex/comments/1soq1r7/code_comments_and_prompts_leaking_into_frontend/
+                  - img [ref=e2216]
+        - article [ref=e2220]:
+          - generic [ref=e2221]:
+            - paragraph [ref=e2224]: Tecmint
+            - 'link "sort and uniq: Clean and Count Log File Entries in Linux" [ref=e2225] [cursor=pointer]':
+              - /url: /reader/cmo3yunlnv1orpg3wo7jujncr
+              - 'heading "sort and uniq: Clean and Count Log File Entries in Linux" [level=3] [ref=e2226]'
+            - paragraph [ref=e2227]: "The post sort and uniq: Clean and Count Log File Entries in Linux first appeared on Tecmint: Linux Howtos, Tutorials & Guides . In this guide, we’ll show you how to use sort and uniq together to deduplicate, count, and summarize log file sort and uniq: Clean and Count Log File Entries in Linux first appeared on Tecmint: Linux Howtos, Tutorials & Guides."
+            - generic [ref=e2228]:
+              - generic [ref=e2229]:
+                - generic [ref=e2230]: 2 hours ago
+                - generic [ref=e2231]: ·
+                - generic [ref=e2232]: RSS
+              - generic [ref=e2233]:
+                - button "Bookmark" [ref=e2234]:
+                  - img [ref=e2235]
+                - link "Read" [ref=e2237] [cursor=pointer]:
+                  - /url: /reader/cmo3yunlnv1orpg3wo7jujncr
+                  - button "Read" [ref=e2238]
+                - link [ref=e2239] [cursor=pointer]:
+                  - /url: https://www.tecmint.com/sort-uniq-clean-count-log-entries-linux/
+                  - img [ref=e2240]
+        - article [ref=e2244]:
+          - generic [ref=e2245]:
+            - paragraph [ref=e2248]: r/iphone
+            - link "Can you help me?" [ref=e2249] [cursor=pointer]:
+              - /url: /reader/cmo3yyfhgv3n7pg3wuwzv3ow4
+              - heading "Can you help me?" [level=3] [ref=e2250]
+            - paragraph [ref=e2251]: submitted by /u/Jim1525734 [link] [comments]
+            - generic [ref=e2252]:
+              - generic [ref=e2253]:
+                - generic [ref=e2254]: 2 hours ago
+                - generic [ref=e2255]: ·
+                - generic [ref=e2256]: REDDIT
+              - generic [ref=e2257]:
+                - button "Bookmark" [ref=e2258]:
+                  - img [ref=e2259]
+                - link "Read" [ref=e2261] [cursor=pointer]:
+                  - /url: /reader/cmo3yyfhgv3n7pg3wuwzv3ow4
+                  - button "Read" [ref=e2262]
+                - link [ref=e2263] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iphone/comments/1sopzwx/can_you_help_me/
+                  - img [ref=e2264]
+        - article [ref=e2268]:
+          - generic [ref=e2269]:
+            - paragraph [ref=e2272]: r/codex
+            - link "Codex computer use is INSANE" [ref=e2273] [cursor=pointer]:
+              - /url: /reader/cmo3yyhytv3snpg3w26dkidqh
+              - heading "Codex computer use is INSANE" [level=3] [ref=e2274]
+            - paragraph [ref=e2275]: "Decided to try it out after seeing someone let it loose on Universal Paperclips: https://x.com/leoshimo/status/2045254020428869827?s=46&t=oirjJSvLbhgA-LCU9Ilttw It's absolutely crazy how good it is. I can just ask it to look at any app on my computer and have it do stuff in the background while I work. I got it to freaking play bloons tower defense (albeit with some weird tower placements) while I ate lunch, and I'm sure with some better prompting I could get it to do gacha game dailies for me. It really completely bypasses the need for traditional plugins/connectors and whatnot - even if those might be better optimized, Computer Use *just works* for everything. This plus voice transcription is the closest I've felt to having a Jarvis on my computer. I can ask it to do basically *anything.* And it's really fast with 5.3 Spark - it navigates around as fast as a person does. I really feel like, once more people try it out, we'll be seeing the next GPT3.5 moment. submitted by /u/mtrlst [link] [comments]"
+            - generic [ref=e2276]:
+              - generic [ref=e2277]:
+                - generic [ref=e2278]: 2 hours ago
+                - generic [ref=e2279]: ·
+                - generic [ref=e2280]: REDDIT
+              - generic [ref=e2281]:
+                - button "Bookmark" [ref=e2282]:
+                  - img [ref=e2283]
+                - link [ref=e2285] [cursor=pointer]:
+                  - /url: /reader/cmo3yyhytv3snpg3w26dkidqh
+                  - img [ref=e2287]
+                - link [ref=e2289] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/codex/comments/1sopzc6/codex_computer_use_is_insane/
+                  - img [ref=e2290]
+        - article [ref=e2294]:
+          - link [ref=e2295] [cursor=pointer]:
+            - /url: /reader/cmo3ys2z7uzzfpg3wsuu09mam
+          - generic [ref=e2298]:
+            - paragraph [ref=e2301]: r/appgiveaway
+            - link "[59,99$ -> Free for Early Users] Face Yoga Daily Routine App" [ref=e2302] [cursor=pointer]:
+              - /url: /reader/cmo3ys2z7uzzfpg3wsuu09mam
+              - heading "[59,99$ -> Free for Early Users] Face Yoga Daily Routine App" [level=3] [ref=e2303]
+            - generic [ref=e2304]:
+              - generic [ref=e2305]:
+                - generic [ref=e2306]: 2 hours ago
+                - generic [ref=e2307]: ·
+                - generic [ref=e2308]: REDDIT
+              - generic [ref=e2309]:
+                - button "Bookmark" [ref=e2310]:
+                  - img [ref=e2311]
+                - link "Read" [ref=e2313] [cursor=pointer]:
+                  - /url: /reader/cmo3ys2z7uzzfpg3wsuu09mam
+                  - button "Read" [ref=e2314]
+                - link [ref=e2315] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/AppGiveaway/comments/1sopywa/5999_free_for_early_users_face_yoga_daily_routine/
+                  - img [ref=e2316]
+        - article [ref=e2320]:
+          - link [ref=e2321] [cursor=pointer]:
+            - /url: /reader/cmo3ys0y1uzolpg3wk6pepg8d
+          - generic [ref=e2324]:
+            - paragraph [ref=e2327]: r/homeassistant
+            - link "Help with smart door locks" [ref=e2328] [cursor=pointer]:
+              - /url: /reader/cmo3ys0y1uzolpg3wk6pepg8d
+              - heading "Help with smart door locks" [level=3] [ref=e2329]
+            - generic [ref=e2330]:
+              - generic [ref=e2331]:
+                - generic [ref=e2332]: 2 hours ago
+                - generic [ref=e2333]: ·
+                - generic [ref=e2334]: REDDIT
+              - generic [ref=e2335]:
+                - button "Bookmark" [ref=e2336]:
+                  - img [ref=e2337]
+                - link "Read" [ref=e2339] [cursor=pointer]:
+                  - /url: /reader/cmo3ys0y1uzolpg3wk6pepg8d
+                  - button "Read" [ref=e2340]
+                - link [ref=e2341] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/homeassistant/comments/1sopy2x/help_with_smart_door_locks/
+                  - img [ref=e2342]
+        - article [ref=e2346]:
+          - generic [ref=e2347]:
+            - paragraph [ref=e2350]: r/archlinux
+            - link "OBS screen capture source gone after latest update" [ref=e2351] [cursor=pointer]:
+              - /url: /reader/cmo3yqrx8uyzhpg3wj3gfwugf
+              - heading "OBS screen capture source gone after latest update" [level=3] [ref=e2352]
+            - paragraph [ref=e2353]: "hello! Recently did pacman -Syu, and woke up today to OBS studio having screen capture option deleted. Any help? I looked through the available sources list and there's no replacement for it. Did some search before posting, found a forum post where using obs-studio-liberty solved the issue, and after waiting 15 minutes for it to compile, I got the exact same obs with no screen capture option. I am on Wayland, KDE. Screenshots: https://litter.catbox.moe/qzqfmm7z1jyleit1.png https://litter.catbox.moe/1t5lgoxkcuomb8xm.png EDIT: I tried to find the last version it was working in, but from 32.1.0-1 and earlier it segfaults, and 32.1.0-2 has no screen recording source submitted by /u/ilia_21 [link] [comments]"
+            - generic [ref=e2354]:
+              - generic [ref=e2355]:
+                - generic [ref=e2356]: 2 hours ago
+                - generic [ref=e2357]: ·
+                - generic [ref=e2358]: REDDIT
+              - generic [ref=e2359]:
+                - button "Bookmark" [ref=e2360]:
+                  - img [ref=e2361]
+                - link "Read" [ref=e2363] [cursor=pointer]:
+                  - /url: /reader/cmo3yqrx8uyzhpg3wj3gfwugf
+                  - button "Read" [ref=e2364]
+                - link [ref=e2365] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/archlinux/comments/1sopuxt/obs_screen_capture_source_gone_after_latest_update/
+                  - img [ref=e2366]
+        - article [ref=e2370]:
+          - link [ref=e2371] [cursor=pointer]:
+            - /url: /reader/cmo3ys2m0uzy5pg3w2sxw237l
+          - generic [ref=e2374]:
+            - paragraph [ref=e2377]: r/vibecoding
+            - link "Friday project! Tsunami simulator" [ref=e2378] [cursor=pointer]:
+              - /url: /reader/cmo3ys2m0uzy5pg3w2sxw237l
+              - heading "Friday project! Tsunami simulator" [level=3] [ref=e2379]
+            - generic [ref=e2380]:
+              - generic [ref=e2381]:
+                - generic [ref=e2382]: 2 hours ago
+                - generic [ref=e2383]: ·
+                - generic [ref=e2384]: REDDIT
+              - generic [ref=e2385]:
+                - button "Bookmark" [ref=e2386]:
+                  - img [ref=e2387]
+                - link "Read" [ref=e2389] [cursor=pointer]:
+                  - /url: /reader/cmo3ys2m0uzy5pg3w2sxw237l
+                  - button "Read" [ref=e2390]
+                - link [ref=e2391] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/vibecoding/comments/1sopuim/friday_project_tsunami_simulator/
+                  - img [ref=e2392]
+        - article [ref=e2396]:
+          - generic [ref=e2397]:
+            - paragraph [ref=e2400]: LinuxLinks
+            - link "Bonobo – minimalist static site generator" [ref=e2401] [cursor=pointer]:
+              - /url: /reader/cmo3yune0v1k7pg3wmn6bgcgz
+              - heading "Bonobo – minimalist static site generator" [level=3] [ref=e2402]
+            - paragraph [ref=e2403]: Bonobo is a minimalist static site generator written in C. It’s designed to be very small and easy to understand. The post Bonobo – minimalist static site generator appeared first on LinuxLinks.
+            - generic [ref=e2404]:
+              - generic [ref=e2405]:
+                - generic [ref=e2406]: 2 hours ago
+                - generic [ref=e2407]: ·
+                - generic [ref=e2408]: RSS
+              - generic [ref=e2409]:
+                - button "Bookmark" [ref=e2410]:
+                  - img [ref=e2411]
+                - link "Read" [ref=e2413] [cursor=pointer]:
+                  - /url: /reader/cmo3yune0v1k7pg3wmn6bgcgz
+                  - button "Read" [ref=e2414]
+                - link [ref=e2415] [cursor=pointer]:
+                  - /url: https://www.linuxlinks.com/bonobo-minimalist-static-site-generator/
+                  - img [ref=e2416]
+        - article [ref=e2420]:
+          - generic [ref=e2421]:
+            - paragraph [ref=e2424]: r/OpenClawUseCases
+            - link "Paperclip use cases are getting wild — are you using it as an org chart or pairing it with OpenClaw?" [ref=e2425] [cursor=pointer]:
+              - /url: /reader/cmo3yllnyuwgppg3wyb8ebpxu
+              - heading "Paperclip use cases are getting wild — are you using it as an org chart or pairing it with OpenClaw?" [level=3] [ref=e2426]
+            - paragraph [ref=e2427]: submitted by /u/EstablishmentSea4024 [link] [comments]
+            - generic [ref=e2428]:
+              - generic [ref=e2429]:
+                - generic [ref=e2430]: 2 hours ago
+                - generic [ref=e2431]: ·
+                - generic [ref=e2432]: REDDIT
+              - generic [ref=e2433]:
+                - button "Bookmark" [ref=e2434]:
+                  - img [ref=e2435]
+                - link "Read" [ref=e2437] [cursor=pointer]:
+                  - /url: /reader/cmo3yllnyuwgppg3wyb8ebpxu
+                  - button "Read" [ref=e2438]
+                - link [ref=e2439] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/OpenClawUseCases/comments/1soprma/paperclip_use_cases_are_getting_wild_are_you/
+                  - img [ref=e2440]
+        - article [ref=e2444]:
+          - generic [ref=e2445]:
+            - paragraph [ref=e2448]: r/cachyos
+            - link "Tablet android como segundo monitor" [ref=e2449] [cursor=pointer]:
+              - /url: /reader/cmo3y7fgcup21pg3wrw93staz
+              - heading "Tablet android como segundo monitor" [level=3] [ref=e2450]
+            - paragraph [ref=e2451]: submitted by /u/KisukoKun [link] [comments]
+            - generic [ref=e2452]:
+              - generic [ref=e2453]:
+                - generic [ref=e2454]: 2 hours ago
+                - generic [ref=e2455]: ·
+                - generic [ref=e2456]: REDDIT
+              - generic [ref=e2457]:
+                - button "Bookmark" [ref=e2458]:
+                  - img [ref=e2459]
+                - link "Read" [ref=e2461] [cursor=pointer]:
+                  - /url: /reader/cmo3y7fgcup21pg3wrw93staz
+                  - button "Read" [ref=e2462]
+                - link [ref=e2463] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/cachyos/comments/1soppbk/tablet_android_como_segundo_monitor/
+                  - img [ref=e2464]
+        - article [ref=e2468]:
+          - generic [ref=e2469]:
+            - paragraph [ref=e2472]: r/OpenClawUseCases
+            - link "Edge AI company running with OpenClaw" [ref=e2473] [cursor=pointer]:
+              - /url: /reader/cmo3yllnyuwgrpg3wf961oo0s
+              - heading "Edge AI company running with OpenClaw" [level=3] [ref=e2474]
+            - paragraph [ref=e2475]: The build is growing and the company is starting to generate revenue! Watch this detailed guide to building a company on 3 edge devices I had lying around. Video 3 is up! Check out the latest from BlackBoxAiLab https://youtube.com/@blackboxailab?si=mqsc-SFmjNynmAvW submitted by /u/Weird_Night_2176 [link] [comments]
+            - generic [ref=e2476]:
+              - generic [ref=e2477]:
+                - generic [ref=e2478]: 2 hours ago
+                - generic [ref=e2479]: ·
+                - generic [ref=e2480]: REDDIT
+              - generic [ref=e2481]:
+                - button "Bookmark" [ref=e2482]:
+                  - img [ref=e2483]
+                - link "Read" [ref=e2485] [cursor=pointer]:
+                  - /url: /reader/cmo3yllnyuwgrpg3wf961oo0s
+                  - button "Read" [ref=e2486]
+                - link [ref=e2487] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/OpenClawUseCases/comments/1sopowx/edge_ai_company_running_with_openclaw/
+                  - img [ref=e2488]
+        - article [ref=e2492]:
+          - link [ref=e2493] [cursor=pointer]:
+            - /url: /reader/cmo3y7i09uphbpg3wv7bo7afx
+          - generic [ref=e2496]:
+            - paragraph [ref=e2499]: r/ZaiGLM
+            - link "GPT is hilariously bad at pre-design design reviews" [ref=e2500] [cursor=pointer]:
+              - /url: /reader/cmo3y7i09uphbpg3wv7bo7afx
+              - heading "GPT is hilariously bad at pre-design design reviews" [level=3] [ref=e2501]
+            - generic [ref=e2502]:
+              - generic [ref=e2503]:
+                - generic [ref=e2504]: 2 hours ago
+                - generic [ref=e2505]: ·
+                - generic [ref=e2506]: REDDIT
+              - generic [ref=e2507]:
+                - button "Bookmark" [ref=e2508]:
+                  - img [ref=e2509]
+                - link "Read" [ref=e2511] [cursor=pointer]:
+                  - /url: /reader/cmo3y7i09uphbpg3wv7bo7afx
+                  - button "Read" [ref=e2512]
+                - link [ref=e2513] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/ZaiGLM/comments/1sopo5o/gpt_is_hilariously_bad_at_predesign_design_reviews/
+                  - img [ref=e2514]
+        - article [ref=e2518]:
+          - generic [ref=e2519]:
+            - paragraph [ref=e2522]: r/OpenClawUseCases
+            - link "👋 Welcome to r/PaperclipUseCases — Share Your Paperclip AI Use Cases" [ref=e2523] [cursor=pointer]:
+              - /url: /reader/cmo3yllnzuwgtpg3wj1cznz6g
+              - heading "👋 Welcome to r/PaperclipUseCases — Share Your Paperclip AI Use Cases" [level=3] [ref=e2524]
+            - paragraph [ref=e2525]: submitted by /u/EstablishmentSea4024 [link] [comments]
+            - generic [ref=e2526]:
+              - generic [ref=e2527]:
+                - generic [ref=e2528]: 2 hours ago
+                - generic [ref=e2529]: ·
+                - generic [ref=e2530]: REDDIT
+              - generic [ref=e2531]:
+                - button "Bookmark" [ref=e2532]:
+                  - img [ref=e2533]
+                - link "Read" [ref=e2535] [cursor=pointer]:
+                  - /url: /reader/cmo3yllnzuwgtpg3wj1cznz6g
+                  - button "Read" [ref=e2536]
+                - link [ref=e2537] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/OpenClawUseCases/comments/1sopnsr/welcome_to_rpaperclipusecases_share_your/
+                  - img [ref=e2538]
+        - article [ref=e2542]:
+          - generic [ref=e2543]:
+            - paragraph [ref=e2546]: r/iphone
+            - link "do you guys actually carry a power bank when traveling?" [ref=e2547] [cursor=pointer]:
+              - /url: /reader/cmo3ydupuuszxpg3wl8s8nwm4
+              - heading "do you guys actually carry a power bank when traveling?" [level=3] [ref=e2548]
+            - paragraph [ref=e2549]: I’ve been using my iPhone Air for a while now and honestly,it has been totally fine for day-to-day use. Like, regular stuff — messaging, a bit of scrolling, some videos — it easily gets me through the day without stressing too much about charging. But I’m planning a short trip soon (nothing crazy, just a couple of days out), and I realized I might actually need a backup… especially if I’m out all day taking photos / using maps. I don’t really want to carry something bulky though. Ideally something small and easy to throw in a bag or even a pocket. For those of you who travel with your phone a lot — do you usually bring a power bank, or just rely on charging when you get the chance? submitted by /u/Former-Gazelle-473 [link] [comments]
+            - generic [ref=e2550]:
+              - generic [ref=e2551]:
+                - generic [ref=e2552]: 3 hours ago
+                - generic [ref=e2553]: ·
+                - generic [ref=e2554]: REDDIT
+              - generic [ref=e2555]:
+                - button "Bookmark" [ref=e2556]:
+                  - img [ref=e2557]
+                - link "Read" [ref=e2559] [cursor=pointer]:
+                  - /url: /reader/cmo3ydupuuszxpg3wl8s8nwm4
+                  - button "Read" [ref=e2560]
+                - link [ref=e2561] [cursor=pointer]:
+                  - /url: https://www.reddit.com/r/iphone/comments/1sopjg8/do_you_guys_actually_carry_a_power_bank_when/
+                  - img [ref=e2562]
+    - navigation [ref=e2566]:
+      - generic [ref=e2567]:
+        - link "Timeline" [ref=e2568] [cursor=pointer]:
+          - /url: /app/unread
+          - img [ref=e2569]
+          - generic [ref=e2571]: Timeline
+        - link "Feeds" [ref=e2572] [cursor=pointer]:
+          - /url: /app/feeds
+          - img [ref=e2573]
+          - generic [ref=e2577]: Feeds
+        - link "Discover" [ref=e2578] [cursor=pointer]:
+          - /url: /app/discover
+          - img [ref=e2579]
+          - generic [ref=e2582]: Discover
+        - link "Saved" [ref=e2583] [cursor=pointer]:
+          - /url: /app/saved
+          - img [ref=e2584]
+          - generic [ref=e2586]: Saved
+        - link "Settings" [ref=e2587] [cursor=pointer]:
+          - /url: /app/settings
+          - img [ref=e2588]
+          - generic [ref=e2591]: Settings
+  - alert [ref=e2592]

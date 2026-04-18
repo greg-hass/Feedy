@@ -1,0 +1,3 @@
+[     613ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:4000/api/me:0
+[   71404ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://static.doubleclick.net/instream/ad_status.js:0
+[   71405ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://googleads.g.doubleclick.net/pagead/id:0

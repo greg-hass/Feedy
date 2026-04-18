@@ -5,11 +5,11 @@ export function serializeItem(item: {
   readabilityHtml?: string | null;
   contentHtml?: string | null;
   canonicalUrl: string | null;
-  commentsUrl: string | null;
+  commentsUrl?: string | null;
   mediaUrl: string | null;
   publishedAt: Date | null;
   youtubeVideoId: string | null;
-  redditPermalink: string | null;
+  redditPermalink?: string | null;
   feed: {
     id: string;
     title: string;

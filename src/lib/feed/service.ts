@@ -425,13 +425,26 @@ export async function ensureReaderContent(itemId: string) {
     return item;
   }
 
-  if (item.readabilityHtml) {
-    return item;
+  const updated = await ensureReaderContentForLoadedItem(item, startedAt);
+  return updated ?? item;
+}
+
+export async function ensureReaderContentForLoadedItem(
+  item: {
+    id: string;
+    canonicalUrl: string | null;
+    readabilityHtml: string | null;
+    summary: string | null;
+  },
+  startedAt = performance.now(),
+) {
+  if (!item.canonicalUrl || item.readabilityHtml) {
+    return null;
   }
 
   const readable = await extractReadableContent(item.canonicalUrl).catch(() => null);
   if (!readable) {
-    return item;
+    return null;
   }
 
   const updated = await prisma.item.update({
@@ -445,9 +458,12 @@ export async function ensureReaderContent(itemId: string) {
   logPerf(
     "worker.readerExtract",
     performance.now() - startedAt,
-    { itemId, cached: false },
+    { itemId: item.id, cached: false },
     false,
   );
 
-  return updated;
+  return {
+    readabilityHtml: updated.readabilityHtml,
+    summary: updated.summary,
+  };
 }

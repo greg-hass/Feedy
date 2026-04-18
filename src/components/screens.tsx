@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { MobileShell, useMe, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
 import { FeedAvatar } from "@/components/feed-avatar";
-import { AddFeedForm, AddFolderForm, EditFeedSheet, EditFolderSheet } from "@/components/forms";
 import { ItemCard } from "@/components/item-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,19 @@ import { api } from "@/lib/client";
 import { accentOptions } from "@/lib/theme";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord, MeResponse, NavFeed, NavFolder } from "@/types/app";
+
+const AddFeedForm = dynamic(() => import("@/components/forms").then((module) => module.AddFeedForm), {
+  ssr: false,
+});
+const AddFolderForm = dynamic(() => import("@/components/forms").then((module) => module.AddFolderForm), {
+  ssr: false,
+});
+const EditFeedSheet = dynamic(() => import("@/components/forms").then((module) => module.EditFeedSheet), {
+  ssr: false,
+});
+const EditFolderSheet = dynamic(() => import("@/components/forms").then((module) => module.EditFolderSheet), {
+  ssr: false,
+});
 
 function formatSourceType(value: string) {
   return value.replaceAll("_RSS", "").replaceAll("_", " ");
@@ -252,6 +265,7 @@ export function UnreadScreen() {
   const timelineStateStorageKey = "feedy-timeline-state-v2";
   const timelineSourceStorageKey = "feedy-timeline-source-v2";
   const timelineAnchorStorageKey = "feedy-timeline-anchor-item";
+  const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
   const [timelineFixedTop, setTimelineFixedTop] = useState(146);
   const [stateFilter, setStateFilter] = useState<"UNREAD" | "ALL" | "READ">(() => {
     if (typeof window === "undefined") return "ALL";
@@ -265,37 +279,18 @@ export function UnreadScreen() {
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [inlineOpenMap, setInlineOpenMap] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
   const [timelinePanelHeight, setTimelinePanelHeight] = useState(0);
   const restoredScrollRef = useRef(false);
   const timelinePanelRef = useRef<HTMLElement | null>(null);
+  const saveScrollFrameRef = useRef<number | null>(null);
+  const saveScrollYRef = useRef(0);
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
     window.sessionStorage.setItem(timelineStateStorageKey, stateFilter);
     window.sessionStorage.setItem(timelineSourceStorageKey, sourceFilter);
   }, [sourceFilter, stateFilter, timelineSourceStorageKey, timelineStateStorageKey]);
-
-  useEffect(() => {
-    const clearInlinePlayers = () => {
-      setInlineOpenMap({});
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible") {
-        clearInlinePlayers();
-      }
-    };
-
-    window.addEventListener("pagehide", clearInlinePlayers);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("pagehide", clearInlinePlayers);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
 
   useEffect(() => {
     if (!searchOpen) {
@@ -323,6 +318,8 @@ export function UnreadScreen() {
     queryKey: ["items", "timeline", stateFilter, sourceFilter, deferredQuery.trim()],
     queryFn: () => api<ItemRecord[]>(itemsUrl),
     staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
   const refresh = useRefreshController("/api/refresh/all", ["items"]);
   const queryClient = useQueryClient();
@@ -380,88 +377,153 @@ export function UnreadScreen() {
     };
   }, [filtersOpen, query, searchOpen]);
 
-  useEffect(() => {
-    const previous = window.history.scrollRestoration;
-    window.history.scrollRestoration = "manual";
+  // scrollRestoration is set globally to "manual" in providers.tsx — no
+  // per-component effect needed here. A per-component effect with a cleanup
+  // that resets to "auto" was the root cause of the scroll-loss bug: the
+  // cleanup fired on unmount (when navigating to an article), and the browser
+  // would then auto-scroll to 0 on popstate before this component could set
+  // it back to "manual".
 
-    return () => {
-      window.history.scrollRestoration = previous;
+  useEffect(() => {
+    const flushScroll = () => {
+      window.sessionStorage.setItem(scrollStorageKey, String(Math.max(0, Math.round(saveScrollYRef.current))));
     };
-  }, []);
 
-  useEffect(() => {
     const saveScroll = () => {
-      window.sessionStorage.setItem(scrollStorageKey, String(window.scrollY));
+      saveScrollYRef.current = window.scrollY;
+      if (saveScrollFrameRef.current != null) {
+        return;
+      }
+
+      saveScrollFrameRef.current = window.requestAnimationFrame(() => {
+        saveScrollFrameRef.current = null;
+        flushScroll();
+      });
     };
 
     window.addEventListener("scroll", saveScroll, { passive: true });
+    window.addEventListener("pagehide", flushScroll);
+    window.addEventListener("visibilitychange", flushScroll);
     return () => {
-      saveScroll();
+      if (saveScrollFrameRef.current != null) {
+        window.cancelAnimationFrame(saveScrollFrameRef.current);
+        saveScrollFrameRef.current = null;
+      }
+      saveScrollYRef.current = window.scrollY;
+      flushScroll();
       window.removeEventListener("scroll", saveScroll);
+      window.removeEventListener("pagehide", flushScroll);
+      window.removeEventListener("visibilitychange", flushScroll);
     };
   }, [scrollStorageKey]);
 
   useEffect(() => {
+    if (!items.data?.length) {
+      return;
+    }
+
+    const pendingReadItemId = window.sessionStorage.getItem(timelinePendingReadStorageKey);
+    if (!pendingReadItemId) {
+      return;
+    }
+
+    queryClient.setQueriesData<ItemRecord[]>({ queryKey: ["items", "timeline"] }, (current) =>
+      current?.map((entry) => (entry.id === pendingReadItemId ? { ...entry, read: true } : entry)) ?? current,
+    );
+    window.sessionStorage.removeItem(timelinePendingReadStorageKey);
+  }, [items.data, queryClient]);
+
+  useLayoutEffect(() => {
     if (items.isLoading || restoredScrollRef.current) {
       return;
     }
 
-    const anchorStateRaw = window.sessionStorage.getItem(timelineAnchorStorageKey);
-    const savedScroll = Number(window.sessionStorage.getItem(scrollStorageKey) || "0");
     restoredScrollRef.current = true;
 
-    requestAnimationFrame(() => {
-      if (anchorStateRaw) {
-        let anchorItemId: string | null = null;
-        let viewportTop = timelineFixedTop + timelineControlsPanelHeight;
-        let exactScrollY: number | null = null;
+    // Parse saved anchor state — prefers element-based restoration (itemId)
+    // over pixel-based (scrollY) because it is immune to layout timing issues.
+    const anchorStateRaw = window.sessionStorage.getItem(timelineAnchorStorageKey);
+    let anchorItemId: string | null = null;
+    let anchorScrollY: number | null = null;
 
-        try {
-          const parsed = JSON.parse(anchorStateRaw) as { itemId?: string; viewportTop?: number; scrollY?: number };
-          anchorItemId = parsed.itemId ?? null;
-          if (typeof parsed.viewportTop === "number") {
-            viewportTop = parsed.viewportTop;
-          }
-          if (typeof parsed.scrollY === "number") {
-            exactScrollY = parsed.scrollY;
-          }
-        } catch {
-          anchorItemId = anchorStateRaw;
-        }
+    if (anchorStateRaw) {
+      try {
+        const parsed = JSON.parse(anchorStateRaw) as { itemId?: string; scrollY?: number };
+        anchorItemId = parsed.itemId ?? null;
+        anchorScrollY = typeof parsed.scrollY === "number" ? parsed.scrollY : null;
+      } catch {
+        // Ignore malformed saved anchor state.
+      }
+    }
 
-        if (typeof exactScrollY === "number") {
-          const restoreExactScroll = () => {
-            window.scrollTo({
-              top: Math.max(exactScrollY ?? 0, 0),
-              behavior: "auto",
-            });
-          };
+    const savedScroll = anchorScrollY ?? Number(window.sessionStorage.getItem(scrollStorageKey) || "0");
 
-          restoreExactScroll();
-          window.requestAnimationFrame(restoreExactScroll);
-          window.setTimeout(restoreExactScroll, 60);
-          window.sessionStorage.removeItem(timelineAnchorStorageKey);
-          return;
-        }
+    if (savedScroll <= 0 && !anchorItemId) {
+      window.sessionStorage.removeItem(timelineAnchorStorageKey);
+      return;
+    }
 
-        const anchorElement = document.querySelector<HTMLElement>(
-          `[data-timeline-item-id="${anchorItemId}"]`,
-        );
-
-        if (anchorElement) {
-          const anchorTop = anchorElement.getBoundingClientRect().top + window.scrollY;
-          window.scrollTo({
-            top: Math.max(anchorTop - viewportTop, 0),
-            behavior: "auto",
-          });
-          window.sessionStorage.removeItem(timelineAnchorStorageKey);
-          return;
+    // Prefer the saved pixel offset — it is accurate now that contentVisibility:auto
+    // has been removed from ItemCard (that CSS was giving the browser a fake page
+    // height that made scrollTo land at the wrong position).
+    // Element-based positioning is kept as a last-resort fallback only, for cases
+    // where no scrollY was recorded but we have an itemId to navigate to.
+    const computeTarget = (): number => {
+      if (savedScroll > 0) {
+        return savedScroll;
+      }
+      if (anchorItemId) {
+        const el = document.querySelector<HTMLElement>(`[data-timeline-item-id="${anchorItemId}"]`);
+        if (el) {
+          // No saved scroll — best we can do is put the card near the top.
+          return Math.max(0, el.offsetTop - timelineFixedTop - 8);
         }
       }
+      return 0;
+    };
 
-      window.scrollTo({ top: savedScroll, behavior: "auto" });
-    });
-  }, [items.isLoading, items.data, scrollStorageKey, timelineAnchorStorageKey]);
+    let guardActive = true;
+
+    const restoreScroll = () => {
+      if (!guardActive) return;
+      window.scrollTo({ top: computeTarget(), behavior: "auto" });
+    };
+
+    // Guard against any rogue scroll-to-0 fired by the browser or Next.js
+    // router during the restoration window.
+    const onUnwantedScroll = () => {
+      if (guardActive && window.scrollY < savedScroll * 0.5) {
+        restoreScroll();
+      }
+    };
+
+    window.addEventListener("scroll", onUnwantedScroll, { passive: true });
+
+    // Retry several times — layout may still be settling over the first few
+    // frames (fonts, lazy images, flex layout recalculation).
+    restoreScroll();
+    const frameOne = window.requestAnimationFrame(restoreScroll);
+    const frameTwo = window.requestAnimationFrame(() => window.requestAnimationFrame(restoreScroll));
+    const timeoutOne = window.setTimeout(restoreScroll, 60);
+    const timeoutTwo = window.setTimeout(restoreScroll, 200);
+    const timeoutThree = window.setTimeout(restoreScroll, 400);
+    const timeoutFour = window.setTimeout(() => {
+      guardActive = false;
+      window.removeEventListener("scroll", onUnwantedScroll);
+      window.sessionStorage.removeItem(timelineAnchorStorageKey);
+    }, 650);
+
+    return () => {
+      guardActive = false;
+      window.removeEventListener("scroll", onUnwantedScroll);
+      window.cancelAnimationFrame(frameOne);
+      window.cancelAnimationFrame(frameTwo);
+      window.clearTimeout(timeoutOne);
+      window.clearTimeout(timeoutTwo);
+      window.clearTimeout(timeoutThree);
+      window.clearTimeout(timeoutFour);
+    };
+  }, [items.isLoading, items.data, scrollStorageKey, timelineAnchorStorageKey, timelineFixedTop]);
 
   useEffect(() => {
     if (!refresh.active) {
@@ -688,18 +750,6 @@ export function UnreadScreen() {
             <ItemCard
               key={item.id}
               item={item}
-              inlineOpen={inlineOpenMap[item.id]}
-              onInlineOpenChange={(open) => {
-                setInlineOpenMap((current) => {
-                  if (open) {
-                    return { ...current, [item.id]: true };
-                  }
-
-                  const next = { ...current };
-                  delete next[item.id];
-                  return next;
-                });
-              }}
             />
           ))}
         </div>
@@ -743,7 +793,6 @@ export function FeedsScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
   const [showBulkMove, setShowBulkMove] = useState(false);
-  const [showBulkCadence, setShowBulkCadence] = useState(false);
   const [query, setQuery] = useState("");
   const [showSwipeHint, setShowSwipeHint] = useState(() => {
     if (typeof window === "undefined") {
@@ -755,47 +804,96 @@ export function FeedsScreen() {
   const queryClient = useQueryClient();
   const deferredQuery = useDeferredValue(query);
 
-  const feeds = me.data?.navigation.feeds ?? [];
-  const folders = me.data?.navigation.folders ?? [];
-  const healthCounts = {
-    all: feeds.length,
-    healthy: feeds.filter((feed) => feed.healthStatus === "HEALTHY").length,
-    issues: feeds.filter((feed) => feed.healthStatus !== "HEALTHY").length,
-    slow: feeds.filter((feed) => feed.performance.isSlow).length,
-  };
-
+  const feeds = useMemo(() => me.data?.navigation.feeds ?? [], [me.data?.navigation.feeds]);
+  const folders = useMemo(() => me.data?.navigation.folders ?? [], [me.data?.navigation.folders]);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
-  const matchesFeed = (feed: NavFeed) =>
-    (!normalizedQuery ||
-      [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(normalizedQuery)));
+  const healthCounts = useMemo(
+    () => ({
+      all: feeds.length,
+      healthy: feeds.filter((feed) => feed.healthStatus === "HEALTHY").length,
+      issues: feeds.filter((feed) => feed.healthStatus !== "HEALTHY").length,
+      slow: feeds.filter((feed) => feed.performance.isSlow).length,
+    }),
+    [feeds],
+  );
 
-  const pinnedFeeds = feeds.filter((f) => f.isPinned && matchesFeed(f)).sort(compareFeedLabels);
-  const uncategorizedFeeds = feeds
-    .filter((f) => !f.folderId && !f.isPinned && matchesFeed(f))
-    .sort(compareFeedLabels);
-  const matchingFeeds = feeds.filter(matchesFeed).sort(compareFeedLabels);
-  const effectiveSelectedFeedIds = selectedFeedIds.filter((id) => matchingFeeds.some((feed) => feed.id === id));
-  const selectedSet = new Set(effectiveSelectedFeedIds);
+  const matchingFeeds = useMemo(() => {
+    if (!normalizedQuery) {
+      return feeds.slice().sort(compareFeedLabels);
+    }
+
+    return feeds
+      .filter((feed) =>
+        [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
+          .filter(Boolean)
+          .some((value) => value!.toLowerCase().includes(normalizedQuery)),
+      )
+      .sort(compareFeedLabels);
+  }, [feeds, normalizedQuery]);
+
+  const pinnedFeeds = useMemo(
+    () => matchingFeeds.filter((feed) => feed.isPinned),
+    [matchingFeeds],
+  );
+  const uncategorizedFeeds = useMemo(
+    () => matchingFeeds.filter((feed) => !feed.folderId && !feed.isPinned),
+    [matchingFeeds],
+  );
+  const looseSelectableFeeds = useMemo(
+    () => matchingFeeds.filter((feed) => !feed.folderId),
+    [matchingFeeds],
+  );
+  const effectiveSelectedFeedIds = useMemo(
+    () => selectedFeedIds.filter((id) => matchingFeeds.some((feed) => feed.id === id)),
+    [matchingFeeds, selectedFeedIds],
+  );
+  const selectedSet = useMemo(() => new Set(effectiveSelectedFeedIds), [effectiveSelectedFeedIds]);
   const selectedCount = effectiveSelectedFeedIds.length;
-  const folderNameById = new Map(folders.map((folder) => [folder.id, folder.title]));
-  const visibleFolders = folders
-    .map((folder) => {
-      const folderFeeds = feeds.filter((feed) => feed.folderId === folder.id);
-      const matchingFeeds = folderFeeds.filter(matchesFeed).sort(compareFeedLabels);
-      const folderMatches = folder.title.toLowerCase().includes(normalizedQuery);
+  const feedsByFolderId = useMemo(() => {
+    const grouped = new Map<string, NavFeed[]>();
 
-      return {
-        ...folder,
-        matchingFeeds,
-        visible:
-          !normalizedQuery ||
-          folderMatches ||
-          matchingFeeds.length > 0,
-      };
-    })
-    .filter((folder) => folder.visible);
+    for (const feed of feeds) {
+      if (!feed.folderId) {
+        continue;
+      }
+
+      const current = grouped.get(feed.folderId);
+      if (current) {
+        current.push(feed);
+      } else {
+        grouped.set(feed.folderId, [feed]);
+      }
+    }
+
+    return grouped;
+  }, [feeds]);
+  const visibleFolders = useMemo(
+    () =>
+      folders
+        .map((folder) => {
+          const folderFeeds = feedsByFolderId.get(folder.id) ?? [];
+          const matchingFolderFeeds = folderFeeds
+            .filter((feed) =>
+              !normalizedQuery ||
+              [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
+                .filter(Boolean)
+                .some((value) => value!.toLowerCase().includes(normalizedQuery)),
+            )
+            .sort(compareFeedLabels);
+          const folderMatches = folder.title.toLowerCase().includes(normalizedQuery);
+
+          return {
+            ...folder,
+            matchingFeeds: matchingFolderFeeds,
+            visible:
+              !normalizedQuery ||
+              folderMatches ||
+              matchingFolderFeeds.length > 0,
+          };
+        })
+        .filter((folder) => folder.visible),
+    [feedsByFolderId, folders, normalizedQuery],
+  );
 
   const moveFeeds = useMutation({
     mutationFn: async (folderId: string | null) => {
@@ -810,29 +908,10 @@ export function FeedsScreen() {
     },
     onSuccess: async () => {
       setShowBulkMove(false);
-      setShowBulkCadence(false);
       setSelectionMode(false);
       setSelectedFeedIds([]);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
-    },
-  });
-  const updateCadenceForFeeds = useMutation({
-    mutationFn: async (refreshIntervalMinutes: number) => {
-      await Promise.all(
-        effectiveSelectedFeedIds.map((feedId) =>
-          api(`/api/feeds/${feedId}`, {
-            method: "PATCH",
-            body: JSON.stringify({ refreshIntervalMinutes }),
-          }),
-        ),
-      );
-    },
-    onSuccess: async () => {
-      setShowBulkCadence(false);
-      setSelectionMode(false);
-      setSelectedFeedIds([]);
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 
@@ -852,18 +931,10 @@ export function FeedsScreen() {
                   setSelectionMode(false);
                   setSelectedFeedIds([]);
                   setShowBulkMove(false);
-                  setShowBulkCadence(false);
                 }}
                 className="inline-flex h-10 items-center rounded-2xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
               >
                 Cancel
-              </button>
-              <button
-                onClick={() => setShowBulkCadence(true)}
-                disabled={!selectedCount}
-                className="inline-flex h-10 items-center rounded-2xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary disabled:opacity-50"
-              >
-                Cadence
               </button>
               <button
                 onClick={() => setShowBulkMove(true)}
@@ -972,19 +1043,12 @@ export function FeedsScreen() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
                   Multi-select
                 </p>
-                <h2 className="mt-1 text-[1.05rem] font-semibold tracking-[-0.03em]">Select feeds to move</h2>
+                <h2 className="mt-1 text-[1.05rem] font-semibold tracking-[-0.03em]">Select folders or loose feeds</h2>
                 <p className="mt-1 text-xs text-secondary">
-                  {selectedCount} selected across {matchingFeeds.length} visible feeds.
+                  {selectedCount} selected across {visibleFolders.length} visible folders and {looseSelectableFeeds.length} loose feeds.
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowBulkCadence(true)}
-                  disabled={!selectedCount}
-                  className="rounded-2xl border border-subtle bg-[var(--surface)] px-3 py-2 text-xs font-semibold text-secondary disabled:opacity-50"
-                >
-                  Cadence
-                </button>
                 <button
                   onClick={() => setShowBulkMove(true)}
                   disabled={!selectedCount}
@@ -996,26 +1060,71 @@ export function FeedsScreen() {
             </div>
           </section>
 
-          <div className="space-y-2">
-            {matchingFeeds.map((feed) => (
-              <SelectableFeedRow
-                key={feed.id}
-                feed={feed}
-                selected={selectedSet.has(feed.id)}
-                folderTitle={feed.folderId ? (folderNameById.get(feed.folderId) ?? null) : null}
-                onToggle={() =>
-                  setSelectedFeedIds((current) =>
-                    current.includes(feed.id)
-                      ? current.filter((id) => id !== feed.id)
-                      : [...current, feed.id],
-                  )
-                }
-              />
-            ))}
-            {!matchingFeeds.length && (
+          <div className="space-y-4">
+            {visibleFolders.length > 0 ? (
+              <section>
+                <SectionLabel eyebrow="Library" title="Folders" meta={`${visibleFolders.length} groups`} />
+                <div className="space-y-2">
+                  {visibleFolders.map((folder) => {
+                    const folderFeedIds = folder.matchingFeeds.map((feed) => feed.id);
+                    const folderSelected =
+                      folderFeedIds.length > 0 && folderFeedIds.every((id) => selectedSet.has(id));
+
+                    return (
+                      <SelectableFolderRow
+                        key={folder.id}
+                        folder={folder}
+                        selected={folderSelected}
+                        selectedCount={folderFeedIds.filter((id) => selectedSet.has(id)).length}
+                        onToggle={() =>
+                          setSelectedFeedIds((current) => {
+                            const currentSet = new Set(current);
+                            if (folderSelected) {
+                              folderFeedIds.forEach((id) => currentSet.delete(id));
+                            } else {
+                              folderFeedIds.forEach((id) => currentSet.add(id));
+                            }
+                            return Array.from(currentSet);
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {looseSelectableFeeds.length > 0 ? (
+              <section>
+                <SectionLabel
+                  eyebrow={visibleFolders.length > 0 ? "Loose feeds" : "Library"}
+                  title={visibleFolders.length > 0 ? "Uncategorized" : "Feeds"}
+                  meta={`${looseSelectableFeeds.length} feeds`}
+                />
+                <div className="space-y-2">
+                  {looseSelectableFeeds.map((feed) => (
+                    <SelectableFeedRow
+                      key={feed.id}
+                      feed={feed}
+                      selected={selectedSet.has(feed.id)}
+                      folderTitle={null}
+                      onToggle={() =>
+                        setSelectedFeedIds((current) =>
+                          current.includes(feed.id)
+                            ? current.filter((id) => id !== feed.id)
+                            : [...current, feed.id],
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {!visibleFolders.length && !looseSelectableFeeds.length && (
               <EmptyState
                 title="No feeds in this view"
-                body="Try another search or filter, then select feeds to move."
+                body="Try another search or filter, then select folders or loose feeds."
                 icon={<Rss className="size-6" />}
               />
             )}
@@ -1087,14 +1196,6 @@ export function FeedsScreen() {
           isPending={moveFeeds.isPending}
         />
       ) : null}
-      {showBulkCadence ? (
-        <BulkCadenceSheet
-          selectedCount={selectedCount}
-          onClose={() => setShowBulkCadence(false)}
-          onApply={(refreshIntervalMinutes) => updateCadenceForFeeds.mutate(refreshIntervalMinutes)}
-          isPending={updateCadenceForFeeds.isPending}
-        />
-      ) : null}
     </MobileShell>
   );
 }
@@ -1145,7 +1246,6 @@ export function FoldersScreen() {
 
 export function SavedScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [inlineOpenMap, setInlineOpenMap] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
   const [pullDistance, setPullDistance] = useState(0);
   const deferredQuery = useDeferredValue(query);
@@ -1160,26 +1260,6 @@ export function SavedScreen() {
       document.getElementById("saved-search-input")?.focus();
     });
   }, [searchOpen]);
-
-  useEffect(() => {
-    const clearInlinePlayers = () => {
-      setInlineOpenMap({});
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible") {
-        clearInlinePlayers();
-      }
-    };
-
-    window.addEventListener("pagehide", clearInlinePlayers);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("pagehide", clearInlinePlayers);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
 
   const params = new URLSearchParams({ saved: "true" });
   if (deferredQuery.trim()) {
@@ -1333,18 +1413,6 @@ export function SavedScreen() {
             <ItemCard
               key={item.id}
               item={item}
-              inlineOpen={inlineOpenMap[item.id]}
-              onInlineOpenChange={(open) => {
-                setInlineOpenMap((current) => {
-                  if (open) {
-                    return { ...current, [item.id]: true };
-                  }
-
-                  const next = { ...current };
-                  delete next[item.id];
-                  return next;
-                });
-              }}
             />
           ))}
         </div>
@@ -2146,6 +2214,80 @@ function SelectableFeedRow({
             {!health.compact ? <span>{health.label}</span> : null}
           </span>
         </div>
+      </div>
+    </button>
+  );
+}
+
+function SelectableFolderRow({
+  folder,
+  selected,
+  selectedCount,
+  onToggle,
+}: {
+  folder: NavFolder & { matchingFeeds: NavFeed[] };
+  selected: boolean;
+  selectedCount: number;
+  onToggle: () => void;
+}) {
+  const partiallySelected = selectedCount > 0 && !selected;
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_14px_34px_rgba(0,0,0,0.16)] transition-colors ${
+        selected || partiallySelected
+          ? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
+          : "border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)]"
+      }`}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "92px" }}
+    >
+      <div
+        className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
+          selected
+            ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]"
+            : partiallySelected
+              ? "border-[var(--accent)] bg-[var(--accent)]/20 text-[var(--accent)]"
+              : "border-subtle bg-[var(--surface-muted)] text-transparent"
+        }`}
+      >
+        <Check className="size-3.5" />
+      </div>
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+        <FolderOpen className="size-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">{folder.title}</h3>
+          <span className="rounded-full border border-[var(--accent)]/30 bg-[var(--accent)] px-2.5 py-1 text-[10px] font-semibold text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.22)]">
+            {folder.matchingFeeds.length}
+          </span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-secondary">
+          <span>{folder.counts.unreadCount} unread</span>
+          <span>·</span>
+          <span>{folder.counts.feedCount} feeds</span>
+          {folder.counts.issueCount > 0 ? (
+            <>
+              <span>·</span>
+              <span className="font-medium text-amber-300">{folder.counts.issueCount} issues</span>
+            </>
+          ) : null}
+          {folder.counts.slowFeedCount > 0 ? (
+            <>
+              <span>·</span>
+              <span className="font-medium text-amber-300">{folder.counts.slowFeedCount} slow</span>
+            </>
+          ) : null}
+        </div>
+        <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-secondary">
+          {selected
+            ? `All ${folder.matchingFeeds.length} visible feeds selected`
+            : partiallySelected
+              ? `${selectedCount} of ${folder.matchingFeeds.length} visible feeds selected`
+              : `${folder.matchingFeeds.length} visible feeds`}
+        </p>
       </div>
     </button>
   );

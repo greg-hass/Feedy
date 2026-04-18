@@ -7,16 +7,16 @@ export type TimelineSourceFilter = "RSS" | "REDDIT" | "YOUTUBE";
 export type TimelineStateFilter = "UNREAD" | "READ" | "ALL";
 export type FeedSourceFilter = "ALL" | TimelineSourceFilter;
 
-type FeedCountRow = {
-  feedId: string;
+type FeedFolderCountRow = {
+  feedId: string | null;
+  folderId: string | null;
   totalCount: bigint;
   unreadCount: bigint;
 };
 
-type FolderCountRow = {
-  folderId: string | null;
-  totalCount: bigint;
-  unreadCount: bigint;
+type LibraryCountRow = {
+  unreadTotal: bigint;
+  savedCount: bigint;
 };
 
 type FeedPerformanceRow = {
@@ -57,18 +57,14 @@ const navigationFeedSelect = {
   updatedAt: true,
 } satisfies Prisma.FeedSelect;
 
-const timelineItemSelect = {
+const itemCommonSelect = {
   id: true,
   title: true,
   summary: true,
-  readabilityHtml: true,
-  contentHtml: true,
   canonicalUrl: true,
-  commentsUrl: true,
   mediaUrl: true,
   publishedAt: true,
   youtubeVideoId: true,
-  redditPermalink: true,
   feed: {
     select: {
       id: true,
@@ -85,60 +81,131 @@ const timelineItemSelect = {
   },
 } satisfies Prisma.ItemSelect;
 
+const timelineItemSelect = {
+  ...itemCommonSelect,
+} satisfies Prisma.ItemSelect;
+
+const readerItemSelect = {
+  ...itemCommonSelect,
+  readabilityHtml: true,
+  contentHtml: true,
+  commentsUrl: true,
+  redditPermalink: true,
+  author: true,
+  discoveredAt: true,
+  fetchedAt: true,
+} satisfies Prisma.ItemSelect;
+
 type TimelineItemRecord = Prisma.ItemGetPayload<{
   select: typeof timelineItemSelect;
 }>;
 
-export async function getFeedCounts(userId: string) {
-  const rows = await prisma.$queryRaw<FeedCountRow[]>(Prisma.sql`
-    SELECT
-      i."feedId" AS "feedId",
-      COUNT(*)::bigint AS "totalCount",
-      COUNT(*) FILTER (WHERE rs.id IS NULL)::bigint AS "unreadCount"
-    FROM "Item" i
-    INNER JOIN "Feed" f ON f.id = i."feedId"
-    LEFT JOIN "ReadState" rs
-      ON rs."itemId" = i.id
-      AND rs."userId" = ${userId}
-    WHERE f."userId" = ${userId}
-    GROUP BY i."feedId"
-  `);
+type ReaderItemRecord = Prisma.ItemGetPayload<{
+  select: typeof readerItemSelect;
+}>;
 
-  return new Map(
-    rows.map((row) => [
-      row.feedId,
-      {
-        totalCount: Number(row.totalCount),
-        unreadCount: Number(row.unreadCount),
-      },
-    ]),
-  );
+async function runSearchWithIndexedPlanner<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+) {
+  return prisma.$transaction(async (tx) => {
+    // This search query intentionally leans on trigram indexes for wide text fields.
+    // Postgres sometimes prefers a sequential scan for common terms, so we bias the
+    // planner away from that path only for this transaction.
+    await tx.$executeRawUnsafe("SET LOCAL enable_seqscan = off");
+    return fn(tx);
+  });
 }
 
-export async function getFolderCounts(userId: string) {
-  const rows = await prisma.$queryRaw<FolderCountRow[]>(Prisma.sql`
+function buildSourceTypeFilter(
+  sourceFilter?: TimelineSourceFilter | FeedSourceFilter,
+):
+  | FeedSourceType
+  | {
+      in: FeedSourceType[];
+    }
+  | undefined {
+  if (sourceFilter === "YOUTUBE") {
+    return {
+      in: [
+        FeedSourceType.YOUTUBE_RSS,
+        FeedSourceType.YOUTUBE_CHANNEL_RSS,
+        FeedSourceType.YOUTUBE_PLAYLIST_RSS,
+      ],
+    };
+  }
+
+  if (sourceFilter === "REDDIT") {
+    return FeedSourceType.REDDIT_RSS;
+  }
+
+  if (sourceFilter === "RSS") {
+    return { in: [FeedSourceType.RSS, FeedSourceType.ATOM, FeedSourceType.UNKNOWN] };
+  }
+
+  return undefined;
+}
+
+export async function getFeedAndFolderCounts(userId: string) {
+  const rows = await prisma.$queryRaw<FeedFolderCountRow[]>(Prisma.sql`
     SELECT
-      f."folderId" AS "folderId",
-      COUNT(i.id)::bigint AS "totalCount",
-      COUNT(i.id) FILTER (WHERE rs.id IS NULL)::bigint AS "unreadCount"
+      CASE WHEN GROUPING(f."id") = 0 THEN f."id" ELSE NULL END AS "feedId",
+      CASE WHEN GROUPING(f."id") = 1 THEN f."folderId" ELSE NULL END AS "folderId",
+      COUNT(*)::bigint AS "totalCount",
+      COUNT(*) FILTER (WHERE rs.id IS NULL)::bigint AS "unreadCount"
     FROM "Feed" f
     LEFT JOIN "Item" i ON i."feedId" = f.id
     LEFT JOIN "ReadState" rs
       ON rs."itemId" = i.id
       AND rs."userId" = ${userId}
     WHERE f."userId" = ${userId}
-    GROUP BY f."folderId"
+    GROUP BY GROUPING SETS ((f."id", f."folderId"), (f."folderId"))
   `);
 
-  return new Map(
-    rows.map((row) => [
-      row.folderId ?? "uncategorized",
-      {
-        totalCount: Number(row.totalCount),
-        unreadCount: Number(row.unreadCount),
-      },
-    ]),
-  );
+  const feedCounts = new Map<string, { totalCount: number; unreadCount: number }>();
+  const folderCounts = new Map<string, { totalCount: number; unreadCount: number }>();
+
+  for (const row of rows) {
+    const counts = {
+      totalCount: Number(row.totalCount),
+      unreadCount: Number(row.unreadCount),
+    };
+
+    if (row.feedId) {
+      feedCounts.set(row.feedId, counts);
+    } else {
+      folderCounts.set(row.folderId ?? "uncategorized", counts);
+    }
+  }
+
+  return { feedCounts, folderCounts };
+}
+
+export async function getLibraryCounts(userId: string) {
+  const [row] = await prisma.$queryRaw<LibraryCountRow[]>(Prisma.sql`
+    SELECT
+      (
+        SELECT COUNT(*)::bigint
+        FROM "Item" i
+        INNER JOIN "Feed" f ON f.id = i."feedId"
+        LEFT JOIN "ReadState" rs
+          ON rs."itemId" = i.id
+          AND rs."userId" = ${userId}
+        WHERE f."userId" = ${userId}
+          AND f."excludeFromTimeline" = false
+          AND i."mutedByRule" = false
+          AND rs.id IS NULL
+      ) AS "unreadTotal",
+      (
+        SELECT COUNT(*)::bigint
+        FROM "Bookmark" b
+        WHERE b."userId" = ${userId}
+      ) AS "savedCount"
+  `);
+
+  return {
+    unreadTotal: Number(row?.unreadTotal ?? 0),
+    savedCount: Number(row?.savedCount ?? 0),
+  };
 }
 
 export async function getFeedPerformanceStats(userId: string) {
@@ -186,7 +253,7 @@ export async function getFeedPerformanceStats(userId: string) {
 }
 
 export async function getNavigationData(userId: string) {
-  const [folders, feeds, feedCounts, folderCounts, feedPerformanceStats, unreadTotal, savedCount] =
+  const [folders, feeds, counts, feedPerformanceStats, libraryCounts] =
     await Promise.all([
       prisma.folder.findMany({
         where: { userId },
@@ -198,17 +265,9 @@ export async function getNavigationData(userId: string) {
         select: navigationFeedSelect,
         orderBy: [{ isPinned: "desc" }, { position: "asc" }, { createdAt: "asc" }],
       }),
-      getFeedCounts(userId),
-      getFolderCounts(userId),
+      getFeedAndFolderCounts(userId),
       getFeedPerformanceStats(userId),
-      prisma.item.count({
-        where: {
-          feed: { userId, excludeFromTimeline: false },
-          mutedByRule: false,
-          readStates: { none: { userId } },
-        },
-      }),
-      prisma.bookmark.count({ where: { userId } }),
+      getLibraryCounts(userId),
     ]);
 
   const folderFeedStats = new Map<
@@ -236,8 +295,8 @@ export async function getNavigationData(userId: string) {
     folders: folders.map((folder) => ({
       ...folder,
       counts: {
-        articleCount: folderCounts.get(folder.id)?.totalCount ?? 0,
-        unreadCount: folderCounts.get(folder.id)?.unreadCount ?? 0,
+        articleCount: counts.folderCounts.get(folder.id)?.totalCount ?? 0,
+        unreadCount: counts.folderCounts.get(folder.id)?.unreadCount ?? 0,
         feedCount: folderFeedStats.get(folder.id)?.feedCount ?? 0,
         issueCount: folderFeedStats.get(folder.id)?.issueCount ?? 0,
         slowFeedCount: folderFeedStats.get(folder.id)?.slowFeedCount ?? 0,
@@ -252,11 +311,11 @@ export async function getNavigationData(userId: string) {
         slowCount24h: 0,
         isSlow: false,
       },
-      counts: feedCounts.get(feed.id) ?? { unreadCount: 0, totalCount: 0 },
+      counts: counts.feedCounts.get(feed.id) ?? { unreadCount: 0, totalCount: 0 },
     })),
     stats: {
-      unreadTotal,
-      savedCount,
+      unreadTotal: libraryCounts.unreadTotal,
+      savedCount: libraryCounts.savedCount,
     },
   };
 }
@@ -272,20 +331,7 @@ export async function getTimelineItems(
     q?: string;
   },
 ): Promise<TimelineItemRecord[]> {
-  const sourceTypeFilter =
-    options?.sourceFilter === "YOUTUBE"
-      ? {
-          in: [
-            FeedSourceType.YOUTUBE_RSS,
-            FeedSourceType.YOUTUBE_CHANNEL_RSS,
-            FeedSourceType.YOUTUBE_PLAYLIST_RSS,
-          ],
-        }
-      : options?.sourceFilter === "REDDIT"
-        ? FeedSourceType.REDDIT_RSS
-        : options?.sourceFilter === "RSS"
-          ? { in: [FeedSourceType.RSS, FeedSourceType.ATOM, FeedSourceType.UNKNOWN] }
-          : undefined;
+  const sourceTypeFilter = buildSourceTypeFilter(options?.sourceFilter);
 
   const stateWhere =
     options?.saved
@@ -297,25 +343,41 @@ export async function getTimelineItems(
           : { readStates: { none: { userId } } };
 
   const searchQuery = options?.q?.trim();
-  const searchWhere = searchQuery
-    ? {
-        OR: [
-          { title: { contains: searchQuery, mode: "insensitive" as const } },
-          { summary: { contains: searchQuery, mode: "insensitive" as const } },
-          { contentHtml: { contains: searchQuery, mode: "insensitive" as const } },
-          { readabilityHtml: { contains: searchQuery, mode: "insensitive" as const } },
-          { author: { contains: searchQuery, mode: "insensitive" as const } },
-          {
-            feed: {
+  const matchingFeedIds =
+    searchQuery && searchQuery.length > 0
+      ? (
+          await prisma.feed.findMany({
+            where: {
+              userId,
+              ...(options?.feedId ? { id: options.feedId } : {}),
+              ...(options?.folderId ? { folderId: options.folderId } : {}),
+              ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
+              ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
               OR: [
                 { title: { contains: searchQuery, mode: "insensitive" as const } },
                 { label: { contains: searchQuery, mode: "insensitive" as const } },
               ],
             },
-          },
-        ],
-      }
-    : {};
+            select: { id: true },
+          })
+        ).map((feed) => feed.id)
+      : [];
+
+  const searchWhere =
+    searchQuery && searchQuery.length > 0
+      ? {
+          OR: [
+            { title: { contains: searchQuery, mode: "insensitive" as const } },
+            { summary: { contains: searchQuery, mode: "insensitive" as const } },
+            { contentHtml: { contains: searchQuery, mode: "insensitive" as const } },
+            { readabilityHtml: { contains: searchQuery, mode: "insensitive" as const } },
+            { author: { contains: searchQuery, mode: "insensitive" as const } },
+            ...(matchingFeedIds.length > 0
+              ? [{ feedId: { in: matchingFeedIds } }]
+              : []),
+          ],
+        }
+      : {};
 
   const query = {
     where: {
@@ -339,6 +401,10 @@ export async function getTimelineItems(
     },
   } satisfies Prisma.ItemFindManyArgs;
 
+  if (searchQuery) {
+    return runSearchWithIndexedPlanner((tx) => tx.item.findMany(query) as Promise<TimelineItemRecord[]>);
+  }
+
   return prisma.item.findMany(query) as Promise<TimelineItemRecord[]>;
 }
 
@@ -351,20 +417,7 @@ export async function getFeedSearch(
     return [];
   }
 
-  const sourceTypeFilter =
-    sourceFilter === "YOUTUBE"
-      ? {
-          in: [
-            FeedSourceType.YOUTUBE_RSS,
-            FeedSourceType.YOUTUBE_CHANNEL_RSS,
-            FeedSourceType.YOUTUBE_PLAYLIST_RSS,
-          ],
-        }
-      : sourceFilter === "REDDIT"
-        ? FeedSourceType.REDDIT_RSS
-        : sourceFilter === "RSS"
-          ? { in: [FeedSourceType.RSS, FeedSourceType.ATOM, FeedSourceType.UNKNOWN] }
-          : undefined;
+  const sourceTypeFilter = buildSourceTypeFilter(sourceFilter);
 
   return prisma.feed.findMany({
     where: {
@@ -398,20 +451,9 @@ export async function getReaderItem(userId: string, itemId: string) {
       feed: { userId },
     },
     select: {
-      ...timelineItemSelect,
-      author: true,
-      discoveredAt: true,
-      fetchedAt: true,
-      feed: {
-        select: {
-          id: true,
-          title: true,
-          label: true,
-          sourceType: true,
-        },
-      },
+      ...readerItemSelect,
       bookmarks: { where: { userId }, select: { id: true } },
       readStates: { where: { userId }, select: { id: true } },
     },
-  });
+  }) as Promise<ReaderItemRecord | null>;
 }

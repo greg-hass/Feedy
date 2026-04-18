@@ -54,11 +54,11 @@ export type ItemRecord = {
   readabilityHtml?: string | null;
   contentHtml?: string | null;
   canonicalUrl: string | null;
-  commentsUrl: string | null;
+  commentsUrl?: string | null;
   mediaUrl: string | null;
   publishedAt: string | null;
   youtubeVideoId: string | null;
-  redditPermalink: string | null;
+  redditPermalink?: string | null;
   bookmarked: boolean;
   read: boolean;
   feed: {

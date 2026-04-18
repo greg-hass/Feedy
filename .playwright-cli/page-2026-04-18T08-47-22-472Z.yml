@@ -1,0 +1,42 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2592]
+  - generic [ref=e2593]:
+    - banner [ref=e2594]:
+      - generic [ref=e2596]:
+        - button [ref=e2597]:
+          - img [ref=e2598]
+        - generic [ref=e2600]:
+          - button [ref=e2601]:
+            - img [ref=e2602]
+          - button [ref=e2604]:
+            - img [ref=e2605]
+          - link [ref=e2611] [cursor=pointer]:
+            - /url: https://www.reddit.com/r/cachyos/comments/1sos83q/just_reinstalled_cachyos_for_the_7th_time_already/
+            - img [ref=e2612]
+    - generic [ref=e2616]:
+      - generic [ref=e2617]:
+        - generic [ref=e2618]:
+          - img "r/cachyos" [ref=e2619]
+          - paragraph [ref=e2620]: r/cachyos
+        - heading "Just reinstalled cachyos (for the 7th time already) because of vulkan bugs." [level=1] [ref=e2621]
+        - generic [ref=e2622]:
+          - generic [ref=e2623]: 18 Apr 2026
+          - generic [ref=e2624]: REDDIT RSS
+        - button "Mark unread" [ref=e2626]
+      - article [ref=e2627]:
+        - generic [ref=e2628]:
+          - paragraph [ref=e2629]: The title pretty much sums it up, but for futher details, cachyos has the one kernel i really want to use because of its latency (miles better than the standart linux-rt kernel offers, and linux-zen doesnt come close), but Vulkan simply refuses to work, i've already reinstalled everything it needs, tried different nvidia package versions, etc.
+          - paragraph [ref=e2630]: I really want to main cachyos as installing its kernel on endeavouros turned out to be way harder than expected (even harder than when i did the same on Manjaro, it worked flawlessly there) but all of these issues just won't stop popping up one after the other, vkcube and all ways to check if vulkan is correctly works have passed, and everything goes flawlessly... until i want to game.
+          - paragraph [ref=e2631]: "I keep getting vulkan call errors and everything related to that which has sadly led to me going back go my ol' reliable: Manjaro (i know some of yall will hate me for it, but its the one distro that just worked the best for me, even did better than Debian on my laptop)."
+          - paragraph [ref=e2632]: Laptop is an ASUS TUF Gaming f15 FX506HC.
+          - paragraph [ref=e2633]: "CPU: Intel Core i5 11400h"
+          - paragraph [ref=e2634]: "GPU: RTX 3050 4gb"
+          - paragraph [ref=e2635]: "RAM: 16gb DDR4 @ 3200mhz"
+          - paragraph [ref=e2636]: "SSD: 512gb Gen3 micron nvme ssd, 1tb kingston Gen3 nvme ssd."
+        - text: submitted by
+        - link "/u/JuanchoGYT" [ref=e2637] [cursor=pointer]:
+          - /url: https://www.reddit.com/user/JuanchoGYT
+        - link "[link]" [ref=e2639] [cursor=pointer]:
+          - /url: https://www.reddit.com/r/cachyos/comments/1sos83q/just_reinstalled_cachyos_for_the_7th_time_already/
+        - link "[comments]" [ref=e2641] [cursor=pointer]:
+          - /url: https://www.reddit.com/r/cachyos/comments/1sos83q/just_reinstalled_cachyos_for_the_7th_time_already/

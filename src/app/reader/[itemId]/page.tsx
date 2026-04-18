@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Bookmark, ExternalLink, Share2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FeedAvatar } from "@/components/feed-avatar";
@@ -16,6 +16,13 @@ export default function ReaderPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
+  const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
+
+  const forceScrollTop = () => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
 
   const item = useQuery({
     queryKey: ["reader", params.itemId],
@@ -29,21 +36,47 @@ export default function ReaderPage() {
         body: JSON.stringify(body),
       }),
     onSuccess: async (_result, variables) => {
-      updateItemStateCaches(queryClient, params.itemId, variables);
+      if (variables.read === true && typeof window !== "undefined") {
+        window.sessionStorage.setItem(timelinePendingReadStorageKey, params.itemId);
+      }
+      updateItemStateCaches(queryClient, params.itemId, variables, {
+        skipTimelineReadPatch: true,
+      });
       updateReaderStateCache(queryClient, params.itemId, variables);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
+  useLayoutEffect(() => {
+    let cancelled = false;
 
-    const frame = window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: "auto" });
-    });
+    const resetScroll = () => {
+      if (cancelled) {
+        return;
+      }
 
-    return () => window.cancelAnimationFrame(frame);
-  }, [params.itemId]);
+      forceScrollTop();
+    };
+
+    // Next.js and the browser can both try to preserve scroll state during
+    // the transition. Re-assert top-of-page across a few frames so the reader
+    // always opens with the header fully visible.
+    resetScroll();
+    const frameOne = window.requestAnimationFrame(resetScroll);
+    const frameTwo = window.requestAnimationFrame(() => window.requestAnimationFrame(resetScroll));
+    const timeoutOne = window.setTimeout(resetScroll, 60);
+    const timeoutTwo = window.setTimeout(resetScroll, 180);
+    const timeoutThree = window.setTimeout(resetScroll, 420);
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frameOne);
+      window.cancelAnimationFrame(frameTwo);
+      window.clearTimeout(timeoutOne);
+      window.clearTimeout(timeoutTwo);
+      window.clearTimeout(timeoutThree);
+    };
+  }, [params.itemId, item.data?.id]);
 
   useEffect(() => {
     if (item.data && !item.data.read && !state.isPending) {
@@ -94,8 +127,11 @@ export default function ReaderPage() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-[max(12px,env(safe-area-inset-top))]">
       <header
-        className="sticky top-0 z-40 -mx-4 px-4 pb-3 pt-1"
-        style={{ backgroundColor: "var(--app-bg)" }}
+        className="sticky z-40 -mx-4 mb-2 px-4 pb-3 pt-1"
+        style={{
+          top: "max(12px, env(safe-area-inset-top))",
+          backgroundColor: "var(--app-bg)",
+        }}
       >
         <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface-strong)_92%,black_8%)] px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.24)] backdrop-blur-xl">
           <div className="flex items-center justify-between">
@@ -123,16 +159,38 @@ export default function ReaderPage() {
               {data.canonicalUrl && (
                 <>
                   <button
-                    onClick={() => {
+                    type="button"
+                    onClick={async () => {
                       if (navigator.share && data.canonicalUrl) {
-                        navigator.share({ title: data.title, url: data.canonicalUrl });
+                        try {
+                          await navigator.share({ title: data.title, url: data.canonicalUrl });
+                          return;
+                        } catch {
+                          // Fall through to the copy-link fallback below.
+                        }
                       }
+
+                      if (navigator.clipboard?.writeText && data.canonicalUrl) {
+                        try {
+                          await navigator.clipboard.writeText(data.canonicalUrl);
+                          return;
+                        } catch {
+                          // Fall through to the manual prompt fallback below.
+                        }
+                      }
+
+                      window.prompt("Copy link", data.canonicalUrl ?? undefined);
                     }}
                     className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
                   >
                     <Share2 className="size-5" />
                   </button>
-                  <a href={data.canonicalUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary">
+                  <a
+                    href={data.canonicalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
+                  >
                     <ExternalLink className="size-5" />
                   </a>
                 </>
@@ -142,7 +200,10 @@ export default function ReaderPage() {
         </div>
       </header>
 
-      <div className="screen-enter mt-1 overflow-hidden rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+      <div
+        className="overflow-hidden rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
+        style={{ overflowAnchor: "none" }}
+      >
         <div className="px-5 pt-4">
           <div className="flex items-center gap-2">
             <FeedAvatar feedId={data.feed.id} title={data.feed.label || data.feed.title} />
@@ -184,18 +245,6 @@ export default function ReaderPage() {
             </div>
           )}
 
-          {data.redditPermalink && (
-            <a
-              href={data.redditPermalink}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 flex items-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
-            >
-              <span className="font-medium">View on Reddit</span>
-              <ExternalLink className="size-3.5 text-secondary" />
-            </a>
-          )}
-
           {data.mediaUrl && !data.youtubeVideoId && (
             <div className="mt-4 overflow-hidden rounded-[20px] border border-subtle">
               <img src={data.mediaUrl} alt="" className="w-full" loading="lazy" />
@@ -215,20 +264,6 @@ export default function ReaderPage() {
             <p className="text-sm leading-relaxed text-secondary">{data.summary}</p>
           </div>
         ) : null}
-
-        {data.canonicalUrl && (
-          <div className="border-t border-subtle px-5 py-4">
-            <a
-              href={data.canonicalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
-            >
-              <span className="font-medium">Read original article</span>
-              <ExternalLink className="size-4 text-secondary" />
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );

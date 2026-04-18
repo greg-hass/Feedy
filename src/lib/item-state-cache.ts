@@ -19,15 +19,26 @@ function isSavedItemsQuery(queryKey: QueryKey) {
   return Array.isArray(queryKey) && queryKey[0] === "items" && queryKey[1] === "saved";
 }
 
+function isTimelineItemsQuery(queryKey: QueryKey) {
+  return Array.isArray(queryKey) && queryKey[0] === "items" && queryKey[1] === "timeline";
+}
+
 export function updateItemStateCaches(
   queryClient: QueryClient,
   itemId: string,
   patch: ItemStatePatch,
+  options?: {
+    skipTimelineReadPatch?: boolean;
+  },
 ) {
   for (const [queryKey, current] of queryClient.getQueriesData<ItemRecord[]>({
     queryKey: ["items"],
   })) {
     if (!current) {
+      continue;
+    }
+
+    if (options?.skipTimelineReadPatch && typeof patch.read === "boolean" && isTimelineItemsQuery(queryKey)) {
       continue;
     }
 

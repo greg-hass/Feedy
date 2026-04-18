@@ -150,6 +150,7 @@ model Feed {
   @@unique([userId, sourceUrl])
   @@index([userId, folderId, position])
   @@index([userId, isPinned, position])
+  @@index([userId, folderId, excludeFromTimeline, sourceType])
   @@index([userId, siteUrl])
   @@index([userId, excludeFromTimeline, sourceType])
   @@index([lastRefreshedAt])
@@ -194,6 +195,8 @@ model Item {
   bookmarks      Bookmark[]
 
   @@index([feedId, publishedAt(sort: Desc), discoveredAt(sort: Desc)])
+  @@index([feedId, mutedByRule, publishedAt(sort: Desc), discoveredAt(sort: Desc)])
+  @@index([mutedByRule, publishedAt(sort: Desc), discoveredAt(sort: Desc)])
   @@index([discoveredAt(sort: Desc)])
 }
 

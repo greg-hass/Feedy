@@ -63,15 +63,18 @@ export function MobileShell({
         <header data-mobile-shell-header="true" className="fixed inset-x-0 top-0 z-40" style={{ backgroundColor: 'var(--app-bg)' }}>
           <div className="mx-auto max-w-md px-5 pb-0 pt-[max(12px,env(safe-area-inset-top))]">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex h-7 items-center gap-1.5 rounded-full px-2.5" style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}>
+              <div
+                className="flex h-10 shrink-0 items-center gap-2 rounded-2xl px-3"
+                style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}
+              >
                 <img
                   src="/icon-64.png"
                   alt=""
-                  className="size-3.5 rounded-[4px]"
+                  className="size-5 shrink-0 rounded-[6px]"
                   loading="eager"
                   decoding="async"
                 />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--accent)' }}>
+                <span className="whitespace-nowrap text-[12px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--accent)' }}>
                   Feedy
                 </span>
               </div>
@@ -118,7 +121,7 @@ export function MobileShell({
         </header>
 
         <div className="px-5">
-          <main key={pathname} className="flex-1 pb-28 pt-[146px]">
+          <main className="flex-1 pb-28 pt-[146px]">
             {children}
           </main>
         </div>
