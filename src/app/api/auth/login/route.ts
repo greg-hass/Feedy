@@ -3,6 +3,15 @@ import { NextResponse } from "next/server";
 import { apiError, parseJson } from "@/lib/api";
 import { authenticate } from "@/lib/auth";
 import { loginSchema } from "@/lib/schemas";
+import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
+
+const rateLimiter = createFixedWindowRateLimiter();
+
+function getRequestIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const forwardedIp = forwardedFor?.split(",")[0]?.trim();
+  return forwardedIp || request.headers.get("x-real-ip") || request.headers.get("cf-connecting-ip") || "unknown";
+}
 
 function requestOrigin(request: Request) {
   const forwardedProto = request.headers.get("x-forwarded-proto");
@@ -20,6 +29,23 @@ export async function POST(request: Request) {
       : loginSchema.parse(
           Object.fromEntries((await request.formData()).entries()),
         );
+    const loginAttempt = await rateLimiter.check(`login:${getRequestIp(request)}:${input.username.toLowerCase()}`, {
+      limit: 5,
+      windowSeconds: 15 * 60,
+    });
+    if (!loginAttempt.allowed) {
+      if (contentType.includes("application/json")) {
+        const response = apiError("Too many login attempts", 429);
+        response.headers.set("Retry-After", String(loginAttempt.retryAfterSeconds));
+        return response;
+      }
+
+      const response = NextResponse.redirect(new URL("/login?error=rate_limited", requestOrigin(request)), {
+        status: 303,
+      });
+      response.headers.set("Retry-After", String(loginAttempt.retryAfterSeconds));
+      return response;
+    }
     const user = await authenticate(input.username, input.password);
     if (!user) {
       if (contentType.includes("application/json")) {

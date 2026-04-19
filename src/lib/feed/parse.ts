@@ -4,6 +4,7 @@ import Parser from "rss-parser";
 
 import { FeedSourceType } from "@prisma/client";
 import { fetchWithTimeout } from "@/lib/http";
+import { sanitizeReaderHtml } from "@/lib/sanitize-reader-html";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import { decodeHtmlEntities } from "@/lib/utils";
 import {
@@ -159,10 +160,7 @@ export async function fetchAndParseFeedConditionally(
       externalId: (typeof extra.id === "string" ? extra.id : null) ?? item.guid ?? null,
       title: decodeHtmlEntities(item.title?.trim()) || "Untitled item",
       summary: decodeHtmlEntities(item.contentSnippet?.trim() || item.summary?.trim()) || null,
-      contentHtml:
-        (extra.contentEncoded as string | undefined) ??
-        item["content"] ??
-        null,
+      contentHtml: sanitizeReaderHtml((extra.contentEncoded as string | undefined) ?? item["content"] ?? null) || null,
       author:
         decodeHtmlEntities(item.creator?.trim()) ||
         (typeof extra.author === "string" ? decodeHtmlEntities(extra.author.trim()) : null),

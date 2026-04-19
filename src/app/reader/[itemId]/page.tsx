@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
+import { sanitizeReaderHtml } from "@/lib/sanitize-reader-html";
 import type { ItemRecord } from "@/types/app";
 
 export default function ReaderPage() {
@@ -259,7 +260,7 @@ export default function ReaderPage() {
           <article
             className="reader-content mt-4 px-5 pb-5"
             dangerouslySetInnerHTML={{
-              __html: data.readabilityHtml || data.contentHtml || `<p>${data.summary || ""}</p>`,
+              __html: sanitizeReaderHtml(data.readabilityHtml || data.contentHtml || `<p>${data.summary || ""}</p>`),
             }}
           />
         ) : data.summary ? (

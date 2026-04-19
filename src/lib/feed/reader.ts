@@ -1,8 +1,8 @@
-import sanitizeHtml from "sanitize-html";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 
 import { fetchWithTimeout } from "@/lib/http";
+import { sanitizeReaderHtml } from "@/lib/sanitize-reader-html";
 
 export async function extractReadableContent(url: string) {
   const response = await fetchWithTimeout(url, {}, 15_000);
@@ -22,19 +22,6 @@ export async function extractReadableContent(url: string) {
   return {
     title: article.title,
     excerpt: article.excerpt,
-    content: sanitizeHtml(article.content, {
-      allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "figure", "figcaption"]),
-      allowedAttributes: {
-        ...sanitizeHtml.defaults.allowedAttributes,
-        a: ["href", "name", "target", "rel"],
-        img: ["src", "alt", "title", "width", "height"],
-      },
-      transformTags: {
-        a: sanitizeHtml.simpleTransform("a", {
-          target: "_blank",
-          rel: "noopener noreferrer",
-        }),
-      },
-    }),
+    content: sanitizeReaderHtml(article.content),
   };
 }

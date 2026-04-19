@@ -16,8 +16,10 @@ type SessionPayload = {
   username: string;
 };
 
-export async function ensureSingleUser() {
-  const existing = await prisma.user.findFirst({
+type SingleUserClient = typeof prisma;
+
+export async function syncSingleUserFromEnv(client: SingleUserClient = prisma) {
+  const existing = await client.user.findFirst({
     include: {
       settings: true,
     },
@@ -25,7 +27,7 @@ export async function ensureSingleUser() {
   const passwordHash = await hash(env.APP_PASSWORD, 12);
 
   if (existing) {
-    return prisma.user.update({
+    return client.user.update({
       where: { id: existing.id },
       data: {
         username: env.APP_USERNAME,
@@ -53,7 +55,7 @@ export async function ensureSingleUser() {
     });
   }
 
-  return prisma.user.create({
+  return client.user.create({
     data: {
       username: env.APP_USERNAME,
       passwordHash,
@@ -69,6 +71,19 @@ export async function ensureSingleUser() {
     include: {
       settings: true,
     },
+  });
+}
+
+export async function loadUserBySessionId(client: SingleUserClient, userId: string) {
+  return client.user.findUnique({
+    where: { id: userId },
+    include: { settings: true },
+  });
+}
+
+export async function loadPrimaryUser(client: SingleUserClient = prisma) {
+  return client.user.findFirst({
+    include: { settings: true },
   });
 }
 
@@ -114,16 +129,12 @@ export async function getSession() {
 }
 
 export async function requireUser() {
-  await ensureSingleUser();
   const session = await getSession();
   if (!session?.userId) {
     redirect("/login");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    include: { settings: true },
-  });
+  const user = await loadUserBySessionId(prisma, session.userId);
 
   if (!user) {
     redirect("/login");
@@ -133,7 +144,7 @@ export async function requireUser() {
 }
 
 export async function authenticate(username: string, password: string) {
-  const user = await ensureSingleUser();
+  const user = await syncSingleUserFromEnv();
   if (user.username !== username) {
     return null;
   }

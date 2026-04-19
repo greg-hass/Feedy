@@ -4,7 +4,7 @@ import { JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndCacheIcon } from "@/lib/feed/icons";
 import { refreshFeed } from "@/lib/feed/service";
-import { ensureSingleUser } from "@/lib/auth";
+import { loadPrimaryUser, syncSingleUserFromEnv } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { enqueueFeedRefresh, getRefreshQueue, iconQueueName, refreshQueueName } from "@/lib/queue";
 import { getRedis } from "@/lib/redis";
@@ -12,7 +12,10 @@ import { pruneUserData } from "@/lib/retention";
 import { ensureDataDirs } from "@/lib/storage";
 
 async function scheduleDueFeeds() {
-  const user = await ensureSingleUser();
+  const user = await loadPrimaryUser();
+  if (!user) {
+    return;
+  }
 
   const queue = getRefreshQueue();
   const waiting = await queue.getWaitingCount();
@@ -79,7 +82,10 @@ async function scheduleDueFeeds() {
 }
 
 async function runRetentionCleanup() {
-  const user = await ensureSingleUser();
+  const user = await loadPrimaryUser();
+  if (!user) {
+    return;
+  }
   const retentionDays = user.settings?.itemRetentionDays ?? 90;
   const result = await pruneUserData(user.id, retentionDays);
 
@@ -95,7 +101,7 @@ async function runRetentionCleanup() {
 
 async function boot() {
   ensureDataDirs();
-  await ensureSingleUser();
+  await syncSingleUserFromEnv();
 
   const refreshWorker = new Worker(
     refreshQueueName,

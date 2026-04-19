@@ -6,6 +6,9 @@ import { prisma } from "@/lib/db";
 import { parseOpml } from "@/lib/feed/opml";
 import { validateFeedUrl } from "@/lib/feed/parse";
 import { createValidatedFeedForUser } from "@/lib/feed/service";
+import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
+
+const rateLimiter = createFixedWindowRateLimiter();
 
 type OpmlNode = {
   title: string;
@@ -151,6 +154,15 @@ async function importNodes(userId: string, nodes: OpmlNode[]) {
 export async function POST(request: Request) {
   try {
     const user = await assertApiUser();
+    const importAttempt = await rateLimiter.check(`import:opml:${user.id}`, {
+      limit: 3,
+      windowSeconds: 15 * 60,
+    });
+    if (!importAttempt.allowed) {
+      const response = apiError("Too many OPML imports", 429);
+      response.headers.set("Retry-After", String(importAttempt.retryAfterSeconds));
+      return response;
+    }
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
