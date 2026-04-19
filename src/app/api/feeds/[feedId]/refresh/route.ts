@@ -35,6 +35,8 @@ export async function POST(_request: Request, context: { params: Params }) {
     return NextResponse.json({
       ok: true,
       queued: queued.enqueued ? 1 : 0,
+      skipped: queued.enqueued ? 0 : 1,
+      totalFeeds: 1,
       batchStartedAt: batchStartedAt.toISOString(),
       batchId,
     });

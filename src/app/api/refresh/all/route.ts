@@ -43,6 +43,8 @@ export async function POST() {
     return NextResponse.json({
       ok: true,
       queued: results.filter(Boolean).length,
+      skipped: feeds.length - results.filter(Boolean).length,
+      totalFeeds: feeds.length,
       batchStartedAt: batchStartedAt.toISOString(),
       batchId,
     });

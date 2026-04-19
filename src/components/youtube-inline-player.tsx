@@ -118,6 +118,7 @@ export function YouTubeInlinePlayer({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const saveTimerRef = useRef<number | null>(null);
+  const startSecondsRef = useRef(startSeconds);
   const readyCallbackRef = useRef(onReady);
   const progressCallbackRef = useRef(onProgressChange);
   const meaningfulCallbackRef = useRef(onMeaningfulPlayback);
@@ -204,10 +205,11 @@ export function YouTubeInlinePlayer({
         },
         events: {
           onReady: ({ target }) => {
-            if (startSeconds > 1) {
-              target.seekTo(startSeconds, true);
-              lastSavedSecondsRef.current = Math.floor(startSeconds);
-              progressCallbackRef.current?.(Math.floor(startSeconds));
+            const startAt = startSecondsRef.current;
+            if (startAt > 1) {
+              target.seekTo(startAt, true);
+              lastSavedSecondsRef.current = Math.floor(startAt);
+              progressCallbackRef.current?.(Math.floor(startAt));
             }
 
             readyCallbackRef.current?.();
@@ -269,7 +271,7 @@ export function YouTubeInlinePlayer({
       }
       playerRef.current = null;
     };
-  }, [autoplay, itemId, startSeconds, videoId]);
+  }, [autoplay, itemId, videoId]);
 
   if (variant === "mount") {
     return (

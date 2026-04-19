@@ -25,7 +25,7 @@ let iconQueue: Queue<IconJobPayload> | undefined;
 
 const INFLIGHT_JOB_STATES = new Set(["waiting", "active", "delayed", "prioritized", "waiting-children"]);
 
-function getRefreshQueue() {
+export function getRefreshQueue() {
   refreshQueue ??= new Queue<RefreshJobPayload>(refreshQueueName, {
     connection: getRedis(),
     defaultJobOptions: {

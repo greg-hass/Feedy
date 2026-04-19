@@ -6,19 +6,31 @@ import { fetchAndCacheIcon } from "@/lib/feed/icons";
 import { refreshFeed } from "@/lib/feed/service";
 import { ensureSingleUser } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { enqueueFeedRefresh, iconQueueName, refreshQueueName } from "@/lib/queue";
+import { enqueueFeedRefresh, getRefreshQueue, iconQueueName, refreshQueueName } from "@/lib/queue";
 import { getRedis } from "@/lib/redis";
 import { pruneUserData } from "@/lib/retention";
 import { ensureDataDirs } from "@/lib/storage";
 
 async function scheduleDueFeeds() {
   const user = await ensureSingleUser();
+
+  const queue = getRefreshQueue();
+  const waiting = await queue.getWaitingCount();
+  const active = await queue.getActiveCount();
+  const backlog = waiting + active;
+
+  if (backlog > 50) {
+    console.log(`[worker] Auto-refresh skipped: queue backlog is ${backlog}`);
+    return;
+  }
+
   const feeds = await prisma.feed.findMany({
     where: { userId: user.id },
     include: { user: { include: { settings: true } } },
   });
 
   const now = Date.now();
+  let queuedCount = 0;
   for (const feed of feeds) {
     const interval =
       feed.refreshIntervalMinutes ??
@@ -36,6 +48,11 @@ async function scheduleDueFeeds() {
       continue;
     }
 
+    if (backlog + queuedCount >= 100) {
+      console.log(`[worker] Auto-refresh capped at ${queuedCount} feeds to limit queue growth`);
+      break;
+    }
+
     const refreshJob = await prisma.refreshJob.create({
       data: {
         userId: user.id,
@@ -51,7 +68,13 @@ async function scheduleDueFeeds() {
     });
     if (!queued.enqueued) {
       await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
+    } else {
+      queuedCount++;
     }
+  }
+
+  if (queuedCount > 0) {
+    console.log(`[worker] Auto-refresh queued ${queuedCount} feeds (backlog was ${backlog})`);
   }
 }
 

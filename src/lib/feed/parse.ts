@@ -6,6 +6,11 @@ import { FeedSourceType } from "@prisma/client";
 import { fetchWithTimeout } from "@/lib/http";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import { decodeHtmlEntities } from "@/lib/utils";
+import {
+  fetchYouTubeFeedConditionally,
+  parseYouTubeFeedTarget,
+  validateYouTubeFeedUrl,
+} from "@/lib/feed/youtube";
 
 const parser = new Parser({
   defaultRSS: 2.0,
@@ -23,6 +28,11 @@ const parser = new Parser({
 });
 
 function detectSourceType(url: string, feedType?: string | null): FeedSourceType {
+  const youtubeTarget = parseYouTubeFeedTarget(url);
+  if (youtubeTarget) {
+    return youtubeTarget.sourceType;
+  }
+
   const normalized = url.toLowerCase();
 
   if (normalized.includes("reddit.com")) {
@@ -57,6 +67,11 @@ function hashUniqueKey(feedId: string, raw: string) {
 }
 
 export async function validateFeedUrl(url: string): Promise<FeedValidationResult> {
+  const youtubeTarget = parseYouTubeFeedTarget(url);
+  if (youtubeTarget) {
+    return validateYouTubeFeedUrl(url);
+  }
+
   const response = await fetchWithTimeout(url);
   if (!response.ok) {
     throw new Error(`Feed returned ${response.status}`);
@@ -89,6 +104,13 @@ export async function fetchAndParseFeedConditionally(
     lastModified?: string | null;
   },
 ) {
+  const youtubeTarget = parseYouTubeFeedTarget(url);
+  if (youtubeTarget) {
+    return fetchYouTubeFeedConditionally(url, feedId, {
+      etag: options?.etag ?? null,
+    });
+  }
+
   const requestHeaders: Record<string, string> = {};
   if (options?.etag) {
     requestHeaders["if-none-match"] = options.etag;

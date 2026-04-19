@@ -232,6 +232,11 @@ function SegmentedControl<T extends string>({
 function useRefreshController(endpoint: string, invalidate: string[]) {
   const queryClient = useQueryClient();
   const [trackedBatchId, setTrackedBatchId] = useState<string | null>(null);
+  const [batchSummary, setBatchSummary] = useState<{
+    totalFeeds: number;
+    queued: number;
+    skipped: number;
+  } | null>(null);
   const refreshStatus = useQuery({
     queryKey: ["refresh-status", endpoint, trackedBatchId],
     queryFn: () =>
@@ -250,14 +255,29 @@ function useRefreshController(endpoint: string, invalidate: string[]) {
 
   const mutation = useMutation({
     mutationFn: () =>
-      api<{ batchId?: string; batchStartedAt?: string; queued?: number }>(endpoint, { method: "POST" }),
+      api<{
+        batchId?: string;
+        batchStartedAt?: string;
+        queued?: number;
+        skipped?: number;
+        totalFeeds?: number;
+      }>(endpoint, { method: "POST" }),
     onSuccess: async (data) => {
       setTrackedBatchId(data.batchId ?? null);
+      setBatchSummary(
+        typeof data.totalFeeds === "number" && typeof data.queued === "number"
+          ? {
+              totalFeeds: data.totalFeeds,
+              queued: data.queued,
+              skipped: data.skipped ?? Math.max(0, data.totalFeeds - data.queued),
+            }
+          : null,
+      );
       await queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
-      await queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
     },
     onError: () => {
       setTrackedBatchId(null);
+      setBatchSummary(null);
     },
   });
 
@@ -272,7 +292,6 @@ function useRefreshController(endpoint: string, invalidate: string[]) {
     }
 
     void queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
-    void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
 
     if (status.total > 0 && status.active === 0) {
       const timeout = window.setTimeout(() => {
@@ -301,6 +320,7 @@ function useRefreshController(endpoint: string, invalidate: string[]) {
   return {
     active: mutation.isPending || !!trackedBatchId,
     progress,
+    summary: batchSummary,
     start: () => mutation.mutate(),
     status: refreshStatus.data,
   };
@@ -2933,26 +2953,41 @@ function RefreshButton({
         <RefreshCcw className={`size-4 ${refresh.active ? "animate-spin" : ""}`} />
       </button>
       {refresh.active ? (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+70px)] z-50 px-5">
-          <div className="mx-auto w-full max-w-md rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-4 py-3 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+88px)] z-50 px-5">
+          <div className="mx-auto w-full max-w-md rounded-[24px] border border-[var(--accent)]/18 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_92%,white_8%)_0%,color-mix(in_srgb,var(--surface)_86%,black_14%)_100%)] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.52)] ring-1 ring-white/5 backdrop-blur-2xl">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[12px] font-semibold text-[var(--text-primary)]">
+                <p className="text-[12px] font-semibold text-[var(--accent)]">
                   {!refresh.status ? "Queueing refresh" : "Refreshing feeds"}
                 </p>
-                <p className="mt-0.5 text-[11px] text-secondary">
-                  {refresh.status
-                    ? `${refresh.status.completed} of ${refresh.status.total} feeds finished${refresh.status.failed ? ` · ${refresh.status.failed} failed` : ""}`
-                    : "Pulling in the latest items from your subscriptions."}
+                <p className="mt-0.5 text-[11px] text-[var(--text-primary)]/72">
+                  {refresh.status ? (
+                    refresh.summary ? (
+                      <>
+                        {`${refresh.status.completed} of ${refresh.status.total} newly queued feeds finished`}
+                        {refresh.summary.totalFeeds !== refresh.summary.queued
+                          ? ` · ${refresh.summary.totalFeeds} total feeds`
+                          : null}
+                        {refresh.summary.skipped > 0 ? ` · ${refresh.summary.skipped} already refreshing` : null}
+                        {refresh.status.failed ? ` · ${refresh.status.failed} failed` : ""}
+                      </>
+                    ) : (
+                      `${refresh.status.completed} of ${refresh.status.total} feeds finished${refresh.status.failed ? ` · ${refresh.status.failed} failed` : ""}`
+                    )
+                  ) : refresh.summary ? (
+                    `${refresh.summary.queued} feeds queued from ${refresh.summary.totalFeeds} total`
+                  ) : (
+                    "Pulling in the latest items from your subscriptions."
+                  )}
                 </p>
               </div>
               <span className="text-[11px] font-semibold text-[var(--accent)]">
                 {refresh.progress}%
               </span>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/8">
               <div
-                className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent)_0%,color-mix(in_srgb,var(--accent)_100%,white_20%)_100%)] transition-[width] duration-500 ease-out"
+                className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent)_0%,color-mix(in_srgb,var(--accent)_100%,white_28%)_100%)] transition-[width] duration-500 ease-out"
                 style={{ width: `${refresh.progress}%` }}
               />
             </div>

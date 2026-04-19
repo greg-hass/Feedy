@@ -11,29 +11,34 @@ export async function pruneUserData(userId: string, itemRetentionDays: number) {
   const refreshCutoff = subDays(new Date(), REFRESH_RECORD_RETENTION_DAYS);
   const importCutoff = subDays(new Date(), IMPORT_RECORD_RETENTION_DAYS);
 
-  const staleItems = await prisma.item.findMany({
-    where: {
-      feed: { userId },
-      bookmarks: { none: {} },
-      readStates: { some: { userId } },
-      OR: [
-        { publishedAt: { lt: itemCutoff } },
-        {
-          publishedAt: null,
-          discoveredAt: { lt: itemCutoff },
-        },
-      ],
-    },
-    select: { id: true },
-    take: PRUNE_BATCH_SIZE,
-  });
+  let deletedItems = 0;
+  for (;;) {
+    const staleItems = await prisma.item.findMany({
+      where: {
+        feed: { userId },
+        bookmarks: { none: {} },
+        OR: [
+          { publishedAt: { lt: itemCutoff } },
+          {
+            publishedAt: null,
+            discoveredAt: { lt: itemCutoff },
+          },
+        ],
+      },
+      select: { id: true },
+      take: PRUNE_BATCH_SIZE,
+    });
 
-  if (staleItems.length > 0) {
-    await prisma.item.deleteMany({
+    if (staleItems.length === 0) {
+      break;
+    }
+
+    const result = await prisma.item.deleteMany({
       where: {
         id: { in: staleItems.map((item) => item.id) },
       },
     });
+    deletedItems += result.count;
   }
 
   const [refreshLogsResult, refreshJobsResult, importRecordsResult] = await prisma.$transaction([
@@ -58,7 +63,7 @@ export async function pruneUserData(userId: string, itemRetentionDays: number) {
   ]);
 
   return {
-    deletedItems: staleItems.length,
+    deletedItems,
     deletedRefreshLogs: refreshLogsResult.count,
     deletedRefreshJobs: refreshJobsResult.count,
     deletedImportRecords: importRecordsResult.count,

@@ -1,18 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Bookmark, Check, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useBackgroundPlayback } from "@/components/providers";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord } from "@/types/app";
-import { getSavedYouTubeProgressSeconds } from "@/components/youtube-inline-player";
+import { getSavedYouTubeProgressSeconds, YouTubeInlinePlayer } from "@/components/youtube-inline-player";
 
 function formatResumeTime(seconds: number) {
   const totalSeconds = Math.max(0, Math.floor(seconds));
@@ -27,19 +26,15 @@ export const ItemCard = memo(function ItemCard({
   item: ItemRecord;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const queryClient = useQueryClient();
-  const { activeYouTubePlayback, startYouTubePlayback, setYouTubeInlineHost } = useBackgroundPlayback();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [internalPlayInline, setInternalPlayInline] = useState(false);
   const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
   const [resumeSeconds, setResumeSeconds] = useState(() =>
     item.youtubeVideoId ? getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId) : 0,
   );
-  const inlineHostRef = useRef<HTMLDivElement | null>(null);
   const isYouTube = item.feed.sourceType.includes("YOUTUBE");
-  const isInlineSessionActive = Boolean(
-    item.youtubeVideoId && activeYouTubePlayback?.itemId === item.id && activeYouTubePlayback.sourcePathname === pathname,
-  );
+  const playInline = internalPlayInline;
 
   const rememberTimelineAnchor = () => {
     window.sessionStorage.setItem(
@@ -72,41 +67,6 @@ export const ItemCard = memo(function ItemCard({
     router.push(`/reader/${item.id}`);
   };
 
-  const playVideoInline = () => {
-    if (!item.youtubeVideoId) {
-      return;
-    }
-
-    const startSeconds = resumeSeconds;
-    startYouTubePlayback({
-      itemId: item.id,
-      videoId: item.youtubeVideoId,
-      title: itemTitle,
-      startSeconds,
-      sourcePathname: pathname,
-    });
-
-    if (!item.read) {
-      updateState.mutate({ read: true });
-    }
-
-    // Keep the current resume point available while the source resolves.
-    setResumeSeconds(startSeconds);
-  };
-
-  useLayoutEffect(() => {
-    if (!isInlineSessionActive) {
-      setYouTubeInlineHost(item.id, null);
-      return;
-    }
-
-    setYouTubeInlineHost(item.id, inlineHostRef.current);
-
-    return () => {
-      setYouTubeInlineHost(item.id, null);
-    };
-  }, [isInlineSessionActive, item.id, setYouTubeInlineHost]);
-
   useEffect(() => {
     if (!bookmarkAnimating) {
       return;
@@ -115,33 +75,6 @@ export const ItemCard = memo(function ItemCard({
     const timeout = window.setTimeout(() => setBookmarkAnimating(false), 320);
     return () => window.clearTimeout(timeout);
   }, [bookmarkAnimating]);
-
-  useEffect(() => {
-    if (!item.youtubeVideoId || typeof window === "undefined") {
-      return;
-    }
-
-    const refreshResume = () => {
-      const savedSeconds = getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId!);
-      setResumeSeconds(savedSeconds);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refreshResume();
-      }
-    };
-
-    window.addEventListener("focus", refreshResume);
-    window.addEventListener("pageshow", refreshResume);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("focus", refreshResume);
-      window.removeEventListener("pageshow", refreshResume);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [item.id, item.youtubeVideoId]);
 
   const updateState = useMutation({
     mutationFn: (body: { read?: boolean; bookmarked?: boolean }) =>
@@ -173,19 +106,30 @@ export const ItemCard = memo(function ItemCard({
       {thumbnailUrl && (
         isYouTube && item.youtubeVideoId ? (
           <div className="relative overflow-hidden">
-            <button
-              type="button"
-              onClick={() => {
-                if (isInlineSessionActive) {
-                  return;
-                }
-                playVideoInline();
-              }}
-              className="relative block w-full overflow-hidden text-left"
-              aria-label={isInlineSessionActive ? `Playing ${itemTitle}` : `Play ${itemTitle}`}
-            >
-              {!isInlineSessionActive ? (
-                <>
+            {playInline ? (
+              <YouTubeInlinePlayer
+                itemId={item.id}
+                videoId={item.youtubeVideoId}
+                title={itemTitle}
+                startSeconds={resumeSeconds}
+                onProgressChange={(seconds) => {
+                  setResumeSeconds(seconds);
+                }}
+                onMeaningfulPlayback={() => {
+                  if (!item.read) {
+                    updateState.mutate({ read: true });
+                  }
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setInternalPlayInline(true);
+                }}
+                className="relative block w-full overflow-hidden text-left"
+                aria-label={`Play ${itemTitle} inline`}
+              >
                   <div className="aspect-video w-full bg-surface-muted">
                     <img
                       src={thumbnailUrl}
@@ -198,21 +142,18 @@ export const ItemCard = memo(function ItemCard({
                     />
                     {!imageLoaded && <div className="absolute inset-0 shimmer" />}
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-100">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 shadow-2xl transition-transform duration-300 group-hover:scale-110">
-                      <Play className="ml-1 h-6 w-6 text-black" fill="currentColor" />
-                    </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-100">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 shadow-2xl transition-transform duration-300 group-hover:scale-110">
+                    <Play className="ml-1 h-6 w-6 text-black" fill="currentColor" />
                   </div>
-                  {resumeSeconds > 1 ? (
-                    <div className="absolute left-3 top-3 rounded-full bg-[var(--accent)]/92 px-3 py-1.5 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.24)]">
-                      Resume {formatResumeTime(resumeSeconds)}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <div ref={inlineHostRef} className="aspect-video w-full bg-black" aria-label={itemTitle} />
-              )}
-            </button>
+                </div>
+                {resumeSeconds > 1 ? (
+                  <div className="absolute left-3 top-3 rounded-full bg-[var(--accent)]/92 px-3 py-1.5 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.24)]">
+                    Resume {formatResumeTime(resumeSeconds)}
+                  </div>
+                ) : null}
+              </button>
+            )}
 
           </div>
         ) : (
