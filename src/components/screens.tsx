@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { computeTimelineRefreshDelta } from "@/lib/timeline-refresh";
 import { accentOptions } from "@/lib/theme";
+import { flattenTimelinePages, shouldLoadNextTimelinePage } from "@/lib/timeline-infinite-scroll";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
-import type { ItemRecord, MeResponse, NavFeed, NavFolder } from "@/types/app";
+import type { ItemRecord, MeResponse, NavFeed, NavFolder, TimelineItemsPageResponse } from "@/types/app";
 
 const AddFeedForm = dynamic(() => import("@/components/forms").then((module) => module.AddFeedForm), {
   ssr: false,
@@ -386,29 +387,41 @@ export function UnreadScreen() {
     });
   }, [searchOpen]);
 
-  const params = new URLSearchParams();
-  if (stateFilter !== "UNREAD") {
-    params.set("stateFilter", stateFilter);
-  }
-  if (sourceFilter !== "ALL") {
-    params.set("sourceFilter", sourceFilter);
-  }
-  if (deferredQuery.trim()) {
-    params.set("q", deferredQuery.trim());
-  }
-  const itemsUrl = `/api/items${params.toString() ? `?${params.toString()}` : ""}`;
-
-  const items = useQuery({
+  const items = useInfiniteQuery({
     queryKey: ["items", "timeline", stateFilter, sourceFilter, deferredQuery.trim()],
-    queryFn: () => api<ItemRecord[]>(itemsUrl),
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams();
+      params.set("pageSize", "100");
+
+      if (stateFilter !== "UNREAD") {
+        params.set("stateFilter", stateFilter);
+      }
+      if (sourceFilter !== "ALL") {
+        params.set("sourceFilter", sourceFilter);
+      }
+      if (deferredQuery.trim()) {
+        params.set("q", deferredQuery.trim());
+      }
+      if (pageParam) {
+        params.set("cursor", pageParam);
+      }
+
+      return api<TimelineItemsPageResponse>(`/api/items?${params.toString()}`);
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
     staleTime: 15_000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+  const timelineItems = useMemo(() => flattenTimelinePages(items.data?.pages), [items.data?.pages]);
   const refetchItems = items.refetch;
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = items;
   const refresh = useRefreshController("/api/refresh/all", ["items"]);
   const queryClient = useQueryClient();
   const [pullDistance, setPullDistance] = useState(0);
+  const [isBottomVisible, setIsBottomVisible] = useState(false);
+  const bottomSentinelRef = useRef<HTMLDivElement | null>(null);
   const filtersActive = stateFilter !== "ALL" || sourceFilter !== "ALL";
   const timelinePanelOpen = filtersOpen || searchOpen || !!query.trim();
 
@@ -421,9 +434,9 @@ export function UnreadScreen() {
   const refreshFingerprint = me.data?.navigation.feeds ? getTimelineRefreshFingerprint(me.data.navigation.feeds) : null;
 
   const captureRefreshSnapshot = useCallback(() => {
-    pendingRefreshIdsRef.current = items.data?.map((item) => item.id) ?? null;
+    pendingRefreshIdsRef.current = timelineItems.map((item) => item.id);
     pendingScrollAnchorRef.current = captureTimelineScrollAnchor(timelineFixedTop);
-  }, [items.data, timelineFixedTop]);
+  }, [timelineFixedTop, timelineItems]);
 
   const startRefresh = useCallback(() => {
     captureRefreshSnapshot();
@@ -503,6 +516,34 @@ export function UnreadScreen() {
     };
   }, [filtersOpen, query, searchOpen]);
 
+  useEffect(() => {
+    const sentinel = bottomSentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === "undefined") {
+      queueMicrotask(() => setIsBottomVisible(false));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsBottomVisible(entry.isIntersecting),
+      { rootMargin: "300px 0px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, timelineItems.length]);
+
+  useEffect(() => {
+    if (
+      shouldLoadNextTimelinePage({
+        hasMore: Boolean(hasNextPage),
+        isBottomVisible,
+        isFetchingNextPage,
+      })
+    ) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isBottomVisible, isFetchingNextPage]);
+
   // scrollRestoration is set globally to "manual" in providers.tsx — no
   // per-component effect needed here. A per-component effect with a cleanup
   // that resets to "auto" was the root cause of the scroll-loss bug: the
@@ -544,7 +585,7 @@ export function UnreadScreen() {
   }, [scrollStorageKey]);
 
   useEffect(() => {
-    if (!items.data?.length) {
+    if (!timelineItems.length) {
       return;
     }
 
@@ -553,19 +594,31 @@ export function UnreadScreen() {
       return;
     }
 
-    queryClient.setQueriesData<ItemRecord[]>({ queryKey: ["items", "timeline"] }, (current) =>
-      current?.map((entry) => (entry.id === pendingReadItemId ? { ...entry, read: true } : entry)) ?? current,
+    queryClient.setQueriesData<InfiniteData<TimelineItemsPageResponse>>(
+      { queryKey: ["items", "timeline"] },
+      (current) =>
+        current
+          ? {
+              ...current,
+              pages: current.pages.map((page) => ({
+                ...page,
+                items: page.items.map((entry) =>
+                  entry.id === pendingReadItemId ? { ...entry, read: true } : entry,
+                ),
+              })),
+            }
+          : current,
     );
     window.sessionStorage.removeItem(timelinePendingReadStorageKey);
-  }, [items.data, queryClient]);
+  }, [queryClient, timelineItems]);
 
   useLayoutEffect(() => {
     const previousIds = pendingRefreshIdsRef.current;
-    if (!previousIds || !items.data?.length || refresh.active || items.isFetching) {
+    if (!previousIds || !timelineItems.length || refresh.active || items.isFetching || items.isFetchingNextPage) {
       return;
     }
 
-    const nextIds = items.data.map((item) => item.id);
+    const nextIds = timelineItems.map((item) => item.id);
     pendingRefreshIdsRef.current = null;
 
     const delta = computeTimelineRefreshDelta(previousIds, nextIds);
@@ -589,7 +642,7 @@ export function UnreadScreen() {
       count: delta.newCount,
       jumpTargetId: delta.jumpTargetId ?? nextIds[0],
     });
-  }, [items.data, items.isFetching, refresh.active]);
+  }, [items.isFetching, items.isFetchingNextPage, refresh.active, timelineItems]);
 
   useLayoutEffect(() => {
     if (items.isLoading || restoredScrollRef.current) {
@@ -681,7 +734,7 @@ export function UnreadScreen() {
       window.clearTimeout(timeoutThree);
       window.clearTimeout(timeoutFour);
     };
-  }, [items.isLoading, items.data, scrollStorageKey, timelineAnchorStorageKey, timelineFixedTop]);
+  }, [items.isLoading, scrollStorageKey, timelineAnchorStorageKey, timelineFixedTop, timelineItems]);
 
   useEffect(() => {
     const isStandalone =
@@ -901,7 +954,7 @@ export function UnreadScreen() {
         <LoadingSkeleton />
       ) : items.error ? (
         <ErrorState message={items.error.message} onRetry={() => items.refetch()} />
-      ) : items.data?.length ? (
+      ) : timelineItems.length ? (
         <div
           className="space-y-3"
           style={
@@ -910,13 +963,14 @@ export function UnreadScreen() {
               : undefined
           }
         >
-          {items.data.map((item) => (
+          {timelineItems.map((item) => (
             <ItemCard
               key={item.id}
               item={item}
               searchQuery={deferredQuery}
             />
           ))}
+          <div ref={bottomSentinelRef} aria-hidden className="h-px w-full" />
         </div>
       ) : (
         <div

@@ -2,6 +2,7 @@ import { FeedSourceType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
+import { buildTimelinePage } from "@/lib/timeline-pagination";
 
 export type TimelineSourceFilter = "RSS" | "REDDIT" | "YOUTUBE";
 export type TimelineStateFilter = "UNREAD" | "READ" | "ALL";
@@ -59,6 +60,7 @@ const navigationFeedSelect = {
 
 const itemCommonSelect = {
   id: true,
+  uniqueKey: true,
   title: true,
   summary: true,
   canonicalUrl: true,
@@ -103,6 +105,17 @@ type TimelineItemRecord = Prisma.ItemGetPayload<{
 type ReaderItemRecord = Prisma.ItemGetPayload<{
   select: typeof readerItemSelect;
 }>;
+
+type TimelineItemQueryOptions = {
+  feedId?: string;
+  folderId?: string;
+  saved?: boolean;
+  sourceFilter?: TimelineSourceFilter;
+  stateFilter?: TimelineStateFilter;
+  q?: string;
+  cursor?: string;
+  pageSize?: number;
+};
 
 async function runSearchWithIndexedPlanner<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
@@ -180,6 +193,103 @@ export async function getFeedAndFolderCounts(userId: string) {
   return { feedCounts, folderCounts };
 }
 
+async function buildTimelineQuery(
+  userId: string,
+  options?: TimelineItemQueryOptions,
+  pageSize = 100,
+  includeExtraItem = false,
+){
+  const sourceTypeFilter = buildSourceTypeFilter(options?.sourceFilter);
+
+  const stateWhere =
+    options?.saved
+      ? { bookmarks: { some: { userId } } }
+      : options?.stateFilter === "READ"
+        ? { readStates: { some: { userId } } }
+        : options?.stateFilter === "ALL"
+          ? {}
+          : { readStates: { none: { userId } } };
+
+  const searchQuery = options?.q?.trim() ?? "";
+  const matchingFeedIds =
+    searchQuery.length > 0
+      ? (
+          await prisma.feed.findMany({
+            where: {
+              userId,
+              ...(options?.feedId ? { id: options.feedId } : {}),
+              ...(options?.folderId ? { folderId: options.folderId } : {}),
+              ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
+              ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
+              OR: [
+                { title: { contains: searchQuery, mode: "insensitive" as const } },
+                { label: { contains: searchQuery, mode: "insensitive" as const } },
+              ],
+            },
+            select: { id: true },
+          })
+        ).map((feed) => feed.id)
+      : [];
+
+  const searchWhere =
+    searchQuery.length > 0
+      ? {
+          OR: [
+            { title: { contains: searchQuery, mode: "insensitive" as const } },
+            { summary: { contains: searchQuery, mode: "insensitive" as const } },
+            { contentHtml: { contains: searchQuery, mode: "insensitive" as const } },
+            { readabilityHtml: { contains: searchQuery, mode: "insensitive" as const } },
+            { author: { contains: searchQuery, mode: "insensitive" as const } },
+            ...(matchingFeedIds.length > 0
+              ? [{ feedId: { in: matchingFeedIds } }]
+              : []),
+          ],
+        }
+      : {};
+
+  const query = {
+    where: {
+      feed: {
+        userId,
+        ...(options?.feedId ? { id: options.feedId } : {}),
+        ...(options?.folderId ? { folderId: options.folderId } : {}),
+        ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
+        ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
+      },
+      ...stateWhere,
+      ...(!options?.saved && !options?.feedId && !options?.folderId ? { mutedByRule: false } : {}),
+      ...searchWhere,
+    },
+    orderBy: [{ publishedAt: "desc" }, { discoveredAt: "desc" }, { uniqueKey: "desc" }],
+    take: includeExtraItem ? pageSize + 1 : pageSize,
+    ...(options?.cursor ? { cursor: { uniqueKey: options.cursor }, skip: 1 } : {}),
+    select: {
+      ...timelineItemSelect,
+      bookmarks: { where: { userId }, select: { id: true } },
+      readStates: { where: { userId }, select: { id: true } },
+    },
+  } satisfies Prisma.ItemFindManyArgs;
+
+  return {
+    query,
+    searchQuery: searchQuery.length > 0 ? searchQuery : null,
+  };
+}
+
+async function loadTimelineItemRecords(
+  userId: string,
+  options?: TimelineItemQueryOptions,
+  pageSize = 100,
+  includeExtraItem = false,
+) : Promise<TimelineItemRecord[]> {
+  const { query, searchQuery } = await buildTimelineQuery(userId, options, pageSize, includeExtraItem);
+
+  if (searchQuery) {
+    return runSearchWithIndexedPlanner((tx) => tx.item.findMany(query) as Promise<TimelineItemRecord[]>);
+  }
+
+  return prisma.item.findMany(query) as Promise<TimelineItemRecord[]>;
+}
 export async function getLibraryCounts(userId: string) {
   const [row] = await prisma.$queryRaw<LibraryCountRow[]>(Prisma.sql`
     SELECT
@@ -322,90 +432,18 @@ export async function getNavigationData(userId: string) {
 
 export async function getTimelineItems(
   userId: string,
-  options?: {
-    feedId?: string;
-    folderId?: string;
-    saved?: boolean;
-    sourceFilter?: TimelineSourceFilter;
-    stateFilter?: TimelineStateFilter;
-    q?: string;
-  },
+  options?: TimelineItemQueryOptions,
 ): Promise<TimelineItemRecord[]> {
-  const sourceTypeFilter = buildSourceTypeFilter(options?.sourceFilter);
+  return loadTimelineItemRecords(userId, options, 100, false);
+}
 
-  const stateWhere =
-    options?.saved
-      ? { bookmarks: { some: { userId } } }
-      : options?.stateFilter === "READ"
-        ? { readStates: { some: { userId } } }
-        : options?.stateFilter === "ALL"
-          ? {}
-          : { readStates: { none: { userId } } };
-
-  const searchQuery = options?.q?.trim();
-  const matchingFeedIds =
-    searchQuery && searchQuery.length > 0
-      ? (
-          await prisma.feed.findMany({
-            where: {
-              userId,
-              ...(options?.feedId ? { id: options.feedId } : {}),
-              ...(options?.folderId ? { folderId: options.folderId } : {}),
-              ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
-              ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
-              OR: [
-                { title: { contains: searchQuery, mode: "insensitive" as const } },
-                { label: { contains: searchQuery, mode: "insensitive" as const } },
-              ],
-            },
-            select: { id: true },
-          })
-        ).map((feed) => feed.id)
-      : [];
-
-  const searchWhere =
-    searchQuery && searchQuery.length > 0
-      ? {
-          OR: [
-            { title: { contains: searchQuery, mode: "insensitive" as const } },
-            { summary: { contains: searchQuery, mode: "insensitive" as const } },
-            { contentHtml: { contains: searchQuery, mode: "insensitive" as const } },
-            { readabilityHtml: { contains: searchQuery, mode: "insensitive" as const } },
-            { author: { contains: searchQuery, mode: "insensitive" as const } },
-            ...(matchingFeedIds.length > 0
-              ? [{ feedId: { in: matchingFeedIds } }]
-              : []),
-          ],
-        }
-      : {};
-
-  const query = {
-    where: {
-      feed: {
-        userId,
-        ...(options?.feedId ? { id: options.feedId } : {}),
-        ...(options?.folderId ? { folderId: options.folderId } : {}),
-        ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
-        ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
-      },
-      ...stateWhere,
-      ...(!options?.saved && !options?.feedId && !options?.folderId ? { mutedByRule: false } : {}),
-      ...searchWhere,
-    },
-    orderBy: [{ publishedAt: "desc" }, { discoveredAt: "desc" }],
-    take: 100,
-    select: {
-      ...timelineItemSelect,
-      bookmarks: { where: { userId }, select: { id: true } },
-      readStates: { where: { userId }, select: { id: true } },
-    },
-  } satisfies Prisma.ItemFindManyArgs;
-
-  if (searchQuery) {
-    return runSearchWithIndexedPlanner((tx) => tx.item.findMany(query) as Promise<TimelineItemRecord[]>);
-  }
-
-  return prisma.item.findMany(query) as Promise<TimelineItemRecord[]>;
+export async function getTimelineItemPage(
+  userId: string,
+  options?: TimelineItemQueryOptions,
+) {
+  const pageSize = options?.pageSize ?? 100;
+  const records = await loadTimelineItemRecords(userId, options, pageSize, true);
+  return buildTimelinePage(records, pageSize);
 }
 
 export async function getFeedSearch(

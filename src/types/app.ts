@@ -69,6 +69,12 @@ export type ItemRecord = {
   };
 };
 
+export type TimelineItemsPageResponse = {
+  items: ItemRecord[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
 export type MeResponse = {
   authenticated: boolean;
   user: {
