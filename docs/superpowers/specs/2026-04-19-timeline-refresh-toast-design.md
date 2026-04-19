@@ -55,7 +55,7 @@ When new articles are detected, show a toast message like:
 - `5 new articles`
 
 The toast should include an action:
-- `Jump to oldest new article`
+- `Go to first new article`
 
 The action should scroll to the oldest article in the newly inserted top block, not to the very top of the page. That puts the user at the boundary between old and new content, which makes it easy to review the fresh batch from there.
 
