@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, Manrope } from "next/font/google";
 
 import { Providers } from "@/components/providers";
 import { PwaRegister } from "@/components/pwa-register";
+import { viewport as appViewport } from "@/app/viewport";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -36,17 +37,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  colorScheme: "dark light",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
-};
+export const viewport: Viewport = appViewport;
 
 export default function RootLayout({
   children,
