@@ -541,7 +541,7 @@ export function UnreadScreen() {
 
   useLayoutEffect(() => {
     const previousIds = pendingRefreshIdsRef.current;
-    if (!previousIds || !items.data?.length) {
+    if (!previousIds || !items.data?.length || refresh.active || items.isFetching) {
       return;
     }
 
@@ -569,7 +569,7 @@ export function UnreadScreen() {
       count: delta.newCount,
       jumpTargetId: delta.jumpTargetId ?? nextIds[0],
     });
-  }, [items.data]);
+  }, [items.data, items.isFetching, refresh.active]);
 
   useLayoutEffect(() => {
     if (items.isLoading || restoredScrollRef.current) {
