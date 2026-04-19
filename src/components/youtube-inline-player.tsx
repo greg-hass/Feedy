@@ -11,6 +11,8 @@ declare global {
         element: HTMLElement,
         options: {
           videoId: string;
+          width?: string | number;
+          height?: string | number;
           playerVars?: Record<string, string | number>;
           events?: {
             onReady?: (event: { target: YouTubePlayer }) => void;
@@ -197,6 +199,8 @@ export function YouTubeInlinePlayer({
 
       playerRef.current = new window.YT.Player(mountRef.current, {
         videoId,
+        width: "100%",
+        height: "100%",
         playerVars: {
           autoplay: autoplay ? 1 : 0,
           playsinline: 1,
@@ -205,6 +209,15 @@ export function YouTubeInlinePlayer({
         },
         events: {
           onReady: ({ target }) => {
+            const iframe = mountRef.current?.querySelector("iframe");
+            if (iframe) {
+              iframe.style.width = "100%";
+              iframe.style.height = "100%";
+              iframe.style.position = "absolute";
+              iframe.style.top = "0";
+              iframe.style.left = "0";
+            }
+
             const startAt = startSecondsRef.current;
             if (startAt > 1) {
               target.seekTo(startAt, true);
