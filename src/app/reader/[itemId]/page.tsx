@@ -10,6 +10,7 @@ import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
 import { sanitizeReaderHtml } from "@/lib/sanitize-reader-html";
+import { vibrateIfSupported } from "@/lib/tab-interactions";
 import type { ItemRecord } from "@/types/app";
 
 export default function ReaderPage() {
@@ -170,6 +171,7 @@ export default function ReaderPage() {
                   if (!data.bookmarked) {
                     setBookmarkAnimating(true);
                   }
+                  vibrateIfSupported(window.navigator, 10);
                   state.mutate({ bookmarked: !data.bookmarked });
                 }}
                 className={`rounded-xl border p-2 ${

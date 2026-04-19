@@ -87,7 +87,6 @@ export default async function LoginPage({
               </span>
               <Input
                 name="username"
-                defaultValue="admin"
                 placeholder="Username"
                 className="h-14 rounded-[18px] border-black/8 bg-white px-4 text-base text-[#101618] placeholder:text-[#7c837d]"
                 autoCapitalize="none"

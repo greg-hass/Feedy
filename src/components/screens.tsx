@@ -914,6 +914,7 @@ export function UnreadScreen() {
             <ItemCard
               key={item.id}
               item={item}
+              searchQuery={deferredQuery}
             />
           ))}
         </div>
@@ -1577,6 +1578,7 @@ export function SavedScreen() {
             <ItemCard
               key={item.id}
               item={item}
+              searchQuery={deferredQuery}
             />
           ))}
         </div>

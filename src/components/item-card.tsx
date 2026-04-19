@@ -7,8 +7,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { memo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SearchHighlight } from "@/components/search-highlight";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
+import { vibrateIfSupported } from "@/lib/tab-interactions";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord } from "@/types/app";
 import { getSavedYouTubeProgressSeconds, YouTubeInlinePlayer } from "@/components/youtube-inline-player";
@@ -22,8 +24,10 @@ function formatResumeTime(seconds: number) {
 
 export const ItemCard = memo(function ItemCard({
   item,
+  searchQuery = "",
 }: {
   item: ItemRecord;
+  searchQuery?: string;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -193,13 +197,13 @@ export const ItemCard = memo(function ItemCard({
           onClick={navigateToReader}
         >
           <h3 className="mt-2 text-[17px] font-semibold leading-[1.35] tracking-[-0.01em] line-clamp-2 transition-colors duration-200 group-hover:text-[var(--accent)]">
-            {itemTitle}
+            <SearchHighlight text={itemTitle} query={searchQuery} />
           </h3>
         </Link>
 
         {item.summary && !thumbnailUrl && (
           <p className="mt-2 text-[14px] leading-relaxed text-secondary line-clamp-2">
-            {decodeHtmlEntities(item.summary)}
+            <SearchHighlight text={decodeHtmlEntities(item.summary)} query={searchQuery} />
           </p>
         )}
 
@@ -220,6 +224,7 @@ export const ItemCard = memo(function ItemCard({
                 if (!item.bookmarked) {
                   setBookmarkAnimating(true);
                 }
+                vibrateIfSupported(window.navigator, 10);
                 updateState.mutate({ bookmarked: !item.bookmarked });
               }}
               className={`interactive flex h-9 w-9 items-center justify-center rounded-full border ${

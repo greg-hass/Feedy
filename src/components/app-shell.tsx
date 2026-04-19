@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { api } from "@/lib/client";
+import { isActiveTabTap, vibrateIfSupported } from "@/lib/tab-interactions";
 import type { MeResponse } from "@/types/app";
 
 const navItems = [
@@ -131,10 +132,25 @@ export function MobileShell({
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href;
+              const handleTabClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+                  return;
+                }
+
+                if (!isActiveTabTap(pathname, item.href)) {
+                  return;
+                }
+
+                event.preventDefault();
+                window.scrollTo({ top: 0, behavior: "auto" });
+                vibrateIfSupported(window.navigator, 10);
+              };
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={handleTabClick}
                   className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors duration-200"
                   style={{ 
                     color: active ? 'var(--accent)' : 'var(--text-secondary)',
