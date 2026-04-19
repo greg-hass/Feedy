@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -10,9 +10,11 @@ import { useTheme } from "next-themes";
 import { MobileShell, useMe, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { ItemCard } from "@/components/item-card";
+import { TimelineRefreshToast } from "@/components/timeline-refresh-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
+import { computeTimelineRefreshDelta } from "@/lib/timeline-refresh";
 import { accentOptions } from "@/lib/theme";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord, MeResponse, NavFeed, NavFolder } from "@/types/app";
@@ -29,6 +31,25 @@ const EditFeedSheet = dynamic(() => import("@/components/forms").then((module) =
 const EditFolderSheet = dynamic(() => import("@/components/forms").then((module) => module.EditFolderSheet), {
   ssr: false,
 });
+
+type StorageStats = {
+  dbSizeBytes: number;
+  feedCount: number;
+  articleCount: number;
+  bookmarkedArticleCount: number;
+  retentionDays: number;
+};
+
+function formatBytes(bytes: number) {
+  if (bytes <= 0) {
+    return "0 B";
+  }
+
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** exponent;
+  return `${value.toFixed(exponent === 0 ? 0 : value >= 10 ? 1 : 2)} ${units[exponent]}`;
+}
 
 function formatSourceType(value: string) {
   return value.replaceAll("_RSS", "").replaceAll("_", " ");
@@ -50,6 +71,32 @@ function formatDuration(ms: number | null | undefined) {
   }
 
   return `${(ms / 1000).toFixed(ms >= 10_000 ? 0 : 1)}s`;
+}
+
+function captureTimelineScrollAnchor(timelineFixedTop: number) {
+  const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-timeline-item-id]"));
+  const threshold = timelineFixedTop + 12;
+
+  for (const element of elements) {
+    const rect = element.getBoundingClientRect();
+    if (rect.bottom > threshold) {
+      return {
+        itemId: element.dataset.timelineItemId ?? "",
+        top: rect.top,
+      };
+    }
+  }
+
+  return null;
+}
+
+function getTimelineRefreshFingerprint(feeds: MeResponse["navigation"]["feeds"]) {
+  return feeds
+    .map(
+      (feed) =>
+        `${feed.id}:${feed.lastSuccessfulRefreshAt ?? ""}:${feed.lastRefreshedAt ?? ""}:${feed.lastFailureAt ?? ""}`,
+    )
+    .join("|");
 }
 
 function getSuggestedRefreshInterval(
@@ -281,11 +328,28 @@ export function UnreadScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [timelinePanelHeight, setTimelinePanelHeight] = useState(0);
+  const [refreshToast, setRefreshToast] = useState<{
+    count: number;
+    jumpTargetId: string;
+  } | null>(null);
   const restoredScrollRef = useRef(false);
   const timelinePanelRef = useRef<HTMLElement | null>(null);
   const saveScrollFrameRef = useRef<number | null>(null);
   const saveScrollYRef = useRef(0);
+  const pendingRefreshIdsRef = useRef<string[] | null>(null);
+  const pendingScrollAnchorRef = useRef<{ itemId: string; top: number } | null>(null);
+  const lastRefreshFingerprintRef = useRef<string | null>(null);
+  const refreshStartRef = useRef<(() => void) | null>(null);
   const deferredQuery = useDeferredValue(query);
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: () => api<MeResponse>("/api/me"),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
   useEffect(() => {
     window.sessionStorage.setItem(timelineStateStorageKey, stateFilter);
@@ -321,6 +385,7 @@ export function UnreadScreen() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+  const refetchItems = items.refetch;
   const refresh = useRefreshController("/api/refresh/all", ["items"]);
   const queryClient = useQueryClient();
   const [pullDistance, setPullDistance] = useState(0);
@@ -333,10 +398,51 @@ export function UnreadScreen() {
   const timelineControlsBottomGap = timelineSectionGap;
   const timelineContentPullUp = filtersOpen && !searchOpen && !query.trim() ? 9 : 0;
   const timelineControlsPanelHeight = timelinePanelOpen ? timelinePanelHeight : 0;
+  const refreshFingerprint = me.data?.navigation.feeds ? getTimelineRefreshFingerprint(me.data.navigation.feeds) : null;
+
+  const captureRefreshSnapshot = useCallback(() => {
+    pendingRefreshIdsRef.current = items.data?.map((item) => item.id) ?? null;
+    pendingScrollAnchorRef.current = captureTimelineScrollAnchor(timelineFixedTop);
+  }, [items.data, timelineFixedTop]);
+
+  const startRefresh = useCallback(() => {
+    captureRefreshSnapshot();
+    refreshStartRef.current?.();
+  }, [captureRefreshSnapshot]);
 
   useEffect(() => {
     restoredScrollRef.current = false;
   }, [stateFilter, sourceFilter]);
+
+  useEffect(() => {
+    refreshStartRef.current = refresh.start;
+  }, [refresh.start]);
+
+  useEffect(() => {
+    pendingRefreshIdsRef.current = null;
+    pendingScrollAnchorRef.current = null;
+    queueMicrotask(() => setRefreshToast(null));
+  }, [deferredQuery, sourceFilter, stateFilter]);
+
+  useEffect(() => {
+    if (!refreshFingerprint) {
+      return;
+    }
+
+    const previousFingerprint = lastRefreshFingerprintRef.current;
+    lastRefreshFingerprintRef.current = refreshFingerprint;
+
+    if (!previousFingerprint || previousFingerprint === refreshFingerprint) {
+      return;
+    }
+
+    if (refresh.active || pendingRefreshIdsRef.current) {
+      return;
+    }
+
+    captureRefreshSnapshot();
+    void refetchItems();
+  }, [captureRefreshSnapshot, refresh.active, refreshFingerprint, refetchItems]);
 
   useEffect(() => {
     const updateHeaderOffset = () => {
@@ -434,6 +540,38 @@ export function UnreadScreen() {
   }, [items.data, queryClient]);
 
   useLayoutEffect(() => {
+    const previousIds = pendingRefreshIdsRef.current;
+    if (!previousIds || !items.data?.length) {
+      return;
+    }
+
+    const nextIds = items.data.map((item) => item.id);
+    pendingRefreshIdsRef.current = null;
+
+    const delta = computeTimelineRefreshDelta(previousIds, nextIds);
+    const anchor = pendingScrollAnchorRef.current;
+    pendingScrollAnchorRef.current = null;
+
+    if (delta.newCount <= 0) {
+      queueMicrotask(() => setRefreshToast(null));
+      return;
+    }
+
+    if (anchor?.itemId) {
+      const element = document.querySelector<HTMLElement>(`[data-timeline-item-id="${anchor.itemId}"]`);
+      if (element) {
+        const nextTop = element.getBoundingClientRect().top;
+        window.scrollBy({ top: nextTop - anchor.top, behavior: "auto" });
+      }
+    }
+
+    setRefreshToast({
+      count: delta.newCount,
+      jumpTargetId: delta.jumpTargetId ?? nextIds[0],
+    });
+  }, [items.data]);
+
+  useLayoutEffect(() => {
     if (items.isLoading || restoredScrollRef.current) {
       return;
     }
@@ -526,15 +664,6 @@ export function UnreadScreen() {
   }, [items.isLoading, items.data, scrollStorageKey, timelineAnchorStorageKey, timelineFixedTop]);
 
   useEffect(() => {
-    if (!refresh.active) {
-      return;
-    }
-
-    void items.refetch();
-    void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
-  }, [items.refetch, queryClient, refresh.active, refresh.status?.completed, refresh.status?.failed, refresh.status?.succeeded]);
-
-  useEffect(() => {
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
@@ -587,9 +716,9 @@ export function UnreadScreen() {
 
     const finishDrag = () => {
       if (dragging && latestDistance >= 56 && !refresh.active) {
-        refresh.start();
+        startRefresh();
       } else if (dragging && !refresh.active) {
-        void items.refetch();
+        void refetchItems();
         void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
       }
 
@@ -610,7 +739,7 @@ export function UnreadScreen() {
       window.removeEventListener("touchend", finishDrag);
       window.removeEventListener("touchcancel", finishDrag);
     };
-  }, [items.refetch, queryClient, refresh.active, refresh.start]);
+  }, [queryClient, refetchItems, refresh.active, startRefresh]);
 
   return (
     <MobileShell
@@ -649,10 +778,25 @@ export function UnreadScreen() {
           >
             <SlidersHorizontal className="size-4" />
           </button>
-          <RefreshButton controller={refresh} />
+          <RefreshButton controller={refresh} onStart={startRefresh} />
         </>
       }
     >
+      <TimelineRefreshToast
+        count={refreshToast?.count ?? 0}
+        onJump={() => {
+          const targetId = refreshToast?.jumpTargetId;
+          if (!targetId) {
+            return;
+          }
+
+          const element = document.querySelector<HTMLElement>(`[data-timeline-item-id="${targetId}"]`);
+          element?.scrollIntoView({ block: "start", behavior: "smooth" });
+          setRefreshToast(null);
+        }}
+        onDismiss={() => setRefreshToast(null)}
+      />
+
       {pullDistance > 0 && !refresh.active ? (
         <div className="mb-2 flex items-center justify-center">
           <div className="rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
@@ -1696,6 +1840,10 @@ export function SettingsScreen() {
   const { setTheme, theme } = useTheme();
   const me = useMe();
   const queryClient = useQueryClient();
+  const storage = useQuery({
+    queryKey: ["settings-storage"],
+    queryFn: () => api<StorageStats>("/api/settings/storage"),
+  });
   const settings = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       api("/api/settings", {
@@ -1706,7 +1854,6 @@ export function SettingsScreen() {
       await queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
-
   return (
     <MobileShell title="Settings" subtitle="Theme, refresh, and data">
       <div className="space-y-3">
@@ -1822,25 +1969,59 @@ export function SettingsScreen() {
         </div>
 
         <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
-          <h3 className="text-sm font-semibold">Storage retention</h3>
+          <h3 className="text-sm font-semibold">Database</h3>
           <p className="mt-2 text-xs leading-relaxed text-secondary">
-            The timeline shows up to 100 items at once. Old read items that are not bookmarked are cleaned up automatically.
-            Unread items and saved items are preserved.
+            Local storage usage, retention, and safe purge controls. Bookmarked items are never deleted.
           </p>
-          <div className="mt-3 flex gap-2">
-            {[30, 90, 180, 365].map((days) => (
-              <button
-                key={days}
-                onClick={() => settings.mutate({ itemRetentionDays: days })}
-                className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
-                  me.data?.user.settings.itemRetentionDays === days
-                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-                    : "border-subtle bg-[var(--surface-muted)] text-secondary"
-                }`}
-              >
-                {days}d
-              </button>
-            ))}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Database size</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {storage.data ? formatBytes(storage.data.dbSizeBytes) : "—"}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Feeds stored</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {storage.data ? storage.data.feedCount.toLocaleString() : "—"}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Articles stored</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {storage.data ? storage.data.articleCount.toLocaleString() : "—"}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Saved items</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {storage.data ? storage.data.bookmarkedArticleCount.toLocaleString() : "—"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Retention</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+              {me.data?.user.settings.itemRetentionDays ?? 90} days
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-secondary">
+              Unread and read items older than this window are removed automatically unless they are bookmarked.
+            </p>
+            <div className="mt-3 flex gap-2">
+              {[30, 90, 180, 365].map((days) => (
+                <button
+                  key={days}
+                  onClick={() => settings.mutate({ itemRetentionDays: days })}
+                  className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+                    me.data?.user.settings.itemRetentionDays === days
+                      ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
+                      : "border-subtle bg-[var(--surface-muted)] text-secondary"
+                  }`}
+                >
+                  {days}d
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -2724,10 +2905,12 @@ function RefreshButton({
   controller,
   endpoint,
   invalidate,
+  onStart,
 }: {
   controller?: RefreshController;
   endpoint?: string;
   invalidate?: string[];
+  onStart?: () => void;
 }) {
   const fallbackController = useRefreshController(endpoint ?? "/api/refresh/all", invalidate ?? ["items"]);
   const refresh = controller || fallbackController;
@@ -2735,7 +2918,10 @@ function RefreshButton({
   return (
     <>
       <button
-        onClick={() => refresh.start()}
+        onClick={() => {
+          onStart?.();
+          refresh.start();
+        }}
         disabled={refresh.active}
         className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] disabled:opacity-70 ${
           refresh.active
