@@ -67,6 +67,21 @@ function hashUniqueKey(feedId: string, raw: string) {
   return createHash("sha256").update(`${feedId}:${raw}`).digest("hex");
 }
 
+function firstThumbnailUrlFromParsedItem(value: unknown) {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  for (const thumbnail of value) {
+    const url = (thumbnail as { $?: { url?: string } } | null | undefined)?.$?.url?.trim();
+    if (url) {
+      return url;
+    }
+  }
+
+  return null;
+}
+
 export async function validateFeedUrl(url: string): Promise<FeedValidationResult> {
   const youtubeTarget = parseYouTubeFeedTarget(url);
   if (youtubeTarget) {
@@ -147,6 +162,7 @@ export async function fetchAndParseFeedConditionally(
       extra.ytVideoId?.toString() ??
       new URL(canonicalUrl || "https://www.youtube.com", "https://www.youtube.com")
         .searchParams.get("v");
+    const feedThumbnailUrl = firstThumbnailUrlFromParsedItem(extra.mediaThumbnail);
 
     const rawId =
       item.guid ||
@@ -167,9 +183,9 @@ export async function fetchAndParseFeedConditionally(
       canonicalUrl: canonicalUrl || null,
       commentsUrl: typeof extra.comments === "string" ? extra.comments.trim() : null,
       mediaUrl:
+        (videoId ? feedThumbnailUrl : null) ||
         item.enclosure?.url ||
-        ((extra as { mediaThumbnail?: Array<{ $?: { url?: string } }> }).mediaThumbnail?.[0]?.$
-          ?.url ?? null),
+        feedThumbnailUrl,
       youtubeVideoId: videoId,
       redditPermalink: item.link?.includes("reddit.com") ? item.link : null,
       publishedAt: item.isoDate ? new Date(item.isoDate) : item.pubDate ? new Date(item.pubDate) : null,

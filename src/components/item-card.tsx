@@ -42,7 +42,11 @@ export const ItemCard = memo(function ItemCard({
     item.youtubeVideoId ? getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId) : 0,
   );
   const isYouTube = item.feed.sourceType.includes("YOUTUBE");
-  const youtubeThumbnailUrls = item.youtubeVideoId ? getYouTubeThumbnailUrls(item.youtubeVideoId) : null;
+  const youtubeThumbnailUrls = item.youtubeVideoId
+    ? [item.mediaUrl, ...getYouTubeThumbnailUrls(item.youtubeVideoId)].filter(
+        (url): url is string => typeof url === "string" && url.length > 0,
+      )
+    : null;
   const playInline = internalPlayInline;
   const hoverCardClass = "[@media(hover:hover)]:hover:border-[var(--accent)]/20 [@media(hover:hover)]:hover:shadow-lg";
   const hoverScaleClass = "[@media(hover:hover)]:group-hover:scale-105";
