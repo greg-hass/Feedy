@@ -6,6 +6,7 @@ import {
   probeYouTubeShort,
   parseYouTubeFeedTarget,
 } from "@/lib/feed/youtube";
+import { resolveYouTubePreviewUrl } from "@/lib/feed/youtube-preview";
 
 describe("youtube feed helpers", () => {
   it("detects channel feed urls", () => {
@@ -101,6 +102,48 @@ describe("youtube feed helpers", () => {
     try {
       assert.equal(await probeYouTubeShort("fYqOq0eJalk"), true);
       assert.equal(await probeYouTubeShort("FCb4LSzPVmo"), false);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("falls back to a generated youtube preview when upstream thumbnails are placeholders", async () => {
+    const originalFetch = globalThis.fetch;
+    const placeholderPng = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2X6VwAAAAASUVORK5CYII=",
+      "base64",
+    );
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes("oembed")) {
+        return new Response(JSON.stringify({ thumbnail_url: "https://img.youtube.com/vi/test-video/maxresdefault.jpg" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+
+      if (url.includes("/watch?v=test-video")) {
+        return new Response('<meta property="og:image" content="https://img.youtube.com/vi/test-video/maxresdefault.jpg">', {
+          status: 200,
+          headers: { "content-type": "text/html; charset=UTF-8" },
+        });
+      }
+
+      return new Response(placeholderPng, {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
+    }) as typeof fetch;
+
+    try {
+      const preview = await resolveYouTubePreviewUrl({
+        videoId: "test-video",
+        title: "A very important video title that should always show something",
+        feedThumbnailUrl: "https://img.youtube.com/vi/test-video/maxresdefault.jpg",
+      });
+
+      assert.equal(preview.startsWith("data:image/svg+xml"), true);
     } finally {
       globalThis.fetch = originalFetch;
     }

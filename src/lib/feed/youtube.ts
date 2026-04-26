@@ -269,7 +269,7 @@ function hashYouTubeItemIds(items: ParsedFeedItem[]) {
     .digest("hex");
 }
 
-function mapFeedItemToItem(feedId: string, item: ParsedYouTubeItem): ParsedFeedItem {
+async function mapFeedItemToItem(feedId: string, item: ParsedYouTubeItem): Promise<ParsedFeedItem> {
   const videoId =
     (typeof item.ytVideoId === "string" ? item.ytVideoId : null) ??
     (typeof item.id === "string" && item.id.startsWith("yt:video:") ? item.id.replace(/^yt:video:/, "") : null) ??
@@ -279,8 +279,11 @@ function mapFeedItemToItem(feedId: string, item: ParsedYouTubeItem): ParsedFeedI
   const title = decodeHtmlEntities((typeof item.title === "string" ? item.title.trim() : "") || "Untitled item");
   const published = parseYouTubePublishedAt(item as unknown as Record<string, unknown>);
   const author = decodeHtmlEntities(typeof item.author === "string" ? item.author.trim() || null : null);
-  const mediaUrl =
+  const feedThumbnailUrl =
     firstThumbnailUrlFromParsedItem(item.mediaThumbnail) ||
+    (typeof item.enclosure?.url === "string" ? item.enclosure.url.trim() || null : null);
+  const mediaUrl =
+    feedThumbnailUrl ||
     (typeof item.enclosure?.url === "string" ? item.enclosure.url.trim() || null : null) ||
     (videoId ? getYouTubeThumbnailUrls(videoId)[0] : null);
 
@@ -296,7 +299,7 @@ function mapFeedItemToItem(feedId: string, item: ParsedYouTubeItem): ParsedFeedI
     author,
     canonicalUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}` : null,
     commentsUrl: null,
-    mediaUrl,
+      mediaUrl,
     youtubeVideoId: videoId,
     youtubeIsShort: false,
     redditPermalink: null,
@@ -365,7 +368,7 @@ export async function fetchYouTubeFeedConditionally(
   }
 
   const feed = await parser.parseString(await response.text());
-  const items = (feed.items ?? []).map((item) => mapFeedItemToItem(feedId, item as ParsedYouTubeItem));
+  const items = await Promise.all((feed.items ?? []).map((item) => mapFeedItemToItem(feedId, item as ParsedYouTubeItem)));
   const etag = hashYouTubeItemIds(items);
 
   if (options?.etag && options.etag === etag) {

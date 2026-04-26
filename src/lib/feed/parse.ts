@@ -12,6 +12,7 @@ import {
   parseYouTubeFeedTarget,
   validateYouTubeFeedUrl,
 } from "@/lib/feed/youtube";
+import { resolveYouTubePreviewUrl } from "@/lib/feed/youtube-preview";
 
 const parser = new Parser({
   defaultRSS: 2.0,
@@ -122,9 +123,33 @@ export async function fetchAndParseFeedConditionally(
 ) {
   const youtubeTarget = parseYouTubeFeedTarget(url);
   if (youtubeTarget) {
-    return fetchYouTubeFeedConditionally(url, feedId, {
+    const result = await fetchYouTubeFeedConditionally(url, feedId, {
       etag: options?.etag ?? null,
     });
+
+    if (result.notModified) {
+      return result;
+    }
+
+    return {
+      ...result,
+      items: await Promise.all(
+        result.items.map(async (item) => {
+          if (!item.youtubeVideoId) {
+            return item;
+          }
+
+          return {
+            ...item,
+            mediaUrl: await resolveYouTubePreviewUrl({
+              videoId: item.youtubeVideoId,
+              title: item.title,
+              feedThumbnailUrl: item.mediaUrl,
+            }),
+          };
+        }),
+      ),
+    };
   }
 
   const requestHeaders: Record<string, string> = {};
@@ -153,7 +178,7 @@ export async function fetchAndParseFeedConditionally(
   const feed = await parser.parseString(xml);
   const resolvedFeedUrl = response.url?.trim() || url;
   const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? null);
-  const items: ParsedFeedItem[] = (feed.items ?? []).map((item) => {
+  const items: ParsedFeedItem[] = await Promise.all((feed.items ?? []).map(async (item) => {
     const extra = item as unknown as Record<string, unknown>;
     const canonicalUrl =
       item.link?.trim() ||
@@ -163,6 +188,13 @@ export async function fetchAndParseFeedConditionally(
       new URL(canonicalUrl || "https://www.youtube.com", "https://www.youtube.com")
         .searchParams.get("v");
     const feedThumbnailUrl = firstThumbnailUrlFromParsedItem(extra.mediaThumbnail);
+    const mediaUrl = videoId
+      ? await resolveYouTubePreviewUrl({
+          videoId,
+          title: decodeHtmlEntities(item.title?.trim()) || "Untitled item",
+          feedThumbnailUrl,
+        })
+      : item.enclosure?.url || feedThumbnailUrl || null;
 
     const rawId =
       item.guid ||
@@ -182,15 +214,12 @@ export async function fetchAndParseFeedConditionally(
         (typeof extra.author === "string" ? decodeHtmlEntities(extra.author.trim()) : null),
       canonicalUrl: canonicalUrl || null,
       commentsUrl: typeof extra.comments === "string" ? extra.comments.trim() : null,
-      mediaUrl:
-        (videoId ? feedThumbnailUrl : null) ||
-        item.enclosure?.url ||
-        feedThumbnailUrl,
+      mediaUrl,
       youtubeVideoId: videoId,
       redditPermalink: item.link?.includes("reddit.com") ? item.link : null,
       publishedAt: item.isoDate ? new Date(item.isoDate) : item.pubDate ? new Date(item.pubDate) : null,
     };
-  });
+  }));
 
   return {
     notModified: false as const,
