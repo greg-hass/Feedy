@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { ArrowRight, LockKeyhole, AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, LockKeyhole, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +21,7 @@ function getErrorMessage(errorCode: string | undefined): { message: string; coun
 
 export function LoginForm({ errorCode }: { errorCode?: string }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasAttempted, setHasAttempted] = useState(false);
   const error = getErrorMessage(errorCode);
-
-  const handleSubmit = useCallback(() => {
-    setIsSubmitting(true);
-    setHasAttempted(true);
-  }, []);
 
   return (
     <>
@@ -57,8 +50,6 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
         className="mt-7 space-y-5"
         action="/api/auth/login"
         method="post"
-        onSubmit={handleSubmit}
-        aria-busy={isSubmitting}
       >
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -71,8 +62,7 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
             autoCapitalize="none"
             autoCorrect="off"
             autoComplete="username"
-            autoFocus={!hasAttempted}
-            disabled={isSubmitting}
+            autoFocus
             required
           />
         </label>
@@ -88,7 +78,6 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
               type={showPassword ? "text" : "password"}
               className="h-14 rounded-2xl border-[var(--border)] bg-[var(--surface-strong)] px-4 pr-12 text-base"
               autoComplete="current-password"
-              disabled={isSubmitting}
               required
             />
             <button
@@ -107,19 +96,9 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
           type="submit"
           size="lg"
           className="mt-2 h-14 w-full rounded-2xl transition-transform duration-200 active:scale-[0.985]"
-          disabled={isSubmitting}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Signing in...
-            </>
-          ) : (
-            <>
-              Open Feedy
-              <ArrowRight className="ml-2 size-4" />
-            </>
-          )}
+          Open Feedy
+          <ArrowRight className="ml-2 size-4" />
         </Button>
       </form>
     </>
