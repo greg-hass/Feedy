@@ -9,28 +9,38 @@ export default async function LoginPage({
   const errorCode = params.error;
 
   return (
-    <main className="min-h-screen bg-[var(--app-bg)] text-[var(--text-primary)]">
-      <div className="mx-auto flex min-h-screen w-full max-w-md items-center px-6 py-10">
-        <section className="w-full rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
-          <div className="mb-8 flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src="/icon-192.png" alt="" className="size-11 rounded-2xl" aria-hidden />
-              <div>
-                <p className="text-sm font-semibold tracking-[0.14em] text-[var(--text-primary)] uppercase">
-                  Feedy
-                </p>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                  Private, self-hosted feed reader
-                </p>
-              </div>
-            </div>
-            <div className="rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-              Self-hosted
-            </div>
-          </div>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--app-bg)] text-[var(--text-primary)]">
+      {/* Ambient background glow */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(var(--accent-rgb), 0.12), transparent)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-30"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 40% at 50% 110%, rgba(var(--accent-rgb), 0.08), transparent)",
+        }}
+      />
 
-          <LoginForm errorCode={errorCode} />
-        </section>
+      <div className="relative z-10 mx-auto w-full max-w-sm px-6 py-12 screen-enter">
+        {/* Brand header */}
+        <div className="mb-10 flex flex-col items-center text-center">
+          <div className="mb-5 flex size-16 items-center justify-center rounded-[22px] bg-[var(--surface)] shadow-[0_4px_24px_rgba(0,0,0,0.08)] ring-1 ring-[var(--border)]">
+            <img src="/icon-192.png" alt="" className="size-10 rounded-xl" aria-hidden />
+          </div>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+            Feedy
+          </h1>
+          <p className="mt-1.5 text-[15px] text-[var(--text-secondary)]">
+            Private, self-hosted feed reader
+          </p>
+        </div>
+
+        <LoginForm errorCode={errorCode} />
       </div>
     </main>
   );

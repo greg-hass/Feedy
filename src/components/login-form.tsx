@@ -25,58 +25,55 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
 
   return (
     <>
-      <div className="flex items-start gap-4">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-strong)] text-[var(--accent)]">
-          <LockKeyhole className="size-4.5" />
-        </div>
-        <div>
-          <h1 className="text-[1.65rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            Sign in
-          </h1>
-          <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-            Use the credentials configured for this instance.
-          </p>
-        </div>
-      </div>
-
+      {/* Error banner */}
       {error ? (
-        <div className="mt-5 flex items-start gap-2 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/10 px-4 py-3 text-sm text-[var(--danger)] animate-in slide-in-from-top-1 fade-in duration-200">
+        <div className="mb-6 flex items-start gap-2.5 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/10 px-4 py-3.5 text-sm text-[var(--danger)] animate-in slide-in-from-top-1 fade-in duration-200">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{error.message}</span>
         </div>
       ) : null}
 
       <form
-        className="mt-7 space-y-5"
+        className="space-y-4"
         action="/api/auth/login"
         method="post"
       >
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+        {/* Username field */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="username"
+            className="block text-[13px] font-medium text-[var(--text-secondary)]"
+          >
             Username
-          </span>
+          </label>
           <Input
+            id="username"
             name="username"
-            placeholder="Username"
-            className="h-14 rounded-2xl border-[var(--border)] bg-[var(--surface-strong)] px-4 text-base"
+            placeholder="Enter your username"
+            className="h-12 rounded-2xl border-[var(--border)] bg-[var(--surface)] px-4 text-base shadow-sm"
             autoCapitalize="none"
             autoCorrect="off"
             autoComplete="username"
             autoFocus
             required
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+        {/* Password field */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="password"
+            className="block text-[13px] font-medium text-[var(--text-secondary)]"
+          >
             Password
-          </span>
+          </label>
           <div className="relative">
             <Input
+              id="password"
               name="password"
-              placeholder="Password"
+              placeholder="Enter your password"
               type={showPassword ? "text" : "password"}
-              className="h-14 rounded-2xl border-[var(--border)] bg-[var(--surface-strong)] px-4 pr-12 text-base"
+              className="h-12 rounded-2xl border-[var(--border)] bg-[var(--surface)] px-4 pr-12 text-base shadow-sm"
               autoComplete="current-password"
               required
             />
@@ -90,17 +87,23 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
           </div>
-        </label>
+        </div>
 
+        {/* Submit button */}
         <Button
           type="submit"
           size="lg"
-          className="mt-2 h-14 w-full rounded-2xl transition-transform duration-200 active:scale-[0.985]"
+          className="mt-2 h-12 w-full rounded-2xl text-base transition-transform duration-200 active:scale-[0.985]"
         >
-          Open Feedy
+          Sign in
           <ArrowRight className="ml-2 size-4" />
         </Button>
       </form>
+
+      {/* Footer note */}
+      <p className="mt-6 text-center text-[13px] text-[var(--text-tertiary)]">
+        Use the credentials configured for this instance.
+      </p>
     </>
   );
 }
