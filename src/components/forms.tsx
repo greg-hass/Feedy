@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Trash2, Check, ArrowUp, ArrowDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { splitMutePatterns } from "@/lib/feed/mute-rules";
@@ -27,11 +28,11 @@ export function AddFolderForm({ onClose }: { onClose?: () => void }) {
   });
 
   return (
-    <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.22)]">
+    <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">New folder</p>
         {onClose && (
-          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]">
             <X className="size-4" />
           </button>
         )}
@@ -85,11 +86,11 @@ export function EditFolderSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
       onClick={onClose}
     >
       <div
-        className="max-h-[min(78vh,720px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        className="max-h-[min(78vh,720px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex justify-center">
@@ -101,7 +102,7 @@ export function EditFolderSheet({
             <h3 className="text-[15px] font-semibold">Edit folder</h3>
             <p className="mt-1 text-xs text-secondary">Rename, reorder, or remove this folder.</p>
           </div>
-          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]">
             <X className="size-5" />
           </button>
         </div>
@@ -183,11 +184,11 @@ export function AddFeedForm({
   });
 
   return (
-    <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.22)]">
+    <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">Add feed</p>
         {onClose && (
-          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]">
             <X className="size-4" />
           </button>
         )}
@@ -214,7 +215,7 @@ export function AddFeedForm({
           <select
             value={folderId}
             onChange={(event) => setFolderId(event.target.value)}
-            className="mt-3 h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] px-4 text-sm text-[var(--text-primary)]"
+            className="mt-3 h-12 w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-[var(--text-primary)]"
           >
             <option value="">No folder</option>
             {folders.map((folder) => (
@@ -294,11 +295,11 @@ export function EditFeedSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
       onClick={onClose}
     >
       <div
-        className="max-h-[min(78vh,720px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        className="max-h-[min(78vh,720px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex justify-center">
@@ -310,7 +311,7 @@ export function EditFeedSheet({
             <h3 className="text-[15px] font-semibold">Edit feed</h3>
             <p className="mt-1 truncate text-xs text-secondary">{feed.sourceUrl}</p>
           </div>
-          <button onClick={onClose} className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary">
+          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]">
             <X className="size-5" />
           </button>
         </div>
@@ -326,7 +327,7 @@ export function EditFeedSheet({
             <select
               value={folderId}
               onChange={(event) => setFolderId(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] px-4 text-sm text-[var(--text-primary)]"
+              className="h-12 w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-[var(--text-primary)]"
             >
               <option value="">No folder</option>
               {folders.map((folder) => (
@@ -362,7 +363,7 @@ export function EditFeedSheet({
           Hide from Timeline
         </button>
 
-        <div className="mt-3 rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] p-4">
+        <div className="mt-3 rounded-[22px] border border-subtle bg-[var(--surface-muted)] p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h4 className="text-sm font-semibold">Mute rules</h4>
@@ -379,7 +380,7 @@ export function EditFeedSheet({
               onChange={(event) => setMuteTitlePatterns(event.target.value)}
               placeholder={"Giveaway\nRoundup\nDeals"}
               rows={3}
-              className="min-h-[88px] w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none"
+              className="min-h-[88px] w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none"
             />
           </label>
 
@@ -390,7 +391,7 @@ export function EditFeedSheet({
               onChange={(event) => setMuteAuthorPatterns(event.target.value)}
               placeholder={"Newswire Bot\nSponsored"}
               rows={3}
-              className="min-h-[88px] w-full rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none"
+              className="min-h-[88px] w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none"
             />
           </label>
 

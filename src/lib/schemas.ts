@@ -54,6 +54,7 @@ export const settingsSchema = z.object({
   theme: z.enum(["SYSTEM", "LIGHT", "DARK"]).optional(),
   accentColor: z.enum(accentKeys).optional(),
   itemRetentionDays: z.number().int().min(30).max(365).optional(),
+  hideYouTubeShorts: z.boolean().optional(),
   refreshIntervalMinutes: z.number().int().min(5).max(1440).optional(),
   autoRefreshEnabled: z.boolean().optional(),
   readerOpenOriginalByDefault: z.boolean().optional(),

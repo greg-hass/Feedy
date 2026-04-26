@@ -96,6 +96,7 @@ export type MeResponse = {
         | "TEAL"
         | "SLATE";
       itemRetentionDays: number;
+      hideYouTubeShorts: boolean;
       refreshIntervalMinutes: number;
       autoRefreshEnabled: boolean;
       readerOpenOriginalByDefault: boolean;

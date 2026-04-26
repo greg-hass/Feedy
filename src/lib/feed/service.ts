@@ -6,6 +6,7 @@ import { logPerf } from "@/lib/perf";
 import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
 import type { FeedValidationResult } from "@/lib/feed/types";
 import { evaluateFeedMuteRules, normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
+import { probeYouTubeShort } from "@/lib/feed/youtube";
 
 async function createValidatedFeedForUser(
   userId: string,
@@ -260,6 +261,17 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
       };
     });
 
+    const youtubeShortFlags = new Map<string, boolean>();
+    await Promise.all(
+      evaluatedItems.map(async ({ item }) => {
+        if (!item.youtubeVideoId) {
+          return;
+        }
+
+        youtubeShortFlags.set(item.youtubeVideoId, await probeYouTubeShort(item.youtubeVideoId));
+      }),
+    );
+
     const operations = evaluatedItems.map(({ item, evaluation }) =>
       prisma.item.upsert({
         where: { uniqueKey: item.uniqueKey },
@@ -272,6 +284,8 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
           commentsUrl: item.commentsUrl,
           mediaUrl: item.mediaUrl,
           youtubeVideoId: item.youtubeVideoId,
+          youtubeIsShort: youtubeShortFlags.get(item.youtubeVideoId || "") ?? false,
+          youtubeShortCheckedAt: item.youtubeVideoId ? new Date() : null,
           redditPermalink: item.redditPermalink,
           mutedByRule: evaluation.muteFromTimeline,
           publishedAt: item.publishedAt ?? undefined,
@@ -290,6 +304,8 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
           commentsUrl: item.commentsUrl,
           mediaUrl: item.mediaUrl,
           youtubeVideoId: item.youtubeVideoId,
+          youtubeIsShort: youtubeShortFlags.get(item.youtubeVideoId || "") ?? false,
+          youtubeShortCheckedAt: item.youtubeVideoId ? new Date() : null,
           redditPermalink: item.redditPermalink,
           mutedByRule: evaluation.muteFromTimeline,
           publishedAt: item.publishedAt ?? undefined,

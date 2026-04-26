@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, MoreHorizontal, Plus, RefreshCcw, Rss, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
+import { Bookmark, Check, ChevronRight, EyeOff, FolderOpen, FolderPlus, Loader2, MoreHorizontal, Plus, RefreshCcw, Rss, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { MobileShell, useMe, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
@@ -12,6 +12,7 @@ import { FeedAvatar } from "@/components/feed-avatar";
 import { ItemCard } from "@/components/item-card";
 import { TimelineRefreshToast } from "@/components/timeline-refresh-toast";
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { computeTimelineRefreshDelta } from "@/lib/timeline-refresh";
@@ -129,29 +130,29 @@ function getHealthPresentation(status: string) {
     case "HEALTHY":
       return {
         label: "Healthy",
-        className: "text-emerald-300",
-        dotClassName: "bg-emerald-400",
+        className: "text-[var(--status-healthy)]",
+        dotClassName: "bg-[var(--status-healthy-dot)]",
         compact: true,
       };
     case "DEGRADED":
       return {
         label: "Issue",
-        className: "text-amber-300",
-        dotClassName: "bg-amber-400",
+        className: "text-[var(--status-warning)]",
+        dotClassName: "bg-[var(--status-warning-dot)]",
         compact: false,
       };
     case "ERROR":
       return {
         label: "Error",
-        className: "text-rose-300",
-        dotClassName: "bg-rose-400",
+        className: "text-[var(--status-error)]",
+        dotClassName: "bg-[var(--status-error-dot)]",
         compact: false,
       };
     default:
       return {
         label: "Pending",
-        className: "text-slate-300",
-        dotClassName: "bg-slate-400",
+        className: "text-[var(--status-pending)]",
+        dotClassName: "bg-[var(--status-pending-dot)]",
         compact: false,
       };
   }
@@ -209,7 +210,7 @@ function SegmentedControl<T extends string>({
   columns?: string;
 }) {
   return (
-    <div className={`grid gap-1 rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] p-1 ${columns ?? `grid-cols-${options.length}`}`}>
+    <div className={`grid gap-1 rounded-[20px] bg-[var(--surface-strong)] p-1 ${columns ?? `grid-cols-${options.length}`}`}>
       {options.map((option) => {
         const active = value === option.key;
         return (
@@ -820,37 +821,26 @@ export function UnreadScreen() {
       subtitle="Your latest reading"
       actions={
         <>
-          <button
-            type="button"
+          <IconButton
+            variant={searchOpen || query.trim() ? "active" : "default"}
             onClick={() => {
               if (searchOpen && !query.trim()) {
                 setSearchOpen(false);
                 return;
               }
-
               setSearchOpen(true);
             }}
-            className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] ${
-              searchOpen || query.trim()
-                ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
-                : "border-subtle bg-[var(--surface)] text-secondary"
-            }`}
             aria-label={searchOpen || query.trim() ? "Hide article search" : "Search articles"}
           >
             <Search className="size-4" />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
+            variant={filtersOpen || filtersActive ? "active" : "default"}
             onClick={() => setFiltersOpen((current) => !current)}
-            className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] ${
-              filtersOpen || filtersActive
-                ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
-                : "border-subtle bg-[var(--surface)] text-secondary"
-            }`}
             aria-label={filtersOpen ? "Hide timeline filters" : "Show timeline filters"}
           >
             <SlidersHorizontal className="size-4" />
-          </button>
+          </IconButton>
           <RefreshButton controller={refresh} onStart={startRefresh} />
         </>
       }
@@ -872,7 +862,7 @@ export function UnreadScreen() {
 
       {pullDistance > 0 && !refresh.active ? (
         <div className="mb-2 flex items-center justify-center">
-          <div className="rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+          <div className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.03)]">
             {pullDistance >= 56 ? "Release to refresh feeds" : "Pull to refresh"}
           </div>
         </div>
@@ -898,7 +888,7 @@ export function UnreadScreen() {
                   <select
                     value={stateFilter}
                     onChange={(event) => setStateFilter(event.target.value as "UNREAD" | "ALL" | "READ")}
-                    className="h-12 w-full rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+                    className="h-12 w-full rounded-[20px] bg-[var(--surface-strong)] px-4 text-sm font-medium text-[var(--text-primary)]"
                   >
                     <option value="UNREAD">Unread</option>
                     <option value="ALL">All</option>
@@ -910,7 +900,7 @@ export function UnreadScreen() {
                   <select
                     value={sourceFilter}
                     onChange={(event) => setSourceFilter(event.target.value as "ALL" | "RSS" | "REDDIT" | "YOUTUBE")}
-                    className="h-12 w-full rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 text-sm font-medium text-[var(--text-primary)]"
+                    className="h-12 w-full rounded-[20px] bg-[var(--surface-strong)] px-4 text-sm font-medium text-[var(--text-primary)]"
                   >
                     <option value="ALL">All feeds</option>
                     <option value="RSS">RSS</option>
@@ -923,7 +913,7 @@ export function UnreadScreen() {
 
             {searchOpen || query.trim() ? (
               <section className={filtersOpen ? "mt-3" : undefined}>
-                <div className="flex items-center gap-3 rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3.5">
+                <div className="flex items-center gap-3 rounded-[20px] bg-[var(--surface-strong)] px-3.5">
                   <Search className="size-4 shrink-0 text-secondary" />
                   <Input
                     id="timeline-search-input"
@@ -971,6 +961,12 @@ export function UnreadScreen() {
             />
           ))}
           <div ref={bottomSentinelRef} aria-hidden className="h-px w-full" />
+          {items.isFetchingNextPage ? (
+            <div className="flex items-center justify-center pb-2 pt-1 text-[11px] text-secondary">
+              <Loader2 className="mr-2 size-4 animate-spin" />
+              Loading more items
+            </div>
+          ) : null}
         </div>
       ) : (
         <div
@@ -998,6 +994,16 @@ export function UnreadScreen() {
                 : "New items will land here as feeds refresh."
             }
             icon={<Bookmark className="size-6" />}
+            action={
+              !deferredQuery.trim() && stateFilter === "UNREAD" ? (
+                <Link
+                  href="/app/discover"
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.22)]"
+                >
+                  Discover feeds
+                </Link>
+              ) : null
+            }
           />
         </div>
       )}
@@ -1151,7 +1157,7 @@ export function FeedsScreen() {
                   setSelectedFeedIds([]);
                   setShowBulkMove(false);
                 }}
-                className="inline-flex h-10 items-center rounded-2xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
+                className="inline-flex h-10 items-center rounded-2xl bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
               >
                 Cancel
               </button>
@@ -1167,24 +1173,16 @@ export function FeedsScreen() {
             <>
               <button
                 onClick={() => setSelectionMode(true)}
-                className="inline-flex h-10 items-center rounded-2xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
+                className="inline-flex h-10 items-center rounded-2xl bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
               >
                 Select
               </button>
-              <button
-                onClick={() => setShowAddFolder(true)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-subtle bg-[var(--surface)] text-secondary"
-                aria-label="Create folder"
-              >
+              <IconButton onClick={() => setShowAddFolder(true)} aria-label="Create folder">
                 <FolderPlus className="size-4" />
-              </button>
-              <button
-                onClick={() => setShowAddFeed(true)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)]"
-                aria-label="Add feed"
-              >
+              </IconButton>
+              <IconButton variant="accent" onClick={() => setShowAddFeed(true)} aria-label="Add feed">
                 <Plus className="size-4" />
-              </button>
+              </IconButton>
             </>
           )}
         </div>
@@ -1205,8 +1203,8 @@ export function FeedsScreen() {
         </div>
       )}
 
-      <section className="mb-4 rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_90%,black_10%)] p-3 shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
-        <div className="flex items-center gap-3 rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3.5">
+      <section className="mb-4 rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center gap-3 rounded-[20px] bg-[var(--surface-strong)] px-3.5">
           <Search className="size-4 shrink-0 text-secondary" />
           <Input
             value={query}
@@ -1219,13 +1217,13 @@ export function FeedsScreen() {
           <div className="grid grid-cols-4 gap-2">
             {[
               { label: "All", value: healthCounts.all, tone: "text-[var(--text-primary)]" },
-              { label: "Healthy", value: healthCounts.healthy, tone: "text-emerald-300" },
-              { label: "Issues", value: healthCounts.issues, tone: "text-amber-300" },
-              { label: "Slow", value: healthCounts.slow, tone: "text-amber-200" },
+              { label: "Healthy", value: healthCounts.healthy, tone: "text-[var(--status-healthy)]" },
+              { label: "Issues", value: healthCounts.issues, tone: "text-[var(--status-warning)]" },
+              { label: "Slow", value: healthCounts.slow, tone: "text-[var(--status-warning)]" },
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3 py-2.5 text-center"
+                className="rounded-2xl bg-[var(--surface-strong)] px-3 py-2.5 text-center"
               >
                 <p className={`text-sm font-semibold ${item.tone}`}>{item.value}</p>
                 <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-secondary">
@@ -1238,7 +1236,7 @@ export function FeedsScreen() {
       </section>
 
       {!selectionMode && showSwipeHint ? (
-        <section className="mb-4 flex items-center justify-between gap-3 rounded-[20px] border border-subtle bg-[var(--accent-soft)]/35 px-3.5 py-3 text-sm">
+        <section className="mb-4 flex items-center justify-between gap-3 rounded-[20px] bg-[var(--accent-soft)]/35 px-3.5 py-3 text-sm">
           <p className="text-[13px] text-secondary">
             Swipe a row left for edit and delete actions.
           </p>
@@ -1247,7 +1245,7 @@ export function FeedsScreen() {
               setShowSwipeHint(false);
               window.localStorage.setItem("feedy-swipe-hint-dismissed", "1");
             }}
-            className="rounded-full border border-subtle bg-[var(--surface)] px-3 py-1 text-[11px] font-medium text-secondary"
+            className="rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-medium text-secondary"
           >
             Got it
           </button>
@@ -1256,7 +1254,7 @@ export function FeedsScreen() {
 
       {selectionMode ? (
         <>
-          <section className="mb-4 rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_90%,black_10%)] p-4 shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
+          <section className="mb-4 rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
@@ -1433,12 +1431,9 @@ export function FoldersScreen() {
       title="Folders"
       subtitle="Keep feeds organized"
       actions={
-        <button
-          onClick={() => setShowAddFolder(true)}
-          className="rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] p-2.5 text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)]"
-        >
+        <IconButton variant="accent" onClick={() => setShowAddFolder(true)} aria-label="Create folder">
           <FolderPlus className="size-4" />
-        </button>
+        </IconButton>
       }
     >
       {showAddFolder && (
@@ -1571,37 +1566,31 @@ export function SavedScreen() {
       title="Saved"
       subtitle="Your quiet backlog"
       actions={
-        <button
-          type="button"
+        <IconButton
+          variant={searchOpen || query.trim() ? "active" : "default"}
           onClick={() => {
             if (searchOpen && !query.trim()) {
               setSearchOpen(false);
               return;
             }
-
             setSearchOpen(true);
           }}
-          className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] ${
-            searchOpen || query.trim()
-              ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
-              : "border-subtle bg-[var(--surface)] text-secondary"
-          }`}
           aria-label={searchOpen || query.trim() ? "Hide saved search" : "Search saved items"}
         >
           <Search className="size-4" />
-        </button>
+        </IconButton>
       }
     >
       {pullDistance > 0 ? (
         <div className="mb-2 flex items-center justify-center">
-          <div className="rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface)_94%,black_6%)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+          <div className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.03)]">
             Pull to refresh saved items
           </div>
         </div>
       ) : null}
       {searchOpen || query.trim() ? (
         <section className="mb-3">
-          <div className="flex items-center gap-3 rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3.5">
+          <div className="flex items-center gap-3 rounded-[22px] bg-[var(--surface-strong)] px-3.5">
             <Search className="size-4 shrink-0 text-secondary" />
             <Input
               id="saved-search-input"
@@ -1706,7 +1695,7 @@ export function DiscoverScreen() {
 
   return (
     <MobileShell title="Discover" subtitle="Find new feeds by keyword">
-      <section className="rounded-[26px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-3.5 shadow-[0_18px_42px_rgba(0,0,0,0.22)]">
+      <section className="rounded-[26px] border border-subtle bg-[var(--surface)] p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
             Source scope
@@ -1728,7 +1717,7 @@ export function DiscoverScreen() {
             columns="grid-cols-4"
           />
         </div>
-        <div className="mt-3 flex items-center gap-3 rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_80%,black_20%)] px-3.5">
+        <div className="mt-3 flex items-center gap-3 rounded-[22px] bg-[var(--surface-strong)] px-3.5">
           <Search className="size-4 shrink-0 text-secondary" />
           <Input
             value={query}
@@ -1760,7 +1749,7 @@ export function DiscoverScreen() {
               {local.data?.map((feed) => (
                 <div
                   key={feed.id}
-                  className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]"
+                  className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
                   style={{ contentVisibility: "auto", containIntrinsicSize: "104px" }}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -1806,7 +1795,7 @@ export function DiscoverScreen() {
                 return (
                 <div
                   key={result.feedUrl}
-                  className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]"
+                  className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
                   style={{ contentVisibility: "auto", containIntrinsicSize: "112px" }}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -1885,7 +1874,7 @@ function DiscoveryAvatar({
 
   if (favicon && !failed) {
     return (
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] p-1.5">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-strong)] p-1.5">
         <img
           src={favicon}
           alt=""
@@ -1901,9 +1890,9 @@ function DiscoveryAvatar({
     <div
       className={`flex size-12 shrink-0 items-center justify-center rounded-2xl border border-subtle text-sm font-semibold ${
         isYouTube
-          ? "bg-rose-500/12 text-rose-300"
+          ? "bg-[var(--status-error-bg)] text-[var(--status-error)]"
           : isReddit
-            ? "bg-orange-500/12 text-orange-300"
+            ? "bg-[var(--status-warning-bg)] text-[var(--status-warning)]"
             : "bg-[var(--surface-muted)] text-secondary"
       }`}
     >
@@ -1933,14 +1922,14 @@ export function SettingsScreen() {
   return (
     <MobileShell title="Settings" subtitle="Theme, refresh, and data">
       <div className="space-y-3">
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Account</h3>
           <p className="mt-2 text-sm text-secondary">
             Signed in as <span className="font-medium text-[var(--text-primary)]">{me.data?.user.username}</span>
           </p>
         </div>
 
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Appearance</h3>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(["system", "light", "dark"] as const).map((t) => (
@@ -1950,13 +1939,17 @@ export function SettingsScreen() {
                   setTheme(t);
                   settings.mutate({ theme: t.toUpperCase() });
                 }}
+                disabled={settings.isPending}
                 className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
                   theme === t
                     ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
                     : "border-subtle bg-[var(--surface-muted)] text-secondary"
                 }`}
               >
-                {t === "system" ? "System" : t === "light" ? "Light" : "Dark"}
+                <span className="inline-flex items-center gap-1.5">
+                  {theme === t && settings.isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                  {t === "system" ? "System" : t === "light" ? "Light" : "Dark"}
+                </span>
               </button>
             ))}
           </div>
@@ -1971,17 +1964,18 @@ export function SettingsScreen() {
                   <button
                     key={option.key}
                     onClick={() => settings.mutate({ accentColor: option.key })}
+                    disabled={settings.isPending}
                     className={`flex size-11 items-center justify-center rounded-full border-2 transition-transform ${
-                      active ? "scale-105 border-white" : "border-transparent"
+                      active ? "scale-105 border-[var(--text-primary)]" : "border-transparent"
                     }`}
                     style={{
                       backgroundColor: option.hex,
-                      boxShadow: active ? "0 0 0 3px rgba(255,255,255,0.82)" : "none",
+                      boxShadow: active ? "0 0 0 3px color-mix(in srgb, var(--text-primary) 16%, transparent)" : "none",
                     }}
                     aria-label={`Use ${option.label} accent`}
                     title={option.label}
                   >
-                    {active ? <span className="text-lg font-semibold text-white">✓</span> : null}
+                    {active && settings.isPending ? <Loader2 className="size-4 animate-spin text-[var(--text-primary)]" /> : active ? <span className="text-lg font-semibold text-[var(--text-primary)]">✓</span> : null}
                   </button>
                 );
               })}
@@ -1989,7 +1983,7 @@ export function SettingsScreen() {
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Refresh cadence</h3>
           <p className="mt-2 text-xs text-secondary">
             Current: {me.data?.user.settings.refreshIntervalMinutes ?? 60} minutes
@@ -1999,19 +1993,25 @@ export function SettingsScreen() {
               <button
                 key={minutes}
                 onClick={() => settings.mutate({ refreshIntervalMinutes: minutes })}
+                disabled={settings.isPending}
                 className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
                   me.data?.user.settings.refreshIntervalMinutes === minutes
                     ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
                     : "border-subtle bg-[var(--surface-muted)] text-secondary"
                 }`}
               >
-                {minutes}m
+                <span className="inline-flex items-center gap-1.5">
+                  {me.data?.user.settings.refreshIntervalMinutes === minutes && settings.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : null}
+                  {minutes}m
+                </span>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Device</h3>
           <div className="mt-3 flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -2036,46 +2036,75 @@ export function SettingsScreen() {
               aria-label="Toggle keep screen awake"
             >
               <span
-                className={`absolute size-6 rounded-full bg-white shadow-[0_6px_16px_rgba(0,0,0,0.22)] transition-transform ${
+                className={`absolute size-6 rounded-full bg-[var(--surface)] shadow-[0_6px_16px_rgba(0,0,0,0.22)] transition-transform ${
                   me.data?.user.settings.keepScreenAwake ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          <div className="mt-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Hide YouTube Shorts</p>
+              <p className="mt-1 text-xs leading-relaxed text-secondary">
+                Remove YouTube Shorts from the timeline and unread counts.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                settings.mutate({
+                  hideYouTubeShorts: !me.data?.user.settings.hideYouTubeShorts,
+                })
+              }
+              className={`relative mt-0.5 inline-flex h-8 w-14 shrink-0 items-center rounded-full border transition-colors ${
+                me.data?.user.settings.hideYouTubeShorts
+                  ? "border-[var(--accent)] bg-[var(--accent)]"
+                  : "border-subtle bg-[var(--surface-muted)]"
+              }`}
+              aria-pressed={Boolean(me.data?.user.settings.hideYouTubeShorts)}
+              aria-label="Toggle hide YouTube Shorts"
+            >
+              <span
+                className={`absolute size-6 rounded-full bg-[var(--surface)] shadow-[0_6px_16px_rgba(0,0,0,0.22)] transition-transform ${
+                  me.data?.user.settings.hideYouTubeShorts ? "translate-x-7" : "translate-x-1"
                 }`}
               />
             </button>
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Database</h3>
           <p className="mt-2 text-xs leading-relaxed text-secondary">
             Local storage usage, retention, and safe purge controls. Bookmarked items are never deleted.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+            <div className="rounded-2xl bg-[var(--surface-strong)] p-3">
               <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Database size</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                 {storage.data ? formatBytes(storage.data.dbSizeBytes) : "—"}
               </p>
             </div>
-            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+            <div className="rounded-2xl bg-[var(--surface-strong)] p-3">
               <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Feeds stored</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                 {storage.data ? storage.data.feedCount.toLocaleString() : "—"}
               </p>
             </div>
-            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+            <div className="rounded-2xl bg-[var(--surface-strong)] p-3">
               <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Articles stored</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                 {storage.data ? storage.data.articleCount.toLocaleString() : "—"}
               </p>
             </div>
-            <div className="rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+            <div className="rounded-2xl bg-[var(--surface-strong)] p-3">
               <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Saved items</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                 {storage.data ? storage.data.bookmarkedArticleCount.toLocaleString() : "—"}
               </p>
             </div>
           </div>
-          <div className="mt-4 rounded-2xl border border-subtle bg-[var(--surface-muted)] p-3">
+          <div className="mt-4 rounded-2xl bg-[var(--surface-strong)] p-3">
             <p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">Retention</p>
             <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
               {me.data?.user.settings.itemRetentionDays ?? 90} days
@@ -2101,7 +2130,7 @@ export function SettingsScreen() {
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Import & export</h3>
           <p className="mt-2 text-xs text-secondary">
             Move subscriptions with OPML or keep a full JSON backup.
@@ -2176,7 +2205,7 @@ export function ImportExportScreen() {
   return (
     <MobileShell title="Import / Export" subtitle="Portable subscriptions and backups">
       <div className="space-y-3">
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Import OPML</h3>
           <p className="mt-1 text-xs text-secondary">Upload an OPML file from another feed reader.</p>
           <input
@@ -2194,7 +2223,7 @@ export function ImportExportScreen() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex h-12 items-center rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-secondary"
+              className="flex h-12 items-center rounded-2xl bg-[var(--surface-strong)] px-4 text-sm text-secondary"
             >
               <span className="truncate">{file ? file.name : "Choose OPML file"}</span>
             </button>
@@ -2209,7 +2238,7 @@ export function ImportExportScreen() {
                     fileInputRef.current.value = "";
                   }
                 }}
-                className="h-12 rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-secondary"
+                className="h-12 rounded-2xl bg-[var(--surface-strong)] px-4 text-sm text-secondary"
               >
                 Clear
               </button>
@@ -2244,7 +2273,7 @@ export function ImportExportScreen() {
           )}
         </div>
 
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Export</h3>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <a href="/api/export/opml">
@@ -2344,7 +2373,7 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
                   <>
                     <span>·</span>
                     <span
-                      className="inline-flex items-center text-rose-300"
+                      className="inline-flex items-center text-[var(--status-error)]"
                       aria-label="Hidden from Timeline"
                       title="Hidden from Timeline"
                     >
@@ -2355,7 +2384,7 @@ function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[]; inde
                 {feed.performance.isSlow ? (
                   <>
                     <span>·</span>
-                    <span className="font-medium text-amber-300">
+                    <span className="font-medium text-[var(--status-warning)]">
                       Slow {formatDuration(feed.performance.latestDurationMs)}
                     </span>
                   </>
@@ -2416,10 +2445,10 @@ function SelectableFeedRow({
     <button
       type="button"
       onClick={onToggle}
-      className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_14px_34px_rgba(0,0,0,0.16)] transition-colors ${
+      className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
         selected
           ? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
-          : "border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)]"
+          : "border-subtle bg-[var(--surface)]"
       }`}
       style={{ contentVisibility: "auto", containIntrinsicSize: "92px" }}
     >
@@ -2452,7 +2481,7 @@ function SelectableFeedRow({
           {feed.excludeFromTimeline ? (
             <>
               <span>·</span>
-              <span className="inline-flex items-center text-rose-300" title="Hidden from Timeline">
+              <span className="inline-flex items-center text-[var(--status-error)]" title="Hidden from Timeline">
                 <EyeOff className="size-3.5" />
               </span>
             </>
@@ -2460,7 +2489,7 @@ function SelectableFeedRow({
           {feed.performance.isSlow ? (
             <>
               <span>·</span>
-              <span className="font-medium text-amber-300">
+              <span className="font-medium text-[var(--status-warning)]">
                 Slow {formatDuration(feed.performance.latestDurationMs)}
               </span>
             </>
@@ -2493,10 +2522,10 @@ function SelectableFolderRow({
     <button
       type="button"
       onClick={onToggle}
-      className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_14px_34px_rgba(0,0,0,0.16)] transition-colors ${
+      className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
         selected || partiallySelected
           ? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
-          : "border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)]"
+          : "border-subtle bg-[var(--surface)]"
       }`}
       style={{ contentVisibility: "auto", containIntrinsicSize: "92px" }}
     >
@@ -2528,13 +2557,13 @@ function SelectableFolderRow({
           {folder.counts.issueCount > 0 ? (
             <>
               <span>·</span>
-              <span className="font-medium text-amber-300">{folder.counts.issueCount} issues</span>
+              <span className="font-medium text-[var(--status-warning)]">{folder.counts.issueCount} issues</span>
             </>
           ) : null}
           {folder.counts.slowFeedCount > 0 ? (
             <>
               <span>·</span>
-              <span className="font-medium text-amber-300">{folder.counts.slowFeedCount} slow</span>
+              <span className="font-medium text-[var(--status-warning)]">{folder.counts.slowFeedCount} slow</span>
             </>
           ) : null}
         </div>
@@ -2565,11 +2594,11 @@ function BulkMoveSheet({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
       onClick={onClose}
     >
       <div
-        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex justify-center">
@@ -2584,7 +2613,7 @@ function BulkMoveSheet({
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
           >
             <X className="size-5" />
           </button>
@@ -2594,7 +2623,7 @@ function BulkMoveSheet({
           <button
             onClick={() => onMove(null)}
             disabled={isPending}
-            className="flex w-full items-center justify-between rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] px-4 py-3 text-left disabled:opacity-50"
+            className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
           >
             <div>
               <p className="text-sm font-semibold">No folder</p>
@@ -2607,7 +2636,7 @@ function BulkMoveSheet({
               key={folder.id}
               onClick={() => onMove(folder.id)}
               disabled={isPending}
-              className="flex w-full items-center justify-between rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] px-4 py-3 text-left disabled:opacity-50"
+              className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{folder.title}</p>
@@ -2639,11 +2668,11 @@ function BulkCadenceSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
       onClick={onClose}
     >
       <div
-        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex justify-center">
@@ -2658,7 +2687,7 @@ function BulkCadenceSheet({
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
           >
             <X className="size-5" />
           </button>
@@ -2670,7 +2699,7 @@ function BulkCadenceSheet({
               key={minutes}
               onClick={() => onApply(minutes)}
               disabled={isPending}
-              className="rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] px-4 py-4 text-left disabled:opacity-50"
+              className="rounded-[20px] bg-[var(--surface-strong)] px-4 py-4 text-left disabled:opacity-50"
             >
               <p className="text-sm font-semibold">{minutes} minutes</p>
               <p className="mt-1 text-xs text-secondary">
@@ -2709,11 +2738,11 @@ function FeedHealthSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
       onClick={onClose}
     >
       <div
-        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex justify-center">
@@ -2729,13 +2758,13 @@ function FeedHealthSheet({
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
           >
             <X className="size-5" />
           </button>
         </div>
 
-        <div className="mt-4 rounded-[22px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_82%,black_18%)] p-4">
+        <div className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Status</p>
@@ -2743,7 +2772,7 @@ function FeedHealthSheet({
                 {getHealthSummary(feed)}
               </p>
             </div>
-            <span className={`inline-flex items-center gap-2 rounded-full border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${health.className}`}>
+            <span className={`inline-flex items-center gap-2 rounded-full bg-[var(--surface-strong)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${health.className}`}>
               <span className={`size-2 rounded-full ${health.dotClassName}`} />
               {health.label}
             </span>
@@ -2751,7 +2780,7 @@ function FeedHealthSheet({
         </div>
 
         <div className="mt-3 space-y-2">
-          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+          <div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Refresh cadence</p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
               Every {effectiveRefreshMinutes} minutes
@@ -2763,28 +2792,28 @@ function FeedHealthSheet({
             </p>
           </div>
 
-          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+          <div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Last refresh</p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
               {feed.lastRefreshedAt ? relativeTime(feed.lastRefreshedAt) : "Never"}
             </p>
           </div>
 
-          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+          <div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Last successful refresh</p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
               {feed.lastSuccessfulRefreshAt ? relativeTime(feed.lastSuccessfulRefreshAt) : "No successful refresh yet"}
             </p>
           </div>
 
-          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+          <div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Last failure</p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
               {feed.lastFailureAt ? relativeTime(feed.lastFailureAt) : "No recent failures"}
             </p>
           </div>
 
-          <div className="rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] px-3.5 py-3">
+          <div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
             <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">Recent refresh speed</p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
               Latest {formatDuration(feed.performance.latestDurationMs)} · Avg {formatDuration(feed.performance.averageDurationMs)}
@@ -2798,8 +2827,8 @@ function FeedHealthSheet({
 
           {suggestedRefreshMinutes ? (
             <div className="rounded-[18px] border border-amber-500/20 bg-amber-500/10 px-3.5 py-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-amber-300">Suggested adjustment</p>
-              <p className="mt-1 text-sm leading-relaxed text-amber-50">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--status-warning)]">Suggested adjustment</p>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--text-primary)]">
                 This feed has been consistently slow. Try refreshing it every {suggestedRefreshMinutes} minutes instead of every {effectiveRefreshMinutes} minutes.
               </p>
               <button
@@ -2814,8 +2843,8 @@ function FeedHealthSheet({
 
           {feed.lastError ? (
             <div className="rounded-[18px] border border-rose-500/20 bg-rose-500/10 px-3.5 py-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-rose-300">Latest error</p>
-              <p className="mt-1 text-sm leading-relaxed text-rose-100">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--status-error)]">Latest error</p>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--text-primary)]">
                 {feed.lastError}
               </p>
             </div>
@@ -2897,7 +2926,7 @@ function FolderRow({ folder, folders, index }: { folder: NavFolder; folders: Nav
                 {folder.counts.issueCount > 0 ? (
                   <>
                     <span>·</span>
-                    <span className="font-medium text-amber-300">
+                    <span className="font-medium text-[var(--status-warning)]">
                       {folder.counts.issueCount} issues
                     </span>
                   </>
@@ -2905,7 +2934,7 @@ function FolderRow({ folder, folders, index }: { folder: NavFolder; folders: Nav
                 {folder.counts.slowFeedCount > 0 ? (
                   <>
                     <span>·</span>
-                    <span className="font-medium text-amber-300">
+                    <span className="font-medium text-[var(--status-warning)]">
                       {folder.counts.slowFeedCount} slow
                     </span>
                   </>
@@ -2941,12 +2970,12 @@ function SwipeRow({
   const touchDeltaX = useRef(0);
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
+    <div className="relative overflow-hidden rounded-[24px] border border-subtle bg-[var(--surface)] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
       <div className="absolute inset-y-[5px] right-[5px] flex items-center gap-2">
         {actions}
       </div>
       <div
-        className={`relative z-10 bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] transition-transform duration-200 ease-out ${
+        className={`relative z-10 bg-[var(--surface)] transition-transform duration-200 ease-out ${
           open ? "-translate-x-[132px]" : "translate-x-0"
         }`}
         onTouchStart={(event) => {
@@ -2993,24 +3022,20 @@ function RefreshButton({
 
   return (
     <>
-      <button
+      <IconButton
+        variant={refresh.active ? "active" : "default"}
         onClick={() => {
           onStart?.();
           refresh.start();
         }}
         disabled={refresh.active}
-        className={`rounded-2xl border p-2.5 active:bg-[var(--surface-muted)] disabled:opacity-70 ${
-          refresh.active
-            ? "border-[var(--accent)]/25 bg-[var(--accent-dim)] text-[var(--accent)]"
-            : "border-subtle bg-[var(--surface)] text-secondary"
-        }`}
         aria-label={refresh.active ? "Refreshing feeds" : "Refresh feeds"}
       >
         <RefreshCcw className={`size-4 ${refresh.active ? "animate-spin" : ""}`} />
-      </button>
+      </IconButton>
       {refresh.active ? (
         <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+88px)] z-50 px-5">
-          <div className="mx-auto w-full max-w-md rounded-[24px] border border-[var(--accent)]/18 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_92%,white_8%)_0%,color-mix(in_srgb,var(--surface)_86%,black_14%)_100%)] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.52)] ring-1 ring-white/5 backdrop-blur-2xl">
+          <div className="mx-auto w-full max-w-md rounded-[24px] border border-[var(--accent)]/18 bg-[linear-gradient(180deg,var(--surface)_0%,var(--surface-strong)_100%)] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.52)] ring-1 ring-[var(--text-primary)]/5 backdrop-blur-2xl">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[12px] font-semibold text-[var(--accent)]">
@@ -3041,7 +3066,7 @@ function RefreshButton({
                 {refresh.progress}%
               </span>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/8">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--text-primary)]/8">
               <div
                 className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent)_0%,color-mix(in_srgb,var(--accent)_100%,white_28%)_100%)] transition-[width] duration-500 ease-out"
                 style={{ width: `${refresh.progress}%` }}

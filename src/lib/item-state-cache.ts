@@ -1,4 +1,4 @@
-import type { QueryClient, QueryKey } from "@tanstack/react-query";
+import type { QueryClient, QueryKey, InfiniteData } from "@tanstack/react-query";
 
 import type { ItemRecord } from "@/types/app";
 
@@ -23,6 +23,15 @@ function isTimelineItemsQuery(queryKey: QueryKey) {
   return Array.isArray(queryKey) && queryKey[0] === "items" && queryKey[1] === "timeline";
 }
 
+function isInfiniteData(data: unknown): data is InfiniteData<{ items: ItemRecord[] }> {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "pages" in data &&
+    Array.isArray((data as { pages: unknown }).pages)
+  );
+}
+
 export function updateItemStateCaches(
   queryClient: QueryClient,
   itemId: string,
@@ -31,7 +40,7 @@ export function updateItemStateCaches(
     skipTimelineReadPatch?: boolean;
   },
 ) {
-  for (const [queryKey, current] of queryClient.getQueriesData<ItemRecord[]>({
+  for (const [queryKey, current] of queryClient.getQueriesData({
     queryKey: ["items"],
   })) {
     if (!current) {
@@ -42,9 +51,27 @@ export function updateItemStateCaches(
       continue;
     }
 
-    const next = current
-      .map((entry) => (entry.id === itemId ? applyPatch(entry, patch) : entry))
-      .filter((entry) => !(patch.bookmarked === false && isSavedItemsQuery(queryKey) && entry.id === itemId));
+    let next;
+
+    if (isInfiniteData(current)) {
+      // Timeline uses useInfiniteQuery — data is InfiniteData<{ items: ItemRecord[] }>
+      next = {
+        ...current,
+        pages: current.pages.map((page) => ({
+          ...page,
+          items: page.items
+            .map((entry) => (entry.id === itemId ? applyPatch(entry, patch) : entry))
+            .filter((entry) => !(patch.bookmarked === false && isSavedItemsQuery(queryKey) && entry.id === itemId)),
+        })),
+      };
+    } else if (Array.isArray(current)) {
+      // Saved, feed, and folder queries return flat ItemRecord[]
+      next = current
+        .map((entry) => (entry.id === itemId ? applyPatch(entry, patch) : entry))
+        .filter((entry) => !(patch.bookmarked === false && isSavedItemsQuery(queryKey) && entry.id === itemId));
+    } else {
+      continue;
+    }
 
     queryClient.setQueryData(queryKey, next);
   }

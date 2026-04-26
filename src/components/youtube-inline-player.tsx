@@ -297,7 +297,7 @@ export function YouTubeInlinePlayer({
   }
 
   return (
-    <div className={`aspect-video w-full bg-black${className ? ` ${className}` : ""}`}>
+    <div className={`aspect-video w-full bg-[var(--text-primary)]${className ? ` ${className}` : ""}`}>
       <div
         ref={mountRef}
         className="h-full w-full"

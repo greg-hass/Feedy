@@ -26,6 +26,7 @@ export type ParsedFeedItem = {
   commentsUrl?: string | null;
   mediaUrl?: string | null;
   youtubeVideoId?: string | null;
+  youtubeIsShort?: boolean;
   redditPermalink?: string | null;
   publishedAt?: Date | null;
 };

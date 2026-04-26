@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, EyeOff, FolderOpen, MoreHorizontal, RefreshCcw, Trash2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { FeedAvatar } from "@/components/feed-avatar";
 import { EditFeedSheet } from "@/components/forms";
 import { ItemCard } from "@/components/item-card";
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { MobileShell, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
 import { api } from "@/lib/client";
 import { decodeHtmlEntities } from "@/lib/utils";
@@ -46,6 +47,22 @@ export default function FolderDetailPage() {
   const folderTitle = decodeHtmlEntities(folder?.title || "");
   const selectedSet = new Set(selectedFeedIds);
   const selectedCount = selectedFeedIds.length;
+  const goBack = () => {
+    if (typeof document !== "undefined") {
+      try {
+        const referrerUrl = document.referrer ? new URL(document.referrer) : null;
+        if (!referrerUrl || referrerUrl.host !== window.location.host) {
+          router.replace("/app/folders");
+          return;
+        }
+      } catch {
+        router.replace("/app/folders");
+        return;
+      }
+    }
+
+    router.back();
+  };
 
   const items = useQuery({
     queryKey: ["items", "folder", params.folderId],
@@ -133,41 +150,44 @@ export default function FolderDetailPage() {
   }
 
   return (
-    <div className="screen-fade">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-8 pt-4">
-        <header className="sticky top-3 z-20">
-          <div className="surface rounded-[24px] border border-subtle px-4 py-3">
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.back()} className="rounded-lg p-1 text-secondary">
-                <ArrowLeft className="size-5" />
-              </button>
-              <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
-                <FolderOpen className="size-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-base font-semibold">{folderTitle}</h1>
-                <p className="text-xs text-secondary">
-                  {folder.counts.unreadCount} unread · {folderFeeds.length} feeds
+    <MobileShell
+      title={folderTitle}
+      subtitle={`${folder.counts.unreadCount} unread · ${folderFeeds.length} feeds`}
+      actions={
+        <div className="flex items-center gap-2">
+          <HighlightBackButton onClick={goBack} />
+          <IconButton
+            onClick={() => refresh.mutate()}
+            disabled={refresh.isPending || refreshQueued}
+            aria-label={refreshQueued || refresh.isPending ? "Refreshing folder" : "Refresh folder"}
+          >
+            <RefreshCcw className={`size-4 ${(refresh.isPending || refreshQueued) ? "animate-spin" : ""}`} />
+          </IconButton>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+              <FolderOpen className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-base font-semibold">{folderTitle}</h1>
+              <p className="text-xs text-secondary">
+                {folder.counts.unreadCount} unread · {folderFeeds.length} feeds
+              </p>
+              {refreshQueued ? (
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                  Refreshing
                 </p>
-                {refreshQueued ? (
-                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-                    Refreshing
-                  </p>
-                ) : null}
-              </div>
-              <button
-                onClick={() => refresh.mutate()}
-                disabled={refresh.isPending || refreshQueued}
-                className="rounded-lg p-2 text-secondary disabled:opacity-70"
-              >
-                <RefreshCcw className={`size-4 ${(refresh.isPending || refreshQueued) ? "animate-spin" : ""}`} />
-              </button>
+              ) : null}
             </div>
           </div>
-        </header>
+        </div>
 
         {folderFeeds.length > 0 && (
-          <section className="mt-3 rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-3 shadow-[0_14px_32px_rgba(0,0,0,0.16)]">
+          <section className="rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
             <div className="mb-2 flex items-center justify-between gap-3 px-1">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary">
@@ -185,7 +205,7 @@ export default function FolderDetailPage() {
                     <button
                       onClick={() => setShowBulkCadence(true)}
                       disabled={!selectedCount}
-                      className="rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary disabled:opacity-50"
+                      className="rounded-xl bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary disabled:opacity-50"
                     >
                       Cadence
                     </button>
@@ -201,7 +221,7 @@ export default function FolderDetailPage() {
                         setSelectionMode(false);
                         setSelectedFeedIds([]);
                       }}
-                      className="rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary"
+                      className="rounded-xl bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary"
                     >
                       Cancel
                     </button>
@@ -211,7 +231,7 @@ export default function FolderDetailPage() {
                     <p className="text-[11px] text-secondary">{folderFeeds.length} sources</p>
                     <button
                       onClick={() => setSelectionMode(true)}
-                      className="rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary"
+                      className="rounded-xl bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary"
                     >
                       Select
                     </button>
@@ -242,7 +262,7 @@ export default function FolderDetailPage() {
           </section>
         )}
 
-        <div className="mt-3 flex gap-2">
+        <div className="flex gap-2">
           <Button
             variant="secondary"
             onClick={() => markRead.mutate()}
@@ -252,7 +272,7 @@ export default function FolderDetailPage() {
           </Button>
         </div>
 
-        <main className="mt-4 flex-1">
+        <main className="flex-1">
           {items.isLoading ? (
             <LoadingSkeleton />
           ) : items.error ? (
@@ -291,7 +311,7 @@ export default function FolderDetailPage() {
           />
         ) : null}
       </div>
-    </div>
+    </MobileShell>
   );
 }
 
@@ -355,7 +375,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
               {feed.performance.isSlow ? (
                 <>
                   <span>·</span>
-                  <span className="font-medium text-amber-300">
+                  <span className="font-medium text-[var(--status-warning)]">
                     Slow {feed.performance.latestDurationMs ? `${Math.max(feed.performance.latestDurationMs / 1000, 0.1).toFixed(feed.performance.latestDurationMs >= 10_000 ? 0 : 1)}s` : ""}
                   </span>
                 </>
@@ -364,7 +384,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
                 <>
                   <span>·</span>
                   <span
-                    className="inline-flex items-center text-rose-300"
+                    className="inline-flex items-center text-[var(--status-error)]"
                     aria-label="Hidden from Timeline"
                     title="Hidden from Timeline"
                   >
@@ -433,7 +453,7 @@ function SelectableFolderFeedRow({
           {feed.performance.isSlow ? (
             <>
               <span>·</span>
-              <span className="font-medium text-amber-300">
+              <span className="font-medium text-[var(--status-warning)]">
                 Slow {feed.performance.latestDurationMs ? `${Math.max(feed.performance.latestDurationMs / 1000, 0.1).toFixed(feed.performance.latestDurationMs >= 10_000 ? 0 : 1)}s` : ""}
               </span>
             </>
@@ -442,7 +462,7 @@ function SelectableFolderFeedRow({
             <>
               <span>·</span>
               <span
-                className="inline-flex items-center text-rose-300"
+                className="inline-flex items-center text-[var(--status-error)]"
                 aria-label="Hidden from Timeline"
                 title="Hidden from Timeline"
               >
@@ -473,11 +493,11 @@ function FolderBulkMoveSheet({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
       onClick={onClose}
     >
       <div
-        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex justify-center">
@@ -492,7 +512,7 @@ function FolderBulkMoveSheet({
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
           >
             <X className="size-5" />
           </button>
@@ -502,7 +522,7 @@ function FolderBulkMoveSheet({
           <button
             onClick={() => onMove(null)}
             disabled={isPending}
-            className="flex w-full items-center justify-between rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] px-4 py-3 text-left disabled:opacity-50"
+            className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface)] px-4 py-3 text-left disabled:opacity-50"
           >
             <div>
               <p className="text-sm font-semibold">Remove from folder</p>
@@ -517,7 +537,7 @@ function FolderBulkMoveSheet({
                 key={folder.id}
                 onClick={() => onMove(folder.id)}
                 disabled={isPending}
-                className="flex w-full items-center justify-between rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] px-4 py-3 text-left disabled:opacity-50"
+                className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface)] px-4 py-3 text-left disabled:opacity-50"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{folder.title}</p>
@@ -549,11 +569,11 @@ function FolderBulkCadenceSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
       onClick={onClose}
     >
       <div
-        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface-strong)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
+        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex justify-center">
@@ -568,7 +588,7 @@ function FolderBulkCadenceSheet({
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-1.5 text-secondary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
           >
             <X className="size-5" />
           </button>
@@ -580,7 +600,7 @@ function FolderBulkCadenceSheet({
               key={minutes}
               onClick={() => onApply(minutes)}
               disabled={isPending}
-              className="rounded-[20px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] px-4 py-4 text-left disabled:opacity-50"
+              className="rounded-[20px] bg-[var(--surface)] px-4 py-4 text-left disabled:opacity-50"
             >
               <p className="text-sm font-semibold">{minutes} minutes</p>
               <p className="mt-1 text-xs text-secondary">
@@ -591,6 +611,18 @@ function FolderBulkCadenceSheet({
         </div>
       </div>
     </div>
+  );
+}
+
+function HighlightBackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <IconButton
+      onClick={onClick}
+      aria-label="Go back"
+      variant="accent"
+    >
+      <ArrowLeft className="size-4" />
+    </IconButton>
   );
 }
 

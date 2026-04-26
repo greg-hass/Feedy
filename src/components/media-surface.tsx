@@ -209,7 +209,7 @@ function NativeVideoPlayer({
       playsInline
       poster={poster ?? undefined}
       preload="metadata"
-      className="aspect-video w-full bg-black"
+      className="aspect-video w-full bg-[var(--text-primary)]"
       aria-label={title}
       onError={() => {
         onError?.();
@@ -283,7 +283,7 @@ function NativeMediaSurface({
   }
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden bg-black">
+    <div className="relative aspect-video w-full overflow-hidden bg-[var(--text-primary)]">
       <NativeVideoPlayer
         itemId={itemId}
         title={title}
@@ -301,7 +301,7 @@ function NativeMediaSurface({
         }}
       />
       {!nativeSourcePlaying ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/90">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--text-primary)]/90">
           {poster ? (
             <img
               src={poster}
@@ -310,7 +310,7 @@ function NativeMediaSurface({
               loading="eager"
             />
           ) : null}
-          <div className="relative z-10 h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white/90" />
+          <div className="relative z-10 h-10 w-10 animate-spin rounded-full border-2 border-[var(--surface)]/20 border-t-[var(--surface)]/90" />
         </div>
       ) : null}
     </div>

@@ -159,6 +159,13 @@ function buildSourceTypeFilter(
 }
 
 export async function getFeedAndFolderCounts(userId: string) {
+  const hideYouTubeShorts = (
+    await prisma.user.findUnique({
+      where: { id: userId },
+      select: { settings: { select: { hideYouTubeShorts: true } } },
+    })
+  )?.settings?.hideYouTubeShorts ?? false;
+
   const rows = await prisma.$queryRaw<FeedFolderCountRow[]>(Prisma.sql`
     SELECT
       CASE WHEN GROUPING(f."id") = 0 THEN f."id" ELSE NULL END AS "feedId",
@@ -166,7 +173,12 @@ export async function getFeedAndFolderCounts(userId: string) {
       COUNT(*)::bigint AS "totalCount",
       COUNT(*) FILTER (WHERE rs.id IS NULL)::bigint AS "unreadCount"
     FROM "Feed" f
-    LEFT JOIN "Item" i ON i."feedId" = f.id
+    LEFT JOIN "Item" i
+      ON i."feedId" = f.id
+      AND (
+        NOT ${hideYouTubeShorts}
+        OR COALESCE(i."youtubeIsShort", false) = false
+      )
     LEFT JOIN "ReadState" rs
       ON rs."itemId" = i.id
       AND rs."userId" = ${userId}
@@ -200,6 +212,12 @@ async function buildTimelineQuery(
   includeExtraItem = false,
 ){
   const sourceTypeFilter = buildSourceTypeFilter(options?.sourceFilter);
+  const hideYouTubeShorts = (
+    await prisma.user.findUnique({
+      where: { id: userId },
+      select: { settings: { select: { hideYouTubeShorts: true } } },
+    })
+  )?.settings?.hideYouTubeShorts ?? false;
 
   const stateWhere =
     options?.saved
@@ -258,9 +276,14 @@ async function buildTimelineQuery(
       },
       ...stateWhere,
       ...(!options?.saved && !options?.feedId && !options?.folderId ? { mutedByRule: false } : {}),
+      ...(hideYouTubeShorts ? { youtubeIsShort: false } : {}),
       ...searchWhere,
     },
-    orderBy: [{ publishedAt: "desc" }, { discoveredAt: "desc" }, { uniqueKey: "desc" }],
+    orderBy: [
+      { publishedAt: { sort: "desc", nulls: "last" } },
+      { discoveredAt: "desc" },
+      { uniqueKey: "desc" },
+    ],
     take: includeExtraItem ? pageSize + 1 : pageSize,
     ...(options?.cursor ? { cursor: { uniqueKey: options.cursor }, skip: 1 } : {}),
     select: {
@@ -291,6 +314,13 @@ async function loadTimelineItemRecords(
   return prisma.item.findMany(query) as Promise<TimelineItemRecord[]>;
 }
 export async function getLibraryCounts(userId: string) {
+  const hideYouTubeShorts = (
+    await prisma.user.findUnique({
+      where: { id: userId },
+      select: { settings: { select: { hideYouTubeShorts: true } } },
+    })
+  )?.settings?.hideYouTubeShorts ?? false;
+
   const [row] = await prisma.$queryRaw<LibraryCountRow[]>(Prisma.sql`
     SELECT
       (
@@ -303,6 +333,10 @@ export async function getLibraryCounts(userId: string) {
         WHERE f."userId" = ${userId}
           AND f."excludeFromTimeline" = false
           AND i."mutedByRule" = false
+          AND (
+            NOT ${hideYouTubeShorts}
+            OR COALESCE(i."youtubeIsShort", false) = false
+          )
           AND rs.id IS NULL
       ) AS "unreadTotal",
       (

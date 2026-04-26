@@ -33,11 +33,12 @@ export async function syncSingleUserFromEnv(client: SingleUserClient = prisma) {
         username: env.APP_USERNAME,
         passwordHash,
         settings: existing.settings
-          ? {
+            ? {
               update: {
                 refreshIntervalMinutes:
                   existing.settings.refreshIntervalMinutes || env.REFRESH_DEFAULT_INTERVAL_MINUTES,
                 itemRetentionDays: existing.settings.itemRetentionDays || 90,
+                hideYouTubeShorts: existing.settings.hideYouTubeShorts ?? false,
               },
             }
           : {
@@ -45,6 +46,7 @@ export async function syncSingleUserFromEnv(client: SingleUserClient = prisma) {
                 theme: ThemePreference.SYSTEM,
                 accentColor: AccentPreference.EMERALD,
                 itemRetentionDays: 90,
+                hideYouTubeShorts: false,
                 refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
               },
             },
@@ -64,6 +66,7 @@ export async function syncSingleUserFromEnv(client: SingleUserClient = prisma) {
           theme: ThemePreference.SYSTEM,
           accentColor: AccentPreference.EMERALD,
           itemRetentionDays: 90,
+          hideYouTubeShorts: false,
           refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
         },
       },

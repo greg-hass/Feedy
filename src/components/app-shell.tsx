@@ -6,6 +6,7 @@ import { Bookmark, Compass, Flame, LogOut, Rss, Settings } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
+import { IconButton } from "@/components/ui/icon-button";
 import { api } from "@/lib/client";
 import { isActiveTabTap, vibrateIfSupported } from "@/lib/tab-interactions";
 import type { MeResponse } from "@/types/app";
@@ -81,14 +82,9 @@ export function MobileShell({
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {actions}
-                <button
-                  onClick={() => logout.mutate()}
-                  className="flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-secondary)' }}
-                  aria-label="Sign out"
-                >
-                  <LogOut className="size-[18px]" />
-                </button>
+                <IconButton onClick={() => logout.mutate()} aria-label="Sign out">
+                  <LogOut className="size-4" />
+                </IconButton>
               </div>
             </div>
 
@@ -238,10 +234,12 @@ export function EmptyState({
   title,
   body,
   icon,
+  action,
 }: {
   title: string;
   body: string;
   icon?: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
     <div className="rounded-[24px] px-6 py-12 text-center" style={{ backgroundColor: 'var(--surface)', border: '1px dashed var(--border)' }}>
@@ -252,6 +250,7 @@ export function EmptyState({
       )}
       <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
       <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{body}</p>
+      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   );
 }

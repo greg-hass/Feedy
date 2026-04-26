@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  /* Light Mode */
-  --app-bg: #fafafa;
+  /* Light Mode - clean iOS-style */
+  --app-bg: #f5f5f7;
   --surface: #ffffff;
-  --surface-strong: #f5f5f5;
-  --surface-muted: #e5e5e5;
-  --text-primary: #171717;
-  --text-secondary: #737373;
-  --border: #e5e5e5;
+  --surface-strong: #f5f5f7;
+  --surface-muted: #f5f5f7;
+  --text-primary: #000000;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #a1a1a6;
+  --border: rgba(0, 0, 0, 0.08);
   --accent: #10b981;
   --accent-strong: #059669;
   --accent-soft: #d1fae5;
@@ -16,7 +17,9 @@
   --accent-rgb: 16, 185, 129;
   --accent-contrast: #03110b;
   --danger: #ef4444;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --success: #ef4444;
+  --success-contrast: #ffffff;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .dark {
@@ -27,6 +30,7 @@
   --surface-muted: #1f1f1f;
   --text-primary: #fafafa;
   --text-secondary: #a3a3a3;
+  --text-tertiary: #737373;
   --border: #262626;
   --accent: #10b981;
   --accent-strong: #059669;
@@ -35,6 +39,8 @@
   --accent-rgb: 16, 185, 129;
   --accent-contrast: #03110b;
   --danger: #ef4444;
+  --success: #f87171;
+  --success-contrast: #450a0a;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
@@ -153,6 +159,35 @@
   --font-mono: var(--font-mono);
 }
 
+/* Semantic status colors that adapt to the theme */
+:root {
+  --status-healthy: #059669;
+  --status-healthy-bg: rgba(5, 150, 105, 0.1);
+  --status-healthy-dot: #10b981;
+  --status-warning: #d97706;
+  --status-warning-bg: rgba(217, 119, 6, 0.1);
+  --status-warning-dot: #f59e0b;
+  --status-error: #dc2626;
+  --status-error-bg: rgba(220, 38, 38, 0.1);
+  --status-error-dot: #ef4444;
+  --status-pending: #78716c;
+  --status-pending-dot: #a8a29e;
+}
+
+.dark {
+  --status-healthy: #34d399;
+  --status-healthy-bg: rgba(52, 211, 153, 0.1);
+  --status-healthy-dot: #34d399;
+  --status-warning: #fbbf24;
+  --status-warning-bg: rgba(251, 191, 36, 0.1);
+  --status-warning-dot: #fbbf24;
+  --status-error: #fb7185;
+  --status-error-bg: rgba(251, 113, 133, 0.1);
+  --status-error-dot: #fb7185;
+  --status-pending: #a3a3a3;
+  --status-pending-dot: #a3a3a3;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -202,7 +237,17 @@ select {
 
 .surface-elevated {
   background: var(--surface);
-  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Premium card treatment - pure white floating on warm background */
+.card {
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dark .card {
+  background: var(--surface-strong);
   box-shadow: var(--shadow);
 }
 
@@ -275,9 +320,51 @@ select {
   }
 }
 
+.bookmark-flip {
+  animation: bookmark-flip 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes bookmark-flip {
+  0% {
+    transform: rotateY(0deg) scale(1);
+  }
+  40% {
+    transform: rotateY(180deg) scale(1.2);
+  }
+  100% {
+    transform: rotateY(360deg) scale(1);
+  }
+}
+
+@keyframes back-button-attention {
+  0% {
+    transform: scale(1);
+    background-color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+  }
+  50% {
+    transform: scale(1.15);
+    background-color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+  }
+  100% {
+    transform: scale(1);
+    background-color: var(--surface) !important;
+    border-color: var(--subtle) !important;
+    color: var(--secondary) !important;
+  }
+}
+
+.back-button-attention {
+  animation: back-button-attention 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.3s 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .screen-fade,
-  .screen-enter {
+  .screen-enter,
+  .back-button-attention {
     animation: none;
   }
 

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { ItemCard } from "@/components/item-card";
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { MobileShell, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
 import { api } from "@/lib/client";
 import { splitMutePatterns } from "@/lib/feed/mute-rules";
@@ -38,6 +39,22 @@ export default function FeedDetailPage() {
 
   const feed = me.data?.navigation.feeds.find((f) => f.id === params.feedId);
   const feedTitle = decodeHtmlEntities(feed?.label || feed?.title || "");
+  const goBack = () => {
+    if (typeof document !== "undefined") {
+      try {
+        const referrerUrl = document.referrer ? new URL(document.referrer) : null;
+        if (!referrerUrl || referrerUrl.host !== window.location.host) {
+          router.replace("/app/feeds");
+          return;
+        }
+      } catch {
+        router.replace("/app/feeds");
+        return;
+      }
+    }
+
+    router.back();
+  };
 
   const refresh = useMutation({
     mutationFn: () => api(`/api/feeds/${params.feedId}/refresh`, { method: "POST" }),
@@ -86,46 +103,46 @@ export default function FeedDetailPage() {
   }
 
   return (
-    <div className="screen-fade">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-8 pt-4">
-        <header className="sticky top-3 z-20">
-          <div className="surface rounded-[24px] border border-subtle px-4 py-3">
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.back()} className="rounded-lg p-1 text-secondary">
-                <ArrowLeft className="size-5" />
-              </button>
-              <FeedAvatar feedId={feed.id} title={feedTitle} />
-              <div className="min-w-0 flex-1">
-                <h1 className="text-base font-semibold truncate">{feedTitle}</h1>
-                <p className="text-xs text-secondary">
-                  {feed.counts.unreadCount} unread · {relativeTime(feed.lastRefreshedAt)}
+    <MobileShell
+      title={feedTitle}
+      subtitle={`${feed.counts.unreadCount} unread · ${relativeTime(feed.lastRefreshedAt)}`}
+      actions={
+        <div className="flex items-center gap-2">
+          <IconButton onClick={goBack} aria-label="Go back">
+            <ArrowLeft className="size-4" />
+          </IconButton>
+          <IconButton
+            onClick={() => refresh.mutate()}
+            disabled={refresh.isPending || refreshQueued}
+            aria-label={refreshQueued || refresh.isPending ? "Refreshing feed" : "Refresh feed"}
+          >
+            <RefreshCcw className={`size-4 ${(refresh.isPending || refreshQueued) ? "animate-spin" : ""}`} />
+          </IconButton>
+          <IconButton onClick={() => setShowEdit(true)} aria-label="Edit feed">
+            <MoreHorizontal className="size-4" />
+          </IconButton>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+          <div className="flex items-center gap-3">
+            <FeedAvatar feedId={feed.id} title={feedTitle} />
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-base font-semibold">{feedTitle}</h1>
+              <p className="text-xs text-secondary">
+                {feed.counts.unreadCount} unread · {relativeTime(feed.lastRefreshedAt)}
+              </p>
+              {refreshQueued ? (
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                  Refreshing
                 </p>
-                {refreshQueued ? (
-                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-                    Refreshing
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => refresh.mutate()}
-                  disabled={refresh.isPending || refreshQueued}
-                  className="rounded-lg p-2 text-secondary disabled:opacity-70"
-                >
-                  <RefreshCcw className={`size-4 ${(refresh.isPending || refreshQueued) ? "animate-spin" : ""}`} />
-                </button>
-                <button
-                  onClick={() => setShowEdit(true)}
-                  className="rounded-lg p-2 text-secondary"
-                >
-                  <MoreHorizontal className="size-4" />
-                </button>
-              </div>
+              ) : null}
             </div>
           </div>
-        </header>
+        </div>
 
-        <div className="mt-3 flex gap-2">
+        <div className="flex gap-2">
           <Button
             variant="secondary"
             onClick={() => markRead.mutate()}
@@ -143,7 +160,7 @@ export default function FeedDetailPage() {
           )}
         </div>
 
-        <main className="mt-4 flex-1">
+        <main className="flex-1">
           {items.isLoading ? (
             <LoadingSkeleton />
           ) : items.error ? (
@@ -170,7 +187,7 @@ export default function FeedDetailPage() {
           onDelete={() => deleteFeed.mutate()}
         />
       )}
-    </div>
+    </MobileShell>
   );
 }
 
@@ -220,8 +237,8 @@ function EditFeedModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
-      <div className="w-full max-w-md rounded-t-[24px] bg-[var(--surface-strong)] p-5 pb-8" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40" onClick={onClose}>
+      <div className="w-full max-w-md rounded-t-[24px] bg-[var(--surface)] p-5 pb-8" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-base font-semibold">Edit feed</h3>
         <p className="mt-1 truncate text-xs text-secondary">{feed.sourceUrl}</p>
         <label className="mt-4 block">
@@ -261,7 +278,7 @@ function EditFeedModal({
           </span>
           Hide from Timeline
         </button>
-        <div className="mt-3 rounded-[18px] border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_78%,black_22%)] p-3.5">
+        <div className="mt-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] p-3.5">
           <p className="text-sm font-semibold">Mute rules</p>
           <p className="mt-1 text-xs text-secondary">Match titles or authors for this feed only.</p>
           <textarea
@@ -305,7 +322,7 @@ function EditFeedModal({
             Auto-mark matching items as read
           </button>
         </div>
-        <button onClick={() => mutation.mutate()} className="mt-4 w-full rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-white">
+        <button onClick={() => mutation.mutate()} className="mt-4 w-full rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-[var(--accent-contrast)]">
           Save
         </button>
         <button

@@ -17,7 +17,7 @@ export function TimelineRefreshToast({
 
   return (
     <div className="fixed inset-x-0 bottom-[84px] z-40 px-5">
-      <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_92%,black_8%)] px-4 py-3 shadow-[0_20px_40px_rgba(0,0,0,0.22)]">
+      <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-[24px] border border-subtle bg-[var(--surface)] px-4 py-3 shadow-[0_20px_40px_rgba(0,0,0,0.22)]">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[var(--text-primary)]">{count} new articles</p>
           <p className="text-xs text-secondary">The timeline stayed in place while we refreshed it.</p>

@@ -12,7 +12,7 @@ const buttonVariants = cva(
         primary:
           "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.26)]",
         secondary:
-          "border border-subtle bg-[color-mix(in_srgb,var(--surface-muted)_88%,black_12%)] text-[var(--text-primary)]",
+          "border border-subtle bg-[var(--surface-muted)] text-[var(--text-primary)]",
         ghost: "bg-transparent text-[var(--text-primary)]",
         danger: "bg-[var(--danger)] text-white",
       },

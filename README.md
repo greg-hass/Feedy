@@ -2,6 +2,8 @@
 
 Feedy is a production-oriented, self-hosted, mobile-first PWA feed reader for standard RSS/Atom feeds, Reddit via RSS only, and YouTube via RSS only. The whole stack runs through Docker with PostgreSQL, Redis, a Next.js app, and a BullMQ worker.
 
+Repository: [github.com/greg-hass/Feedy](https://github.com/greg-hass/Feedy)
+
 ## Stack
 
 - Next.js 16 + App Router + TypeScript

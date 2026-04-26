@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
@@ -18,8 +19,26 @@ export default function ReaderPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
+  const [optimisticBookmarked, setOptimisticBookmarked] = useState<boolean | null>(null);
   const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
   const readerTopInset = "calc(max(12px, env(safe-area-inset-top)) + 3.5rem)";
+
+  const goBack = () => {
+    if (typeof document !== "undefined") {
+      try {
+        const referrerUrl = document.referrer ? new URL(document.referrer) : null;
+        if (!referrerUrl || referrerUrl.host !== window.location.host) {
+          router.replace("/app/unread");
+          return;
+        }
+      } catch {
+        router.replace("/app/unread");
+        return;
+      }
+    }
+
+    router.back();
+  };
 
   const forceScrollTop = () => {
     window.scrollTo(0, 0);
@@ -56,12 +75,20 @@ export default function ReaderPage() {
     queryFn: () => api<ItemRecord>(`/api/items/${params.itemId}/reader`),
   });
 
+  const isBookmarked = optimisticBookmarked ?? item.data?.bookmarked ?? false;
+
   const state = useMutation({
     mutationFn: (body: { read?: boolean; bookmarked?: boolean }) =>
       api(`/api/items/${params.itemId}/state`, {
         method: "POST",
         body: JSON.stringify(body),
       }),
+    onMutate: async (variables) => {
+      if (typeof variables.bookmarked === "boolean") {
+        setOptimisticBookmarked(variables.bookmarked);
+        setBookmarkAnimating(true);
+      }
+    },
     onSuccess: async (_result, variables) => {
       if (variables.read === true && typeof window !== "undefined") {
         window.sessionStorage.setItem(timelinePendingReadStorageKey, params.itemId);
@@ -71,6 +98,12 @@ export default function ReaderPage() {
       });
       updateReaderStateCache(queryClient, params.itemId, variables);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: () => {
+      setOptimisticBookmarked(null);
+    },
+    onSettled: () => {
+      setOptimisticBookmarked(null);
     },
   });
 
@@ -124,7 +157,7 @@ export default function ReaderPage() {
   if (item.isLoading) {
     return (
       <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
-        <div className="animate-pulse rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-5 shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
+        <div className="animate-pulse rounded-[24px] border border-subtle bg-[var(--surface)] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <div className="h-3 w-20 rounded-full bg-[var(--surface-muted)]" />
           <div className="mt-3 h-8 w-3/4 rounded-full bg-[var(--surface-muted)]" />
           <div className="mt-4 h-5 w-1/2 rounded-full bg-[var(--surface-muted)]" />
@@ -141,9 +174,9 @@ export default function ReaderPage() {
   if (!item.data) {
     return (
       <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
-        <div className="rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] p-6 text-center shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
+        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <p className="text-sm text-secondary">Failed to load article.</p>
-          <Button onClick={() => router.back()} className="mt-4">Go back</Button>
+          <Button onClick={goBack} className="mt-4">Go back</Button>
         </div>
       </div>
     );
@@ -154,57 +187,49 @@ export default function ReaderPage() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
       <div
-        className="overflow-hidden rounded-[24px] border border-subtle bg-[color-mix(in_srgb,var(--surface)_88%,black_12%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
+        className="overflow-hidden rounded-[24px] border border-subtle bg-[var(--surface)] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
         style={{ overflowAnchor: "none" }}
       >
         <div className="px-5 pt-5">
           <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
-            >
-              <ArrowLeft className="size-5" />
-            </button>
+            <IconButton onClick={goBack} aria-label="Go back">
+              <ArrowLeft className="size-4" />
+            </IconButton>
             <div className="flex items-center gap-2">
-              <button
+              <IconButton
+                variant={isBookmarked ? "accent" : "default"}
                 onClick={() => {
-                  if (!data.bookmarked) {
-                    setBookmarkAnimating(true);
-                  }
                   vibrateIfSupported(window.navigator, 10);
-                  state.mutate({ bookmarked: !data.bookmarked });
+                  state.mutate({ bookmarked: !isBookmarked });
                 }}
-                className={`rounded-xl border p-2 ${
-                  data.bookmarked
-                    ? `border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.22)] ${
-                        bookmarkAnimating ? "bookmark-pop" : ""
-                      }`
-                    : "border-subtle bg-[var(--surface-muted)] text-secondary"
-                }`}
+                aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
               >
-                <Bookmark className="size-5" fill={data.bookmarked ? "currentColor" : "none"} />
-              </button>
+                <Bookmark
+                  className={`size-4 ${bookmarkAnimating ? "bookmark-flip" : ""}`}
+                  fill={isBookmarked ? "currentColor" : "none"}
+                />
+              </IconButton>
               {data.canonicalUrl && (
                 <>
-                  <button
-                    type="button"
+                  <IconButton
                     onClick={() => {
                       if (!data.canonicalUrl) {
                         return;
                       }
                       void shareArticle(data.title, data.canonicalUrl);
                     }}
-                    className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
+                    aria-label="Share article"
                   >
-                    <Share2 className="size-5" />
-                  </button>
+                    <Share2 className="size-4" />
+                  </IconButton>
                   <a
                     href={data.canonicalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-xl border border-subtle bg-[var(--surface-muted)] p-2 text-secondary"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
+                    aria-label="Open original article"
                   >
-                    <ExternalLink className="size-5" />
+                    <ExternalLink className="size-4" />
                   </a>
                 </>
               )}

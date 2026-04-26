@@ -4,6 +4,7 @@ import { JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndCacheIcon } from "@/lib/feed/icons";
 import { refreshFeed } from "@/lib/feed/service";
+import { probeYouTubeShort } from "@/lib/feed/youtube";
 import { loadPrimaryUser, syncSingleUserFromEnv } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { enqueueFeedRefresh, getRefreshQueue, iconQueueName, refreshQueueName } from "@/lib/queue";
@@ -99,6 +100,62 @@ async function runRetentionCleanup() {
   }
 }
 
+async function backfillYouTubeShortFlags() {
+  const batchSize = 25;
+  const concurrency = 5;
+  let processedCount = 0;
+
+  while (true) {
+    const pendingItems = await prisma.item.findMany({
+      where: {
+        youtubeVideoId: { not: null },
+        youtubeShortCheckedAt: null,
+      },
+      select: {
+        id: true,
+        youtubeVideoId: true,
+      },
+      orderBy: {
+        id: "asc",
+      },
+      take: batchSize,
+    });
+
+    if (pendingItems.length === 0) {
+      break;
+    }
+
+    console.log(`[worker] Backfilling YouTube Shorts flags for ${pendingItems.length} items`);
+
+    for (let index = 0; index < pendingItems.length; index += concurrency) {
+      const batch = pendingItems.slice(index, index + concurrency);
+      await Promise.all(
+        batch.map(async (item) => {
+          const youtubeVideoId = item.youtubeVideoId;
+          if (!youtubeVideoId) {
+            return;
+          }
+
+          const youtubeIsShort = await probeYouTubeShort(youtubeVideoId);
+          await prisma.item.update({
+            where: { id: item.id },
+            data: {
+              youtubeIsShort,
+              youtubeShortCheckedAt: new Date(),
+            },
+          });
+        }),
+      );
+    }
+
+    processedCount += pendingItems.length;
+  }
+
+  if (processedCount > 0) {
+    console.log(`[worker] Backfilled YouTube Shorts flags for ${processedCount} items`);
+  }
+}
+
 async function boot() {
   ensureDataDirs();
   await syncSingleUserFromEnv();
@@ -149,6 +206,9 @@ async function boot() {
 
   await scheduleDueFeeds();
   await runRetentionCleanup();
+  void backfillYouTubeShortFlags().catch((error) => {
+    console.error("[worker] YouTube Shorts backfill failed", error);
+  });
   setInterval(() => {
     void scheduleDueFeeds();
   }, 60_000);
