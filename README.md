@@ -185,6 +185,20 @@ Run worker locally if you already have PostgreSQL and Redis available:
 npm run worker
 ```
 
+## Ubuntu Server Deploy
+
+Feedy can be deployed on an Ubuntu server with Docker Compose using the published image at `ghcr.io/greg-hass/feedy:latest`.
+
+1. Clone the repo on the server.
+2. Copy `.env.example` to `.env` and set `APP_URL`, `AUTH_SECRET`, `APP_USERNAME`, `APP_PASSWORD`, and `POSTGRES_PASSWORD`.
+3. Start the stack:
+
+```bash
+docker compose -f docker-compose.deploy.yml up -d
+```
+
+The GitHub Actions workflow at `.github/workflows/publish-ghcr.yml` publishes the image to GHCR automatically on pushes to `main`.
+
 ## Backup Notes
 
 For full recovery, keep:
