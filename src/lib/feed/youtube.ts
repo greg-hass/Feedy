@@ -68,7 +68,23 @@ type ParsedYouTubeItem = {
   enclosure?: { url?: string | null } | null;
 };
 
+const MAX_SHORTS_PROBE_CACHE_ENTRIES = 500;
 const shortsProbeCache = new Map<string, Promise<boolean>>();
+
+function rememberShortsProbe(videoId: string, probe: Promise<boolean>) {
+  if (shortsProbeCache.has(videoId)) {
+    shortsProbeCache.delete(videoId);
+  }
+
+  shortsProbeCache.set(videoId, probe);
+  while (shortsProbeCache.size > MAX_SHORTS_PROBE_CACHE_ENTRIES) {
+    const oldestKey = shortsProbeCache.keys().next().value;
+    if (!oldestKey) {
+      break;
+    }
+    shortsProbeCache.delete(oldestKey);
+  }
+}
 
 export function getYouTubeThumbnailUrls(videoId: string) {
   return [
@@ -100,7 +116,7 @@ export function probeYouTubeShort(videoId: string) {
     }
   })();
 
-  shortsProbeCache.set(videoId, probe);
+  rememberShortsProbe(videoId, probe);
   return probe;
 }
 

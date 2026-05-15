@@ -46,7 +46,7 @@ export const itemStateSchema = z.object({
 export const feedSourceFilterSchema = z.enum(["ALL", "RSS", "REDDIT", "YOUTUBE"]).default("ALL");
 
 export const searchSchema = z.object({
-  q: z.string().default(""),
+  q: z.string().trim().max(240).default(""),
   sourceFilter: feedSourceFilterSchema.optional().default("ALL"),
 });
 

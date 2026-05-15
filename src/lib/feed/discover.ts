@@ -635,7 +635,11 @@ async function discoverFromWebsite(url: string): Promise<DiscoveryResult[]> {
               ? "YOUTUBE_RSS"
               : "RSS",
       });
-    } catch {
+    } catch (error) {
+      console.warn("[discover] Feed autodiscovery failed", {
+        url: candidate,
+        error: error instanceof Error ? error.message : String(error),
+      });
       continue;
     }
   }
@@ -886,7 +890,11 @@ export async function discoverFeeds(
 
       const discovered = await discoverFromWebsite(decoded);
       results.push(...discovered.filter((result) => result.sourceType === "RSS"));
-    } catch {
+    } catch (error) {
+      console.warn("[discover] Search result discovery failed", {
+        url: rawUrl,
+        error: error instanceof Error ? error.message : String(error),
+      });
       continue;
     }
   }

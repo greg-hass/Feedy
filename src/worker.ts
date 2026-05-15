@@ -204,8 +204,12 @@ async function boot() {
     console.error("Icon job failed", job?.id, error);
   });
 
-  await scheduleDueFeeds();
-  await runRetentionCleanup();
+  void scheduleDueFeeds().catch((error) => {
+    console.error("[worker] Initial feed scheduling failed", error);
+  });
+  void runRetentionCleanup().catch((error) => {
+    console.error("[worker] Initial retention cleanup failed", error);
+  });
   void backfillYouTubeShortFlags().catch((error) => {
     console.error("[worker] YouTube Shorts backfill failed", error);
   });

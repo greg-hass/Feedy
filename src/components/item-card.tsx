@@ -132,9 +132,6 @@ export const ItemCard = memo(function ItemCard({
     <article
       data-timeline-item-id={item.id}
       className={`group overflow-hidden rounded-[24px] border border-subtle bg-surface transition-all duration-300 ${hoverCardClass}`}
-      // contentVisibility:auto was removed — its containIntrinsicSize placeholder
-      // gave the browser an inaccurate page height on fresh mount, making pixel-
-      // based scroll restoration unreliable after navigating back from an article.
     >
       {thumbnailUrl && (
         isYouTube && item.youtubeVideoId ? (
