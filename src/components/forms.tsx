@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Trash2, Check, ArrowUp, ArrowDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { splitMutePatterns } from "@/lib/feed/mute-rules";

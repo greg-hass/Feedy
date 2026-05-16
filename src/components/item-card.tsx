@@ -60,7 +60,7 @@ export const ItemCard = memo(function ItemCard({
       JSON.stringify({
         // Save the clicked item's id so restoration can scroll directly to
         // the element rather than relying on a pixel offset. Pixel offsets are
-        // fragile because contentVisibility:auto gives the browser a fake page
+        // fragile when virtualized content gives the browser an estimated page
         // height on fresh mount, causing scrollTo to land at the wrong place.
         itemId: item.id,
         scrollY: Math.max(0, Math.round(window.scrollY)),

@@ -64,6 +64,18 @@ function detectSourceType(url: string, feedType?: string | null): FeedSourceType
   return FeedSourceType.RSS;
 }
 
+function detectFeedMarkupType(xml: string) {
+  if (/<feed\b[^>]*xmlns=["']http:\/\/www\.w3\.org\/2005\/Atom["']/i.test(xml)) {
+    return "atom";
+  }
+
+  if (/<rss\b/i.test(xml)) {
+    return "rss";
+  }
+
+  return null;
+}
+
 function hashUniqueKey(feedId: string, raw: string) {
   return createHash("sha256").update(`${feedId}:${raw}`).digest("hex");
 }
@@ -97,7 +109,7 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
   const xml = await response.text();
   const feed = await parser.parseString(xml);
   const resolvedFeedUrl = response.url?.trim() || url;
-  const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? null);
+  const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? detectFeedMarkupType(xml));
 
   return {
     title: decodeHtmlEntities(feed.title?.trim()) || "Untitled feed",
@@ -177,7 +189,7 @@ export async function fetchAndParseFeedConditionally(
   const xml = await response.text();
   const feed = await parser.parseString(xml);
   const resolvedFeedUrl = response.url?.trim() || url;
-  const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? null);
+  const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? detectFeedMarkupType(xml));
   const items: ParsedFeedItem[] = await Promise.all((feed.items ?? []).map(async (item) => {
     const extra = item as unknown as Record<string, unknown>;
     const canonicalUrl =

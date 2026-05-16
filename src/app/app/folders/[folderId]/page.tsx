@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, EyeOff, FolderOpen, MoreHorizontal, RefreshCcw, Trash2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { FeedAvatar } from "@/components/feed-avatar";
 import { EditFeedSheet } from "@/components/forms";
