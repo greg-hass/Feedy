@@ -1,7 +1,7 @@
 import sharp from "sharp";
 
 import { fetchWithTimeout } from "@/lib/http";
-import { getYouTubeThumbnailUrls } from "@/lib/feed/youtube";
+import { getYouTubeThumbnailUrls } from "@/lib/feed/youtube-thumbnail";
 
 const youtubePreviewCache = new Map<string, Promise<string>>();
 

@@ -108,7 +108,8 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
 
   const xml = await response.text();
   const feed = await parser.parseString(xml);
-  const resolvedFeedUrl = response.url?.trim() || url;
+  const resolvedFeedUrl =
+    ((response as Response & { finalUrl?: string }).finalUrl ?? response.url)?.trim() || url;
   const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? detectFeedMarkupType(xml));
 
   return {
@@ -188,7 +189,8 @@ export async function fetchAndParseFeedConditionally(
 
   const xml = await response.text();
   const feed = await parser.parseString(xml);
-  const resolvedFeedUrl = response.url?.trim() || url;
+  const resolvedFeedUrl =
+    ((response as Response & { finalUrl?: string }).finalUrl ?? response.url)?.trim() || url;
   const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? detectFeedMarkupType(xml));
   const items: ParsedFeedItem[] = await Promise.all((feed.items ?? []).map(async (item) => {
     const extra = item as unknown as Record<string, unknown>;

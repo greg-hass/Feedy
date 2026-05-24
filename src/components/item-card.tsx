@@ -9,7 +9,7 @@ import { memo, useEffect, useState } from "react";
 import { IconButton } from "@/components/ui/icon-button";
 import { SearchHighlight } from "@/components/search-highlight";
 import { api } from "@/lib/client";
-import { getYouTubeThumbnailUrls } from "@/lib/feed/youtube";
+import { getYouTubeThumbnailUrls } from "@/lib/feed/youtube-thumbnail";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";

@@ -7,20 +7,6 @@ import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
 
 const rateLimiter = createFixedWindowRateLimiter();
 
-function getRequestIp(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const forwardedIp = forwardedFor?.split(",")[0]?.trim();
-  return forwardedIp || request.headers.get("x-real-ip") || request.headers.get("cf-connecting-ip") || "unknown";
-}
-
-function requestOrigin(request: Request) {
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost || request.headers.get("host") || new URL(request.url).host;
-  const protocol = forwardedProto || new URL(request.url).protocol.replace(":", "") || "http";
-  return `${protocol}://${host}`;
-}
-
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get("content-type") || "";
@@ -29,21 +15,29 @@ export async function POST(request: Request) {
       : loginSchema.parse(
           Object.fromEntries((await request.formData()).entries()),
         );
-    const loginAttempt = await rateLimiter.check(`login:${getRequestIp(request)}:${input.username.toLowerCase()}`, {
-      limit: 5,
-      windowSeconds: 15 * 60,
-    });
-    if (!loginAttempt.allowed) {
+    const normalizedUsername = input.username.trim().toLowerCase();
+    const [userAttempt, globalAttempt] = await Promise.all([
+      rateLimiter.check(`login:user:${normalizedUsername}`, {
+        limit: 5,
+        windowSeconds: 15 * 60,
+      }),
+      rateLimiter.check("login:global", {
+        limit: 15,
+        windowSeconds: 15 * 60,
+      }),
+    ]);
+    if (!userAttempt.allowed || !globalAttempt.allowed) {
+      const retryAfterSeconds = Math.max(userAttempt.retryAfterSeconds, globalAttempt.retryAfterSeconds);
       if (contentType.includes("application/json")) {
         const response = apiError("Too many login attempts", 429);
-        response.headers.set("Retry-After", String(loginAttempt.retryAfterSeconds));
+        response.headers.set("Retry-After", String(retryAfterSeconds));
         return response;
       }
 
-      const response = NextResponse.redirect(new URL("/login?error=rate_limited", requestOrigin(request)), {
+      const response = NextResponse.redirect(new URL("/login?error=rate_limited", request.url), {
         status: 303,
       });
-      response.headers.set("Retry-After", String(loginAttempt.retryAfterSeconds));
+      response.headers.set("Retry-After", String(retryAfterSeconds));
       return response;
     }
     const user = await authenticate(input.username, input.password);
@@ -52,7 +46,7 @@ export async function POST(request: Request) {
         return apiError("Invalid credentials", 401);
       }
 
-      return NextResponse.redirect(new URL("/login?error=invalid", requestOrigin(request)), {
+      return NextResponse.redirect(new URL("/login?error=invalid", request.url), {
         status: 303,
       });
     }
@@ -61,7 +55,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.redirect(new URL("/app/unread", requestOrigin(request)), {
+    return NextResponse.redirect(new URL("/app/unread", request.url), {
       status: 303,
     });
   } catch (error) {
@@ -70,7 +64,7 @@ export async function POST(request: Request) {
       return apiError(message);
     }
 
-    return NextResponse.redirect(new URL("/login?error=failed", requestOrigin(request)), {
+    return NextResponse.redirect(new URL("/login?error=failed", request.url), {
       status: 303,
     });
   }

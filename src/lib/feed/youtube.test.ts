@@ -39,6 +39,10 @@ describe("youtube feed helpers", () => {
     assert.equal(parseYouTubeFeedTarget("https://www.youtube.com/@GoogleDevelopers"), null);
   });
 
+  it("rejects lookalike youtube hosts", () => {
+    assert.equal(parseYouTubeFeedTarget("https://youtube.com.attacker.invalid/feeds/videos.xml?channel_id=proof"), null);
+  });
+
   it("parses youtube rss feed xml", async () => {
     const originalFetch = globalThis.fetch;
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -87,16 +91,17 @@ describe("youtube feed helpers", () => {
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (url.includes("/shorts/fYqOq0eJalk")) {
-        return {
-          ok: true,
-          url: "https://www.youtube.com/shorts/fYqOq0eJalk",
-        } as Response;
+        return new Response("", {
+          status: 200,
+        });
       }
 
-      return {
-        ok: false,
-        url: "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch?v=FCb4LSzPVmo",
-      } as Response;
+      return new Response("", {
+        status: 404,
+        headers: {
+          location: "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch?v=FCb4LSzPVmo",
+        },
+      });
     }) as typeof fetch;
 
     try {

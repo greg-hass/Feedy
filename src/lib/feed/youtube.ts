@@ -5,6 +5,7 @@ import Parser from "rss-parser";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import { fetchWithTimeout } from "@/lib/http";
 import { decodeHtmlEntities } from "@/lib/utils";
+import { getYouTubeThumbnailUrls } from "@/lib/feed/youtube-thumbnail";
 
 type YouTubeFeedTarget =
   | {
@@ -86,17 +87,6 @@ function rememberShortsProbe(videoId: string, probe: Promise<boolean>) {
   }
 }
 
-export function getYouTubeThumbnailUrls(videoId: string) {
-  return [
-    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-    `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
-    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-    `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
-    `https://i.ytimg.com/vi/${videoId}/default.jpg`,
-    `https://img.youtube.com/vi/${videoId}/0.jpg`,
-  ];
-}
-
 export function probeYouTubeShort(videoId: string) {
   const cached = shortsProbeCache.get(videoId);
   if (cached) {
@@ -110,7 +100,8 @@ export function probeYouTubeShort(videoId: string) {
           "user-agent": "Feedy/1.0",
         },
       });
-      return response.ok && response.url.includes(`/shorts/${videoId}`);
+      const resolvedUrl = (response as Response & { finalUrl?: string }).finalUrl ?? response.url;
+      return response.ok && resolvedUrl.includes(`/shorts/${videoId}`);
     } catch {
       return false;
     }
@@ -234,8 +225,9 @@ function normalizeFeedUrl(url: string) {
 export function parseYouTubeFeedTarget(url: string): YouTubeFeedTarget | null {
   try {
     const parsed = new URL(url);
+    const allowedHosts = new Set(["youtube.com", "www.youtube.com"]);
 
-    if (!parsed.hostname.includes("youtube.com")) {
+    if (!allowedHosts.has(parsed.hostname)) {
       return null;
     }
 

@@ -90,6 +90,12 @@ export async function loadPrimaryUser(client: SingleUserClient = prisma) {
   });
 }
 
+export async function loadUserForAuthentication(client: SingleUserClient = prisma) {
+  return client.user.findFirst({
+    include: { settings: true },
+  });
+}
+
 async function signSession(payload: SessionPayload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -146,8 +152,17 @@ export async function requireUser() {
   return user;
 }
 
-export async function authenticate(username: string, password: string) {
-  const user = await syncSingleUserFromEnv();
+export async function authenticate(
+  username: string,
+  password: string,
+  client: SingleUserClient = prisma,
+  createSessionFn: typeof createSession = createSession,
+) {
+  const user = await loadUserForAuthentication(client);
+  if (!user) {
+    return null;
+  }
+
   if (user.username !== username) {
     return null;
   }
@@ -157,6 +172,6 @@ export async function authenticate(username: string, password: string) {
     return null;
   }
 
-  await createSession(user.id, user.username);
+  await createSessionFn(user.id, user.username);
   return user;
 }

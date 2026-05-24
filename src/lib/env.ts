@@ -20,7 +20,7 @@ const envSchema = z.object({
   DATA_DIR: z.string().default("./data"),
 });
 
-export const env = envSchema.parse({
+const parsedEnv = envSchema.parse({
   DATABASE_URL: process.env.DATABASE_URL,
   REDIS_URL: process.env.REDIS_URL,
   APP_URL: process.env.APP_URL,
@@ -41,3 +41,42 @@ export const env = envSchema.parse({
 });
 
 export const isProd = process.env.NODE_ENV === "production";
+const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+
+function isPublicProductionDeployment(appUrl: string) {
+  try {
+    const url = new URL(appUrl);
+    const hostname = url.hostname.toLowerCase();
+    return (
+      hostname !== "localhost" &&
+      !hostname.endsWith(".localhost") &&
+      !hostname.endsWith(".local") &&
+      !hostname.startsWith("127.") &&
+      hostname !== "::1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+if (isProd && !isProductionBuild && isPublicProductionDeployment(parsedEnv.APP_URL)) {
+  const problems: string[] = [];
+
+  if (parsedEnv.AUTH_SECRET === "development-build-secret-0001" || parsedEnv.AUTH_SECRET.length < 32) {
+    problems.push("AUTH_SECRET must be a random value of at least 32 characters");
+  }
+
+  if (parsedEnv.APP_PASSWORD === "change-me") {
+    problems.push("APP_PASSWORD must not use the default placeholder");
+  }
+
+  if (parsedEnv.COOKIE_SECURE !== "true") {
+    problems.push("COOKIE_SECURE must be true in production");
+  }
+
+  if (problems.length > 0) {
+    throw new Error(`Invalid production environment: ${problems.join("; ")}`);
+  }
+}
+
+export const env = parsedEnv;
