@@ -40,6 +40,8 @@ jobs:
         run: npm run lint
 
       - name: Validate Prisma schema
+        env:
+          DATABASE_URL: postgresql://validation:validation@localhost:5432/feedy?schema=public
         run: npx prisma validate
 
       - name: Audit dependencies
