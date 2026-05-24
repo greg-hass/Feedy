@@ -7,6 +7,13 @@ import { parseOpml } from "@/lib/feed/opml";
 import { validateFeedUrl } from "@/lib/feed/parse";
 import { createValidatedFeedForUser } from "@/lib/feed/service";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
+import {
+  assertWithinLimit,
+  mapInBatches,
+  MAX_OPML_IMPORT_BYTES,
+  MAX_OPML_IMPORT_FEEDS,
+  REMOTE_PROBE_BATCH_SIZE,
+} from "@/lib/workload-limits";
 
 const rateLimiter = createFixedWindowRateLimiter();
 
@@ -83,75 +90,71 @@ async function importNodes(userId: string, nodes: OpmlNode[]) {
       }
 
       if (entry.children?.length) {
-        await getOrCreateFolderId(nextPath);
         await walk(entry.children, nextPath);
       }
     }
   }
 
   await walk(nodes);
-  const concurrency = 5;
+  assertWithinLimit(feedEntries.length, MAX_OPML_IMPORT_FEEDS, "OPML subscriptions");
 
-  for (let start = 0; start < feedEntries.length; start += concurrency) {
-    const batch = feedEntries.slice(start, start + concurrency);
-    await Promise.all(
-      batch.map(async ({ entry, folderPath }) => {
-        try {
-          const validated = await validateFeedUrl(entry.xmlUrl!);
-          const existing = await prisma.feed.findFirst({
-            where: {
-              userId,
-              OR: [
-                { sourceUrl: entry.xmlUrl! },
-                { sourceUrl: validated.feedUrl },
-              ],
-            },
-            select: { id: true },
-          });
+  await mapInBatches(feedEntries, REMOTE_PROBE_BATCH_SIZE, async ({ entry, folderPath }) => {
+    try {
+      const validated = await validateFeedUrl(entry.xmlUrl!);
+      const existing = await prisma.feed.findFirst({
+        where: {
+          userId,
+          OR: [
+            { sourceUrl: entry.xmlUrl! },
+            { sourceUrl: validated.feedUrl },
+          ],
+        },
+        select: { id: true },
+      });
 
-          if (existing) {
-            summary.duplicates += 1;
-            return;
-          }
+      if (existing) {
+        summary.duplicates += 1;
+        return;
+      }
 
-          await createValidatedFeedForUser(
-            userId,
-            {
-              sourceUrl: entry.xmlUrl!,
-              folderId: await getOrCreateFolderId(folderPath),
-              label: entry.title,
-            },
-            validated,
-            {
-              queueInitialRefresh: false,
-              queueInitialIconFetch: false,
-            },
-          );
-          summary.imported += 1;
-        } catch (error) {
-          if (
-            error instanceof Prisma.PrismaClientKnownRequestError &&
-            error.code === "P2002"
-          ) {
-            summary.duplicates += 1;
-          } else {
-            const message = error instanceof Error ? error.message : "Unknown import error";
-            summary.failed += 1;
-            summary.errors.push({
-              title: entry.title || entry.text || "Untitled",
-              sourceUrl: entry.xmlUrl,
-              error: message,
-            });
-          }
-        }
-      }),
-    );
-  }
+      await createValidatedFeedForUser(
+        userId,
+        {
+          sourceUrl: entry.xmlUrl!,
+          folderId: await getOrCreateFolderId(folderPath),
+          label: entry.title,
+        },
+        validated,
+        {
+          queueInitialRefresh: false,
+          queueInitialIconFetch: false,
+        },
+      );
+      summary.imported += 1;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        summary.duplicates += 1;
+      } else {
+        const message = error instanceof Error ? error.message : "Unknown import error";
+        summary.failed += 1;
+        summary.errors.push({
+          title: entry.title || entry.text || "Untitled",
+          sourceUrl: entry.xmlUrl,
+          error: message,
+        });
+      }
+    }
+  });
 
   return summary;
 }
 
 export async function POST(request: Request) {
+  let recordId: string | null = null;
+
   try {
     const user = await assertApiUser();
     const importAttempt = await rateLimiter.check(`import:opml:${user.id}`, {
@@ -168,6 +171,9 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) {
       return apiError("File is required");
     }
+    if (file.size > MAX_OPML_IMPORT_BYTES) {
+      return apiError("OPML file exceeds the 1 MB upload limit.", 413);
+    }
 
     const xml = await file.text();
     const nodes = parseOpml(xml);
@@ -180,6 +186,7 @@ export async function POST(request: Request) {
         filename: file.name,
       },
     });
+    recordId = record.id;
 
     const summary = await importNodes(user.id, nodes);
     await prisma.importExportRecord.update({
@@ -193,6 +200,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, ...summary });
   } catch (error) {
+    if (recordId) {
+      await prisma.importExportRecord.update({
+        where: { id: recordId },
+        data: {
+          status: ImportExportStatus.FAILED,
+          completedAt: new Date(),
+          summary: { error: "Import failed" },
+        },
+      }).catch(() => null);
+    }
+
     return apiError(error instanceof Error ? error.message : "Could not import OPML");
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { apiError, parseJson } from "@/lib/api";
 import { authenticate } from "@/lib/auth";
+import { checkLoginThrottle } from "@/lib/login-throttle";
 import { loginSchema } from "@/lib/schemas";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
 
@@ -16,28 +17,18 @@ export async function POST(request: Request) {
           Object.fromEntries((await request.formData()).entries()),
         );
     const normalizedUsername = input.username.trim().toLowerCase();
-    const [userAttempt, globalAttempt] = await Promise.all([
-      rateLimiter.check(`login:user:${normalizedUsername}`, {
-        limit: 5,
-        windowSeconds: 15 * 60,
-      }),
-      rateLimiter.check("login:global", {
-        limit: 15,
-        windowSeconds: 15 * 60,
-      }),
-    ]);
-    if (!userAttempt.allowed || !globalAttempt.allowed) {
-      const retryAfterSeconds = Math.max(userAttempt.retryAfterSeconds, globalAttempt.retryAfterSeconds);
+    const attempt = await checkLoginThrottle(rateLimiter, normalizedUsername);
+    if (!attempt.allowed) {
       if (contentType.includes("application/json")) {
         const response = apiError("Too many login attempts", 429);
-        response.headers.set("Retry-After", String(retryAfterSeconds));
+        response.headers.set("Retry-After", String(attempt.retryAfterSeconds));
         return response;
       }
 
       const response = NextResponse.redirect(new URL("/login?error=rate_limited", request.url), {
         status: 303,
       });
-      response.headers.set("Retry-After", String(retryAfterSeconds));
+      response.headers.set("Retry-After", String(attempt.retryAfterSeconds));
       return response;
     }
     const user = await authenticate(input.username, input.password);

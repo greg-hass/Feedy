@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
-export function GET() {
-  return NextResponse.json({ ok: true });
+import { checkReadiness } from "@/lib/health";
+
+export async function GET() {
+  const result = await checkReadiness();
+  return NextResponse.json(result, { status: result.ok ? 200 : 503 });
 }

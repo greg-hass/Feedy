@@ -13,6 +13,12 @@ import {
   validateYouTubeFeedUrl,
 } from "@/lib/feed/youtube";
 import { resolveYouTubePreviewUrl } from "@/lib/feed/youtube-preview";
+import {
+  assertWithinLimit,
+  mapInBatches,
+  MAX_FEED_ITEMS_PER_REFRESH,
+  REMOTE_PROBE_BATCH_SIZE,
+} from "@/lib/workload-limits";
 
 const parser = new Parser({
   defaultRSS: 2.0,
@@ -143,11 +149,14 @@ export async function fetchAndParseFeedConditionally(
     if (result.notModified) {
       return result;
     }
+    assertWithinLimit(result.items.length, MAX_FEED_ITEMS_PER_REFRESH, "Feed items");
 
     return {
       ...result,
-      items: await Promise.all(
-        result.items.map(async (item) => {
+      items: await mapInBatches(
+        result.items,
+        REMOTE_PROBE_BATCH_SIZE,
+        async (item) => {
           if (!item.youtubeVideoId) {
             return item;
           }
@@ -160,7 +169,7 @@ export async function fetchAndParseFeedConditionally(
               feedThumbnailUrl: item.mediaUrl,
             }),
           };
-        }),
+        },
       ),
     };
   }
@@ -192,7 +201,9 @@ export async function fetchAndParseFeedConditionally(
   const resolvedFeedUrl =
     ((response as Response & { finalUrl?: string }).finalUrl ?? response.url)?.trim() || url;
   const sourceType = detectSourceType(resolvedFeedUrl, feed.feedUrl ?? feed.generator ?? detectFeedMarkupType(xml));
-  const items: ParsedFeedItem[] = await Promise.all((feed.items ?? []).map(async (item) => {
+  const parsedItems = feed.items ?? [];
+  assertWithinLimit(parsedItems.length, MAX_FEED_ITEMS_PER_REFRESH, "Feed items");
+  const items: ParsedFeedItem[] = await mapInBatches(parsedItems, REMOTE_PROBE_BATCH_SIZE, async (item) => {
     const extra = item as unknown as Record<string, unknown>;
     const canonicalUrl =
       item.link?.trim() ||
@@ -233,7 +244,7 @@ export async function fetchAndParseFeedConditionally(
       redditPermalink: item.link?.includes("reddit.com") ? item.link : null,
       publishedAt: item.isoDate ? new Date(item.isoDate) : item.pubDate ? new Date(item.pubDate) : null,
     };
-  }));
+  });
 
   return {
     notModified: false as const,

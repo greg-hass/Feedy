@@ -6,6 +6,11 @@ import { JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { enqueueFeedRefresh } from "@/lib/queue";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
+import {
+  mapInBatches,
+  MAX_MANUAL_REFRESH_FEEDS,
+  REFRESH_ENQUEUE_BATCH_SIZE,
+} from "@/lib/workload-limits";
 
 const rateLimiter = createFixedWindowRateLimiter();
 
@@ -27,9 +32,17 @@ export async function POST() {
       where: { userId: user.id },
       select: { id: true },
     });
+    if (feeds.length > MAX_MANUAL_REFRESH_FEEDS) {
+      return apiError(
+        `Refresh all is limited to ${MAX_MANUAL_REFRESH_FEEDS} feeds at a time. Refresh folders individually or wait for scheduled refresh.`,
+        413,
+      );
+    }
 
-    const results = await Promise.all(
-      feeds.map(async (feed) => {
+    const results = await mapInBatches(
+      feeds,
+      REFRESH_ENQUEUE_BATCH_SIZE,
+      async (feed) => {
         const refreshJob = await prisma.refreshJob.create({
           data: {
             userId: user.id,
@@ -49,7 +62,7 @@ export async function POST() {
           await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
         }
         return queued.enqueued;
-      }),
+      },
     );
 
     return NextResponse.json({

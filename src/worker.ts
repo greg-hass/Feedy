@@ -11,10 +11,14 @@ import { enqueueFeedRefresh, getRefreshQueue, iconQueueName, refreshQueueName } 
 import { getRedis } from "@/lib/redis";
 import { pruneUserData } from "@/lib/retention";
 import { ensureDataDirs } from "@/lib/storage";
+import { runBackgroundTask } from "@/lib/background-task";
 
 async function scheduleDueFeeds() {
   const user = await loadPrimaryUser();
   if (!user) {
+    return;
+  }
+  if (user.settings?.autoRefreshEnabled === false) {
     return;
   }
 
@@ -204,20 +208,14 @@ async function boot() {
     console.error("Icon job failed", job?.id, error);
   });
 
-  void scheduleDueFeeds().catch((error) => {
-    console.error("[worker] Initial feed scheduling failed", error);
-  });
-  void runRetentionCleanup().catch((error) => {
-    console.error("[worker] Initial retention cleanup failed", error);
-  });
-  void backfillYouTubeShortFlags().catch((error) => {
-    console.error("[worker] YouTube Shorts backfill failed", error);
-  });
+  void runBackgroundTask("initial feed scheduling", scheduleDueFeeds);
+  void runBackgroundTask("initial retention cleanup", runRetentionCleanup);
+  void runBackgroundTask("YouTube Shorts backfill", backfillYouTubeShortFlags);
   setInterval(() => {
-    void scheduleDueFeeds();
+    void runBackgroundTask("scheduled feed scheduling", scheduleDueFeeds);
   }, 60_000);
   setInterval(() => {
-    void runRetentionCleanup();
+    void runBackgroundTask("scheduled retention cleanup", runRetentionCleanup);
   }, 6 * 60 * 60 * 1000);
 
   console.log("Feedy worker started");

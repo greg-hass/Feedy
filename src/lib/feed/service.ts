@@ -8,6 +8,12 @@ import type { FeedValidationResult } from "@/lib/feed/types";
 import { evaluateFeedMuteRules, normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
 import { probeYouTubeShort } from "@/lib/feed/youtube";
 import { assertOwnedFolder } from "@/lib/ownership";
+import {
+  assertWithinLimit,
+  mapInBatches,
+  MAX_FEED_ITEMS_PER_REFRESH,
+  REMOTE_PROBE_BATCH_SIZE,
+} from "@/lib/workload-limits";
 
 async function createValidatedFeedForUser(
   userId: string,
@@ -242,6 +248,7 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
 
       return 0;
     }
+    assertWithinLimit(result.items.length, MAX_FEED_ITEMS_PER_REFRESH, "Feed items");
 
     const dedupeLookupStartedAt = performance.now();
     const existingKeys = new Set(
@@ -267,14 +274,16 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     });
 
     const youtubeShortFlags = new Map<string, boolean>();
-    await Promise.all(
-      evaluatedItems.map(async ({ item }) => {
+    await mapInBatches(
+      evaluatedItems,
+      REMOTE_PROBE_BATCH_SIZE,
+      async ({ item }) => {
         if (!item.youtubeVideoId) {
           return;
         }
 
         youtubeShortFlags.set(item.youtubeVideoId, await probeYouTubeShort(item.youtubeVideoId));
-      }),
+      },
     );
 
     const operations = evaluatedItems.map(({ item, evaluation }) =>
