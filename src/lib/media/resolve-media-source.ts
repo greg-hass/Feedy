@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "@/lib/http";
+
 type ResolvedNativeSource = {
   kind: "native";
   src: string;
@@ -24,7 +26,7 @@ function isLikelyVideoUrl(url: string) {
 
 async function detectContentType(url: string) {
   try {
-    const response = await fetch(url, { method: "HEAD", redirect: "follow" });
+    const response = await fetchWithTimeout(url, { method: "HEAD" }, 10_000);
     return response.headers.get("content-type")?.toLowerCase() ?? null;
   } catch {
     return null;

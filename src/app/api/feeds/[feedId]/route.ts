@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 
 import { apiError, assertApiUser, parseJson } from "@/lib/api";
 import { prisma } from "@/lib/db";
+import { assertOwnedFolder } from "@/lib/ownership";
 import { updateFeedSchema } from "@/lib/schemas";
 
 type Params = Promise<{ feedId: string }>;
@@ -13,6 +14,9 @@ export async function PATCH(request: Request, context: { params: Params }) {
     const { feedId } = await context.params;
     const input = await parseJson(request, updateFeedSchema);
     const { muteRules, ...rest } = input;
+    if (input.folderId) {
+      await assertOwnedFolder(prisma, user.id, input.folderId);
+    }
 
     const feed = await prisma.feed.update({
       where: {

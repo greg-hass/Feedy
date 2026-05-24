@@ -7,6 +7,7 @@ import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
 import type { FeedValidationResult } from "@/lib/feed/types";
 import { evaluateFeedMuteRules, normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
 import { probeYouTubeShort } from "@/lib/feed/youtube";
+import { assertOwnedFolder } from "@/lib/ownership";
 
 async function createValidatedFeedForUser(
   userId: string,
@@ -22,6 +23,10 @@ async function createValidatedFeedForUser(
     queueInitialIconFetch?: boolean;
   },
 ) {
+  if (input.folderId) {
+    await assertOwnedFolder(prisma, userId, input.folderId);
+  }
+
   const existingFeed = await prisma.feed.findFirst({
     where: {
       userId,

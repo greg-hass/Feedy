@@ -61,10 +61,11 @@ cp .env.example .env
 
 2. Set at least:
 
-- `AUTH_SECRET`
+- `AUTH_SECRET` to a unique random value of at least 32 characters, for example from `openssl rand -base64 32`
 - `APP_USERNAME`
-- `APP_PASSWORD`
-- `APP_URL` such as `http://192.168.1.186:4000`
+- `APP_PASSWORD` to a non-placeholder password
+- `APP_URL` such as `http://192.168.1.186:4000` for a trusted private network
+- `COOKIE_SECURE=false` when intentionally using private-network HTTP
 
 3. Start the stack.
 
@@ -72,7 +73,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-4. Open your configured URL, for example [http://192.168.1.186:4000](http://192.168.1.186:4000), on your phone browser or desktop browser for setup, then install it to the home screen.
+4. Open your configured URL, for example [http://192.168.1.186:4000](http://192.168.1.186:4000), on your trusted private network, then install it to the home screen.
+
+Do not expose the HTTP private-network setup to the public internet. Public deployments must use HTTPS with `COOKIE_SECURE=true`.
 
 ## Docker Notes
 
@@ -104,6 +107,8 @@ Recommended proxy behavior:
 - terminate TLS at the proxy
 - set `APP_URL` to the public HTTPS URL
 - set `COOKIE_SECURE=true` behind HTTPS
+
+At runtime, production startup rejects placeholder credentials, public HTTP URLs, and HTTPS configurations that do not use secure cookies.
 
 ## Mobile UX / PWA
 

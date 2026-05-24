@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { apiError, assertApiUser } from "@/lib/api";
 import { JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { assertOwnedFeed } from "@/lib/ownership";
 import { enqueueFeedRefresh } from "@/lib/queue";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
 
@@ -14,6 +15,8 @@ type Params = Promise<{ feedId: string }>;
 export async function POST(_request: Request, context: { params: Params }) {
   try {
     const user = await assertApiUser();
+    const { feedId } = await context.params;
+    await assertOwnedFeed(prisma, user.id, feedId);
     const refreshAttempt = await rateLimiter.check(`refresh:feed:${user.id}`, {
       limit: 5,
       windowSeconds: 5 * 60,
@@ -25,7 +28,6 @@ export async function POST(_request: Request, context: { params: Params }) {
     }
     const batchStartedAt = new Date();
     const batchId = randomUUID();
-    const { feedId } = await context.params;
     const refreshJob = await prisma.refreshJob.create({
       data: {
         userId: user.id,

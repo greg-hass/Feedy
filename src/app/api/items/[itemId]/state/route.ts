@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { apiError, assertApiUser, parseJson } from "@/lib/api";
 import { prisma } from "@/lib/db";
+import { assertOwnedItem } from "@/lib/ownership";
 import { itemStateSchema } from "@/lib/schemas";
 
 type Params = Promise<{ itemId: string }>;
@@ -11,6 +12,7 @@ export async function POST(request: Request, context: { params: Params }) {
     const user = await assertApiUser();
     const { itemId } = await context.params;
     const input = await parseJson(request, itemStateSchema);
+    await assertOwnedItem(prisma, user.id, itemId);
 
     if (typeof input.read === "boolean") {
       if (input.read) {

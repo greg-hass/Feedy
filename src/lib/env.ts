@@ -43,37 +43,68 @@ const parsedEnv = envSchema.parse({
 export const isProd = process.env.NODE_ENV === "production";
 const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
 
-function isPublicProductionDeployment(appUrl: string) {
-  try {
-    const url = new URL(appUrl);
-    const hostname = url.hostname.toLowerCase();
-    return (
-      hostname !== "localhost" &&
-      !hostname.endsWith(".localhost") &&
-      !hostname.endsWith(".local") &&
-      !hostname.startsWith("127.") &&
-      hostname !== "::1"
-    );
-  } catch {
-    return false;
-  }
+type ProductionEnvConfig = Pick<
+  z.infer<typeof envSchema>,
+  "APP_URL" | "AUTH_SECRET" | "APP_PASSWORD" | "COOKIE_SECURE"
+>;
+
+function isPrivateOrLocalDeploymentHost(hostname: string) {
+  const normalized = hostname.toLowerCase().replace(/^\[/, "").replace(/\]$/, "");
+  const octets = normalized.split(".").map((part) => Number.parseInt(part, 10));
+
+  return (
+    normalized === "localhost" ||
+    normalized.endsWith(".localhost") ||
+    normalized.endsWith(".local") ||
+    normalized === "::1" ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe80:") ||
+    octets[0] === 127 ||
+    octets[0] === 10 ||
+    octets[0] === 192 && octets[1] === 168 ||
+    octets[0] === 172 && octets[1] !== undefined && octets[1] >= 16 && octets[1] <= 31
+  );
 }
 
-if (isProd && !isProductionBuild && isPublicProductionDeployment(parsedEnv.APP_URL)) {
+export function getProductionEnvProblems(config: ProductionEnvConfig) {
   const problems: string[] = [];
-
-  if (parsedEnv.AUTH_SECRET === "development-build-secret-0001" || parsedEnv.AUTH_SECRET.length < 32) {
+  if (
+    config.AUTH_SECRET === "development-build-secret-0001" ||
+    config.AUTH_SECRET === "change-me-to-a-long-random-secret" ||
+    config.AUTH_SECRET.length < 32
+  ) {
     problems.push("AUTH_SECRET must be a random value of at least 32 characters");
   }
 
-  if (parsedEnv.APP_PASSWORD === "change-me") {
+  if (config.APP_PASSWORD === "change-me") {
     problems.push("APP_PASSWORD must not use the default placeholder");
   }
 
-  if (parsedEnv.COOKIE_SECURE !== "true") {
-    problems.push("COOKIE_SECURE must be true in production");
+  try {
+    const url = new URL(config.APP_URL);
+    const isPrivateOrLocal = isPrivateOrLocalDeploymentHost(url.hostname);
+
+    if (!isPrivateOrLocal && url.protocol !== "https:") {
+      problems.push("APP_URL must use HTTPS for public production deployments");
+    }
+
+    if (url.protocol === "https:" && config.COOKIE_SECURE !== "true") {
+      problems.push("COOKIE_SECURE must be true when APP_URL uses HTTPS");
+    }
+
+    if (url.protocol === "http:" && config.COOKIE_SECURE !== "false") {
+      problems.push("COOKIE_SECURE must be false when APP_URL uses HTTP");
+    }
+  } catch {
+    problems.push("APP_URL must be a valid URL");
   }
 
+  return problems;
+}
+
+if (isProd && !isProductionBuild) {
+  const problems = getProductionEnvProblems(parsedEnv);
   if (problems.length > 0) {
     throw new Error(`Invalid production environment: ${problems.join("; ")}`);
   }
