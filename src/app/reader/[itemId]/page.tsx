@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Bookmark, ExternalLink, Share2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -278,7 +279,15 @@ export default function ReaderPage() {
 
           {data.mediaUrl && !data.youtubeVideoId && (
             <div className="mt-4 overflow-hidden rounded-[20px] border border-subtle">
-              <img src={data.mediaUrl} alt="" className="w-full" loading="lazy" />
+              <Image
+                src={data.mediaUrl}
+                alt=""
+                width={1200}
+                height={675}
+                unoptimized
+                className="h-auto w-full"
+                loading="lazy"
+              />
             </div>
           )}
         </div>

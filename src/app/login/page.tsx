@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { LoginForm } from "@/components/login-form";
 
 export default async function LoginPage({
@@ -30,7 +32,7 @@ export default async function LoginPage({
         {/* Brand header */}
         <div className="mb-10 flex flex-col items-center text-center">
           <div className="mb-5 flex size-16 items-center justify-center rounded-[22px] bg-[var(--surface)] shadow-[0_4px_24px_rgba(0,0,0,0.08)] ring-1 ring-[var(--border)]">
-            <img src="/icon-192.png" alt="" className="size-10 rounded-xl" aria-hidden />
+            <Image src="/icon-192.png" alt="" width={40} height={40} className="size-10 rounded-xl" aria-hidden />
           </div>
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
             Feedy

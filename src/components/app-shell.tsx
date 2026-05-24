@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Bookmark, Compass, Flame, LogOut, Rss, Settings } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,12 +70,12 @@ export function MobileShell({
                 className="flex h-10 shrink-0 items-center gap-2 rounded-2xl px-3"
                 style={{ border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)', backgroundColor: 'var(--accent-dim)' }}
               >
-                <img
+                <Image
                   src={`/icon-variants/${accent.toLowerCase()}-64.png`}
                   alt=""
+                  width={20}
+                  height={20}
                   className="size-5 shrink-0 rounded-[6px]"
-                  loading="eager"
-                  decoding="async"
                 />
                 <span className="whitespace-nowrap text-[12px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--accent)' }}>
                   Feedy

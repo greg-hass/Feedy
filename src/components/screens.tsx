@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,10 +16,12 @@ import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
+import { formatImportSummary, type ImportSummary } from "@/lib/import-export-ui";
 import { computeTimelineRefreshDelta } from "@/lib/timeline-refresh";
 import { accentOptions } from "@/lib/theme";
 import { flattenTimelinePages, shouldLoadNextTimelinePage } from "@/lib/timeline-infinite-scroll";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
+import { MAX_JSON_EXPORT_ITEMS, MAX_OPML_IMPORT_BYTES, MAX_OPML_IMPORT_FEEDS } from "@/lib/workload-limits";
 import type { ItemRecord, MeResponse, NavFeed, NavFolder, TimelineItemsPageResponse } from "@/types/app";
 
 const AddFeedForm = dynamic(() => import("@/components/forms").then((module) => module.AddFeedForm), {
@@ -1875,9 +1878,12 @@ function DiscoveryAvatar({
   if (favicon && !failed) {
     return (
       <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-strong)] p-1.5">
-        <img
+        <Image
           src={favicon}
           alt=""
+          width={48}
+          height={48}
+          unoptimized
           className="size-full rounded-[12px] object-contain"
           loading="lazy"
           onError={() => setFailed(true)}
@@ -2142,9 +2148,9 @@ export function SettingsScreen() {
                 Import / Export
               </Button>
             </Link>
-            <a href="/api/export/json">
-              <Button className="w-full text-xs">Download JSON</Button>
-            </a>
+            <Link href="/app/import-export">
+              <Button className="w-full text-xs">Backups</Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -2157,6 +2163,8 @@ export function ImportExportScreen() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
+  const [exportStatus, setExportStatus] = useState<"idle" | "downloading" | "success" | "error">("idle");
+  const [exportMessage, setExportMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const upload = useMutation({
@@ -2175,25 +2183,10 @@ export function ImportExportScreen() {
       setStatus("uploading");
       setStatusMessage("Importing subscriptions and preserving folder structure...");
     },
-    onSuccess: (result: {
-      imported?: number;
-      duplicates?: number;
-      failed?: number;
-      foldersCreated?: number;
-    }) => {
+    onSuccess: (result: ImportSummary) => {
       setFile(null);
       setStatus("success");
-      const parts = [
-        `${result.imported ?? 0} imported`,
-        `${result.duplicates ?? 0} duplicates skipped`,
-      ];
-      if (typeof result.foldersCreated === "number") {
-        parts.push(`${result.foldersCreated} folders created`);
-      }
-      if ((result.failed ?? 0) > 0) {
-        parts.push(`${result.failed} failed`);
-      }
-      setStatusMessage(parts.join(" · "));
+      setStatusMessage(formatImportSummary(result));
       queryClient.invalidateQueries({ queryKey: ["me"] });
     },
     onError: (err) => {
@@ -2202,12 +2195,47 @@ export function ImportExportScreen() {
     },
   });
 
+  const downloadJson = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/export/json", {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "JSON export failed");
+      }
+
+      const url = window.URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "feedy-backup.json";
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    },
+    onMutate: () => {
+      setExportStatus("downloading");
+      setExportMessage("Preparing your JSON backup...");
+    },
+    onSuccess: () => {
+      setExportStatus("success");
+      setExportMessage("JSON backup downloaded.");
+    },
+    onError: (error) => {
+      setExportStatus("error");
+      setExportMessage(error instanceof Error ? error.message : "JSON export failed");
+    },
+  });
+
   return (
     <MobileShell title="Import / Export" subtitle="Portable subscriptions and backups">
       <div className="space-y-3">
         <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Import OPML</h3>
-          <p className="mt-1 text-xs text-secondary">Upload an OPML file from another feed reader.</p>
+          <p className="mt-1 text-xs leading-relaxed text-secondary">
+            Upload an OPML file from another feed reader. Imports support files up to{" "}
+            {MAX_OPML_IMPORT_BYTES / (1024 * 1024)} MB and {MAX_OPML_IMPORT_FEEDS.toLocaleString()} subscriptions.
+          </p>
           <input
             ref={fileInputRef}
             type="file"
@@ -2260,6 +2288,8 @@ export function ImportExportScreen() {
           </Button>
           {status !== "idle" && (
             <div
+              role={status === "error" ? "alert" : "status"}
+              aria-live="polite"
               className={`mt-3 rounded-xl px-3 py-2 text-xs ${
                 status === "success"
                   ? "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -2275,16 +2305,38 @@ export function ImportExportScreen() {
 
         <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Export</h3>
+          <p className="mt-1 text-xs leading-relaxed text-secondary">
+            JSON backups include up to {MAX_JSON_EXPORT_ITEMS.toLocaleString()} articles. For larger libraries, keep a database backup.
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <a href="/api/export/opml">
               <Button variant="secondary" className="w-full text-xs">
                 Export OPML
               </Button>
             </a>
-            <a href="/api/export/json">
-              <Button className="w-full text-xs">Export JSON</Button>
-            </a>
+            <Button
+              className="w-full text-xs"
+              onClick={() => downloadJson.mutate()}
+              disabled={exportStatus === "downloading"}
+            >
+              {exportStatus === "downloading" ? "Exporting..." : "Export JSON"}
+            </Button>
           </div>
+          {exportStatus !== "idle" ? (
+            <div
+              role={exportStatus === "error" ? "alert" : "status"}
+              aria-live="polite"
+              className={`mt-3 rounded-xl px-3 py-2 text-xs ${
+                exportStatus === "success"
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  : exportStatus === "error"
+                  ? "bg-[var(--danger)]/10 text-[var(--danger)]"
+                  : "bg-[var(--surface-muted)] text-secondary"
+              }`}
+            >
+              {exportMessage}
+            </div>
+          ) : null}
         </div>
       </div>
     </MobileShell>

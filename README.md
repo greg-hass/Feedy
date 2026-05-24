@@ -137,6 +137,10 @@ The password is hashed and stored in PostgreSQL. Sessions are cookie-based and s
 - Automatic refresh:
   - worker checks due feeds every minute
   - each feed can override the default interval
+- Request boundaries:
+  - manual folder or all-feed refresh accepts up to 500 feeds per request
+  - a single feed refresh rejects responses containing more than 1,000 items
+  - remote media probes and refresh enqueueing run in bounded batches
 - Concurrency protection:
   - BullMQ uses deterministic `jobId`s per feed refresh
 - Reliability:
@@ -158,11 +162,18 @@ The discovery logic is intentionally isolated in `src/lib/feed/discover.ts` so a
 
 ## Import / Export
 
-- Import OPML from the mobile import/export screen
+- Import OPML from the mobile import/export screen, limited to 1 MB and 500 subscriptions per upload
 - Export subscriptions as OPML
-- Export a full JSON backup of folders, feeds, items, bookmarks, read states, and settings
+- Export a portable JSON backup of folders, feeds, items, bookmarks, read states, and settings for libraries with up to 25,000 articles
 
 Folder structure is preserved when OPML outlines include nested feed groups.
+
+## Health And Readiness
+
+`GET /api/health` is a readiness endpoint for deployment tooling and reverse proxies. It checks PostgreSQL and Redis with bounded deadlines:
+
+- returns HTTP `200` with both dependency checks healthy when the app is ready
+- returns HTTP `503` when either required dependency is unavailable or times out
 
 ## Development
 
@@ -178,6 +189,14 @@ Generate Prisma client:
 npx prisma generate
 ```
 
+For local development through Docker, start the normal Compose stack:
+
+```bash
+docker compose up --build
+```
+
+The values in `.env.example` use Docker service names such as `postgres` and `redis`. If you instead run `npm run dev` directly on the host, point `DATABASE_URL` and `REDIS_URL` at reachable host services, typically `localhost`, before starting the development server.
+
 Build:
 
 ```bash
@@ -188,6 +207,16 @@ Run worker locally if you already have PostgreSQL and Redis available:
 
 ```bash
 npm run worker
+```
+
+Run validation locally:
+
+```bash
+npm test
+npm run lint
+npm run build
+npx prisma validate
+npm audit --audit-level=low
 ```
 
 ## Ubuntu Server Deploy
@@ -202,7 +231,7 @@ Feedy can be deployed on an Ubuntu server with Docker Compose using the publishe
 docker compose -f docker-compose.deploy.yml up -d
 ```
 
-The GitHub Actions workflow at `.github/workflows/publish-ghcr.yml` publishes the image to GHCR automatically on pushes to `main`.
+The GitHub Actions workflow at `.github/workflows/publish-ghcr.yml` publishes the image to GHCR automatically on pushes to `main`. Before publishing, it installs locked dependencies and requires tests, lint, Prisma validation, dependency audit, and a production application build to pass.
 
 ## Backup Notes
 
@@ -210,8 +239,10 @@ For full recovery, keep:
 
 - PostgreSQL volume backup
 - Redis volume if you want queue state preserved
-- `app_data` volume for cached icons and exports
-- or use the JSON export for application-level portability
+- `app_data` volume for cached icons
+- or use the JSON export for application-level portability when the library contains no more than 25,000 articles
+
+For larger libraries or full disaster recovery, retain PostgreSQL and `app_data` volume backups rather than relying on the portable JSON export.
 
 ## Limitations
 

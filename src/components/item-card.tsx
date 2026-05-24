@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Bookmark, Check, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -174,10 +175,13 @@ export const ItemCard = memo(function ItemCard({
                 className="relative block w-full overflow-hidden text-left"
                 aria-label={`Play ${itemTitle} inline`}
               >
-                  <div className="aspect-video w-full bg-surface-muted">
-                    <img
+                  <div className="relative aspect-video w-full bg-surface-muted">
+                    <Image
                       src={thumbnailUrl}
                       alt={itemTitle}
+                      fill
+                      sizes="(max-width: 448px) 100vw, 448px"
+                      unoptimized
                       className={`h-full w-full object-cover transition-all duration-500 ${hoverScaleClass} ${
                         imageLoaded ? "opacity-100" : "opacity-0"
                       }`}
@@ -215,10 +219,13 @@ export const ItemCard = memo(function ItemCard({
             onClick={navigateToReader}
             className="relative block overflow-hidden"
           >
-            <div className="aspect-video w-full bg-surface-muted">
-              <img
+            <div className="relative aspect-video w-full bg-surface-muted">
+              <Image
                 src={thumbnailUrl}
                 alt={itemTitle}
+                fill
+                sizes="(max-width: 448px) 100vw, 448px"
+                unoptimized
                 className={`h-full w-full object-cover transition-all duration-500 ${hoverScaleClass} ${
                   imageLoaded ? "opacity-100" : "opacity-0"
                 }`}

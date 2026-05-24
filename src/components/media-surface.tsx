@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 import { YouTubeInlinePlayer } from "@/components/youtube-inline-player";
@@ -303,10 +304,13 @@ function NativeMediaSurface({
       {!nativeSourcePlaying ? (
         <div className="absolute inset-0 flex items-center justify-center bg-[var(--text-primary)]/90">
           {poster ? (
-            <img
+            <Image
               src={poster}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-55"
+              fill
+              sizes="(max-width: 448px) 100vw, 448px"
+              unoptimized
+              className="object-cover opacity-55"
               loading="eager"
             />
           ) : null}

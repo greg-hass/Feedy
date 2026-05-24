@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { memo } from "react";
 
 export const FeedAvatar = memo(function FeedAvatar({
@@ -8,7 +9,7 @@ export const FeedAvatar = memo(function FeedAvatar({
   title: string;
 }) {
   return (
-    <img
+    <Image
       src={`/api/icons/${feedId}?v=2`}
       alt={title}
       width={48}
@@ -16,6 +17,7 @@ export const FeedAvatar = memo(function FeedAvatar({
       className="size-12 rounded-2xl border border-subtle object-cover"
       loading="lazy"
       decoding="async"
+      unoptimized
     />
   );
 });
