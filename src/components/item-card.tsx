@@ -44,10 +44,12 @@ export const ItemCard = memo(function ItemCard({
   );
   const isYouTube = item.feed.sourceType.includes("YOUTUBE");
   const youtubeThumbnailUrls = item.youtubeVideoId
-    ? [item.mediaUrl, ...getYouTubeThumbnailUrls(item.youtubeVideoId)].filter(
-        (url): url is string => typeof url === "string" && url.length > 0,
-      )
+    ? getYouTubeThumbnailUrls(item.youtubeVideoId, {
+        existingUrl: item.mediaUrl,
+        isShort: item.youtubeIsShort,
+      })
     : null;
+  const youtubeThumbnailAspectClass = item.youtubeIsShort ? "aspect-[9/16]" : "aspect-video";
   const playInline = internalPlayInline;
   const hoverCardClass = "[@media(hover:hover)]:hover:border-[var(--accent)]/20 [@media(hover:hover)]:hover:shadow-lg";
   const hoverScaleClass = "[@media(hover:hover)]:group-hover:scale-105";
@@ -175,7 +177,7 @@ export const ItemCard = memo(function ItemCard({
                 className="relative block w-full overflow-hidden text-left"
                 aria-label={`Play ${itemTitle} inline`}
               >
-                  <div className="relative aspect-video w-full bg-surface-muted">
+                  <div className={`relative w-full bg-surface-muted ${youtubeThumbnailAspectClass}`}>
                     <Image
                       src={thumbnailUrl}
                       alt={itemTitle}

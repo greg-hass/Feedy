@@ -9,6 +9,7 @@ export function serializeItem(item: {
   mediaUrl: string | null;
   publishedAt: Date | null;
   youtubeVideoId: string | null;
+  youtubeIsShort: boolean;
   redditPermalink?: string | null;
   feed: {
     id: string;
@@ -30,6 +31,7 @@ export function serializeItem(item: {
     mediaUrl: item.mediaUrl,
     publishedAt: item.publishedAt?.toISOString() ?? null,
     youtubeVideoId: item.youtubeVideoId,
+    youtubeIsShort: item.youtubeIsShort,
     redditPermalink: item.redditPermalink,
     feed: item.feed,
     bookmarked: item.bookmarks.length > 0,

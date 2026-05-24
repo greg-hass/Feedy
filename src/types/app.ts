@@ -58,6 +58,7 @@ export type ItemRecord = {
   mediaUrl: string | null;
   publishedAt: string | null;
   youtubeVideoId: string | null;
+  youtubeIsShort: boolean;
   redditPermalink?: string | null;
   bookmarked: boolean;
   read: boolean;

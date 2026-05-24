@@ -153,4 +153,56 @@ describe("youtube feed helpers", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it("prefers an available maximum-resolution thumbnail over a lower-resolution feed thumbnail", async () => {
+    const originalFetch = globalThis.fetch;
+    const requests: string[] = [];
+    const detailedThumbnail = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><path fill="#000" d="M0 0h640v720H0z"/><path fill="#fff" d="M640 0h640v720H640z"/></svg>',
+    );
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      requests.push(url);
+
+      if (url.includes("/maxresdefault.jpg")) {
+        return new Response(detailedThumbnail, {
+          status: 200,
+          headers: { "content-type": "image/svg+xml" },
+        });
+      }
+
+      if (url.includes("oembed")) {
+        return new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+
+      if (url.includes("/watch?v=")) {
+        return new Response("", {
+          status: 200,
+          headers: { "content-type": "text/html; charset=UTF-8" },
+        });
+      }
+
+      return new Response(detailedThumbnail, {
+        status: 200,
+        headers: { "content-type": "image/svg+xml" },
+      });
+    }) as typeof fetch;
+
+    try {
+      const preview = await resolveYouTubePreviewUrl({
+        videoId: "quality-test-video",
+        title: "Highest quality available",
+        feedThumbnailUrl: "https://i.ytimg.com/vi/quality-test-video/mqdefault.jpg",
+      });
+
+      assert.equal(preview, "https://i.ytimg.com/vi/quality-test-video/maxresdefault.jpg");
+      assert.equal(requests.includes("https://i.ytimg.com/vi/quality-test-video/mqdefault.jpg"), false);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });

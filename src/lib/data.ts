@@ -67,6 +67,7 @@ const itemCommonSelect = {
   mediaUrl: true,
   publishedAt: true,
   youtubeVideoId: true,
+  youtubeIsShort: true,
   feed: {
     select: {
       id: true,

@@ -199,11 +199,14 @@ export async function resolveYouTubePreviewUrl(input: {
   }
 
   const preview = (async () => {
-    const candidateUrls = new Set<string>();
-    if (input.feedThumbnailUrl) {
-      candidateUrls.add(input.feedThumbnailUrl);
+    for (const candidateUrl of getYouTubeThumbnailUrls(videoId)) {
+      const bytes = await fetchImageBytes(candidateUrl);
+      if (bytes && !(await isLikelyThumbnailPlaceholder(bytes))) {
+        return candidateUrl;
+      }
     }
 
+    const candidateUrls = new Set<string>();
     const oEmbedThumbnail = await fetchYouTubeOEmbedThumbnail(videoId);
     if (oEmbedThumbnail) {
       candidateUrls.add(oEmbedThumbnail);
@@ -214,8 +217,8 @@ export async function resolveYouTubePreviewUrl(input: {
       candidateUrls.add(watchThumbnail);
     }
 
-    for (const thumbnailUrl of getYouTubeThumbnailUrls(videoId)) {
-      candidateUrls.add(thumbnailUrl);
+    if (input.feedThumbnailUrl) {
+      candidateUrls.add(input.feedThumbnailUrl);
     }
 
     for (const candidateUrl of candidateUrls) {
