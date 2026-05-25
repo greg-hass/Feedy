@@ -101,6 +101,61 @@ function firstThumbnailUrlFromParsedItem(value: unknown) {
   return null;
 }
 
+const REDDIT_IMAGE_HOSTS = new Set([
+  "preview.redd.it",
+  "i.redd.it",
+  "external-preview.redd.it",
+]);
+
+function redditImageCandidate(url: string) {
+  try {
+    const parsed = new URL(url);
+    if (
+      (parsed.protocol !== "https:" && parsed.protocol !== "http:") ||
+      !REDDIT_IMAGE_HOSTS.has(parsed.hostname.toLowerCase())
+    ) {
+      return null;
+    }
+
+    const width = Number.parseInt(parsed.searchParams.get("width") ?? "", 10);
+    return {
+      url,
+      width: Number.isFinite(width) && width > 0
+        ? width
+        : parsed.hostname.toLowerCase() === "i.redd.it"
+          ? Number.POSITIVE_INFINITY
+          : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function higherResolutionRedditPreviewUrl(content: unknown, thumbnailUrl: string | null) {
+  if (typeof content !== "string") {
+    return null;
+  }
+
+  const thumbnailWidth = thumbnailUrl ? redditImageCandidate(thumbnailUrl)?.width ?? 0 : 0;
+  let bestCandidate: { url: string; width: number } | null = null;
+  const decodedContent = decodeHtmlEntities(content);
+
+  for (const match of decodedContent.matchAll(/https?:\/\/[^\s"'<>]+/gi)) {
+    const candidate = redditImageCandidate(match[0]);
+    if (
+      candidate?.width == null ||
+      candidate.width <= thumbnailWidth ||
+      (bestCandidate && candidate.width <= bestCandidate.width)
+    ) {
+      continue;
+    }
+
+    bestCandidate = { url: candidate.url, width: candidate.width };
+  }
+
+  return bestCandidate?.url ?? null;
+}
+
 export async function validateFeedUrl(url: string): Promise<FeedValidationResult> {
   const youtubeTarget = parseYouTubeFeedTarget(url);
   if (youtubeTarget) {
@@ -213,13 +268,16 @@ export async function fetchAndParseFeedConditionally(
       new URL(canonicalUrl || "https://www.youtube.com", "https://www.youtube.com")
         .searchParams.get("v");
     const feedThumbnailUrl = firstThumbnailUrlFromParsedItem(extra.mediaThumbnail);
+    const redditPreviewUrl = sourceType === FeedSourceType.REDDIT_RSS
+      ? higherResolutionRedditPreviewUrl(extra.contentEncoded ?? item["content"], feedThumbnailUrl)
+      : null;
     const mediaUrl = videoId
       ? await resolveYouTubePreviewUrl({
           videoId,
           title: decodeHtmlEntities(item.title?.trim()) || "Untitled item",
           feedThumbnailUrl,
         })
-      : item.enclosure?.url || feedThumbnailUrl || null;
+      : item.enclosure?.url || redditPreviewUrl || feedThumbnailUrl || null;
 
     const rawId =
       item.guid ||

@@ -2119,7 +2119,7 @@ export function SettingsScreen() {
               Unread and read items older than this window are removed automatically unless they are bookmarked.
             </p>
             <div className="mt-3 flex gap-2">
-              {[30, 90, 180, 365].map((days) => (
+              {[14, 30, 90, 180, 365].map((days) => (
                 <button
                   key={days}
                   onClick={() => settings.mutate({ itemRetentionDays: days })}

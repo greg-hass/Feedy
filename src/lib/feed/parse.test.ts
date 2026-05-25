@@ -148,4 +148,68 @@ describe("feed parsing", () => {
       lastModified: "Thu, 14 May 2026 08:00:00 GMT",
     });
   });
+
+  it("prefers an embedded high-resolution Reddit preview over its small thumbnail", async () => {
+    const reddit = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>newest submissions : ProductivityApps</title>
+  <entry>
+    <id>t3_preview</id>
+    <title>Image post</title>
+    <link href="https://www.reddit.com/r/ProductivityApps/comments/preview/image_post/" />
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://preview.redd.it/image.jpg?width=1080&amp;amp;format=pjpg&amp;amp;auto=webp&quot;&gt;large image&lt;/a&gt;&lt;/p&gt;</content>
+    <media:thumbnail url="https://preview.redd.it/image.jpg?width=140&amp;height=140&amp;crop=1:1,smart&amp;auto=webp" />
+    <published>2026-05-25T11:10:45+00:00</published>
+  </entry>
+</feed>`;
+
+    mockFetch(() => new Response(reddit, { status: 200 }));
+
+    const result = await fetchAndParseFeedConditionally(
+      "https://www.reddit.com/r/ProductivityApps/new/.rss",
+      "reddit-feed",
+    );
+
+    assert.equal(result.notModified, false);
+    if (result.notModified) {
+      throw new Error("Expected parsed Reddit feed");
+    }
+
+    assert.equal(
+      result.items[0]?.mediaUrl,
+      "https://preview.redd.it/image.jpg?width=1080&format=pjpg&auto=webp",
+    );
+  });
+
+  it("retains Reddit's small thumbnail when no larger preview is embedded", async () => {
+    const reddit = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>newest submissions : ProductivityApps</title>
+  <entry>
+    <id>t3_thumbnail</id>
+    <title>Thumbnail post</title>
+    <link href="https://www.reddit.com/r/ProductivityApps/comments/thumbnail/post/" />
+    <content type="html">&lt;p&gt;No large media link here.&lt;/p&gt;</content>
+    <media:thumbnail url="https://preview.redd.it/thumb.png?width=140&amp;height=86&amp;auto=webp" />
+    <published>2026-05-25T07:13:43+00:00</published>
+  </entry>
+</feed>`;
+
+    mockFetch(() => new Response(reddit, { status: 200 }));
+
+    const result = await fetchAndParseFeedConditionally(
+      "https://www.reddit.com/r/ProductivityApps/new/.rss",
+      "reddit-feed",
+    );
+
+    assert.equal(result.notModified, false);
+    if (result.notModified) {
+      throw new Error("Expected parsed Reddit feed");
+    }
+
+    assert.equal(
+      result.items[0]?.mediaUrl,
+      "https://preview.redd.it/thumb.png?width=140&height=86&auto=webp",
+    );
+  });
 });
