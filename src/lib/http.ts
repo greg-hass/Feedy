@@ -186,6 +186,8 @@ async function fetchWithPolicy(
       }
 
       const nextUrl = new URL(location, url);
+      clearTimeout(timeout);
+      release();
       return await fetchWithPolicy(nextUrl, init, timeoutMs, redirectCount + 1);
     }
 

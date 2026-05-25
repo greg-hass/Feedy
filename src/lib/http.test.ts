@@ -22,4 +22,38 @@ describe("fetchWithTimeout", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it("does not deadlock concurrent same-host redirects", async () => {
+    const originalFetch = globalThis.fetch;
+    const completedUrls: string[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes("/initial/")) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: url.replace("/initial/", "/resolved/") },
+        });
+      }
+
+      completedUrls.push(url);
+      return new Response("ok", { status: 200 });
+    }) as typeof fetch;
+
+    try {
+      const redirectRequests = Array.from({ length: 20 }, (_, index) =>
+        fetchWithTimeout(`https://8.8.8.8/initial/${index}`, {}, 1_000),
+      );
+      const responses = await Promise.race([
+        Promise.all(redirectRequests),
+        new Promise<never>((_resolve, reject) => {
+          setTimeout(() => reject(new Error("same-host redirects deadlocked")), 500);
+        }),
+      ]);
+
+      assert.equal(responses.length, 20);
+      assert.equal(completedUrls.length, 20);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
