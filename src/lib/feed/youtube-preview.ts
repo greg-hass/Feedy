@@ -235,7 +235,7 @@ export async function resolveYouTubePreviewUrl(input: {
     }
 
     return buildFallbackYouTubeThumbnailDataUrl(input.title);
-  })();
+  })().catch(() => input.feedThumbnailUrl || buildFallbackYouTubeThumbnailDataUrl(input.title));
 
   youtubePreviewCache.set(cacheKey, preview);
   return preview;

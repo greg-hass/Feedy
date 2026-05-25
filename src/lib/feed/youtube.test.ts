@@ -205,4 +205,23 @@ describe("youtube feed helpers", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it("keeps the feed thumbnail when quality probing fails", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      throw new Error("thumbnail host unavailable");
+    }) as typeof fetch;
+
+    try {
+      const preview = await resolveYouTubePreviewUrl({
+        videoId: "network-failure-video",
+        title: "Available without enrichment",
+        feedThumbnailUrl: "https://i.ytimg.com/vi/network-failure-video/mqdefault.jpg",
+      });
+
+      assert.equal(preview, "https://i.ytimg.com/vi/network-failure-video/mqdefault.jpg");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
