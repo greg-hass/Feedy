@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       const page = await measurePerf(
         "api.items",
         () =>
-          getTimelineItemPage(user.id, {
+          getTimelineItemPage(user.id, user.settings?.hideYouTubeShorts ?? false, {
             feedId: query.feedId,
             folderId: query.folderId,
             saved: query.saved === "true",
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
             q: query.q,
             cursor: query.cursor,
             pageSize: query.pageSize,
-          }, user.settings?.hideYouTubeShorts ?? false),
+          }),
         {
           userId: user.id,
           feedId: query.feedId ?? null,
@@ -58,14 +58,14 @@ export async function GET(request: Request) {
     const items = await measurePerf(
       "api.items",
       () =>
-        getTimelineItems(user.id, {
+        getTimelineItems(user.id, user.settings?.hideYouTubeShorts ?? false, {
           feedId: query.feedId,
           folderId: query.folderId,
           saved: query.saved === "true",
           sourceFilter: query.sourceFilter,
           stateFilter: query.stateFilter,
           q: query.q,
-        }, user.settings?.hideYouTubeShorts ?? false),
+        }),
       {
         userId: user.id,
         feedId: query.feedId ?? null,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
+import { apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
 import { getNavigationData } from "@/lib/navigation-data";
 import { createFeedForUser } from "@/lib/feed/service";
 import { feedSchema } from "@/lib/schemas";
@@ -22,6 +22,6 @@ export async function POST(request: Request) {
     const feed = await createFeedForUser(user.id, input);
     return NextResponse.json(feed);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not create feed");
+    return apiErrorFrom(error, "Could not create feed");
   }
 }

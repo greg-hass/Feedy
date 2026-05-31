@@ -162,43 +162,45 @@ async function finalizeNotModifiedRefresh(input: {
   freshAt: Date;
   result: { etag: string | null; lastModified: string | null };
 }) {
-  await prisma.feed.update({
-    where: { id: input.feed.id },
-    data: {
-      etag: input.result.etag,
-      lastModified: input.result.lastModified,
-      lastRefreshedAt: input.freshAt,
-      lastSuccessfulRefreshAt: input.freshAt,
-      lastError: null,
-      healthStatus: "HEALTHY",
-    },
-  });
-
-  if (input.refreshJob) {
-    await prisma.refreshJob.update({
-      where: { id: input.refreshJob.id },
+  await prisma.$transaction(async (tx) => {
+    await tx.feed.update({
+      where: { id: input.feed.id },
       data: {
-        status: JobStatus.SUCCEEDED,
-        completedAt: input.freshAt,
-        metadata: {
-          ...(input.refreshJob.metadata && typeof input.refreshJob.metadata === "object" ? input.refreshJob.metadata : {}),
-          trigger: input.trigger,
-          processedItems: 0,
-          newItems: 0,
-          notModified: true,
-        },
+        etag: input.result.etag,
+        lastModified: input.result.lastModified,
+        lastRefreshedAt: input.freshAt,
+        lastSuccessfulRefreshAt: input.freshAt,
+        lastError: null,
+        healthStatus: "HEALTHY",
       },
     });
-  }
 
-  await prisma.refreshLog.update({
-    where: { id: input.logId },
-    data: {
-      status: JobStatus.SUCCEEDED,
-      finishedAt: input.freshAt,
-      newItems: 0,
-      metadata: { trigger: input.trigger, notModified: true },
-    },
+    if (input.refreshJob) {
+      await tx.refreshJob.update({
+        where: { id: input.refreshJob.id },
+        data: {
+          status: JobStatus.SUCCEEDED,
+          completedAt: input.freshAt,
+          metadata: {
+            ...(input.refreshJob.metadata && typeof input.refreshJob.metadata === "object" ? input.refreshJob.metadata : {}),
+            trigger: input.trigger,
+            processedItems: 0,
+            newItems: 0,
+            notModified: true,
+          },
+        },
+      });
+    }
+
+    await tx.refreshLog.update({
+      where: { id: input.logId },
+      data: {
+        status: JobStatus.SUCCEEDED,
+        finishedAt: input.freshAt,
+        newItems: 0,
+        metadata: { trigger: input.trigger, notModified: true },
+      },
+    });
   });
 }
 
@@ -223,47 +225,49 @@ async function finalizeSuccessfulRefresh(input: {
   upserts: Array<{ id: string }>;
   newItemsCount: number;
 }) {
-  await prisma.feed.update({
-    where: { id: input.feed.id },
-    data: {
-      title: input.result.feed.title,
-      description: input.result.feed.description,
-      siteUrl: input.result.feed.siteUrl,
-      iconHintUrl: input.result.feed.iconUrl,
-      sourceType: input.result.feed.sourceType,
-      etag: input.result.etag,
-      lastModified: input.result.lastModified,
-      lastRefreshedAt: input.freshAt,
-      lastSuccessfulRefreshAt: input.freshAt,
-      lastError: null,
-      healthStatus: "HEALTHY",
-    },
-  });
-
-  if (input.refreshJob) {
-    await prisma.refreshJob.update({
-      where: { id: input.refreshJob.id },
+  await prisma.$transaction(async (tx) => {
+    await tx.feed.update({
+      where: { id: input.feed.id },
       data: {
-        status: JobStatus.SUCCEEDED,
-        completedAt: input.freshAt,
-        metadata: {
-          ...(input.refreshJob.metadata && typeof input.refreshJob.metadata === "object" ? input.refreshJob.metadata : {}),
-          trigger: input.trigger,
-          processedItems: input.upserts.length,
-          newItems: input.newItemsCount,
-        },
+        title: input.result.feed.title,
+        description: input.result.feed.description,
+        siteUrl: input.result.feed.siteUrl,
+        iconHintUrl: input.result.feed.iconUrl,
+        sourceType: input.result.feed.sourceType,
+        etag: input.result.etag,
+        lastModified: input.result.lastModified,
+        lastRefreshedAt: input.freshAt,
+        lastSuccessfulRefreshAt: input.freshAt,
+        lastError: null,
+        healthStatus: "HEALTHY",
       },
     });
-  }
 
-  await prisma.refreshLog.update({
-    where: { id: input.logId },
-    data: {
-      status: JobStatus.SUCCEEDED,
-      finishedAt: input.freshAt,
-      newItems: input.newItemsCount,
-      metadata: { trigger: input.trigger },
-    },
+    if (input.refreshJob) {
+      await tx.refreshJob.update({
+        where: { id: input.refreshJob.id },
+        data: {
+          status: JobStatus.SUCCEEDED,
+          completedAt: input.freshAt,
+          metadata: {
+            ...(input.refreshJob.metadata && typeof input.refreshJob.metadata === "object" ? input.refreshJob.metadata : {}),
+            trigger: input.trigger,
+            processedItems: input.upserts.length,
+            newItems: input.newItemsCount,
+          },
+        },
+      });
+    }
+
+    await tx.refreshLog.update({
+      where: { id: input.logId },
+      data: {
+        status: JobStatus.SUCCEEDED,
+        finishedAt: input.freshAt,
+        newItems: input.newItemsCount,
+        metadata: { trigger: input.trigger },
+      },
+    });
   });
 }
 
@@ -273,34 +277,37 @@ async function recordFailedRefresh(input: {
   logId: string;
   message: string;
 }) {
-  await prisma.feed.update({
-    where: { id: input.feedId },
-    data: {
-      lastFailureAt: new Date(),
-      lastError: input.message,
-      healthStatus: "ERROR",
-    },
-  });
+  const failureAt = new Date();
+  await prisma.$transaction(async (tx) => {
+    await tx.feed.update({
+      where: { id: input.feedId },
+      data: {
+        lastFailureAt: failureAt,
+        lastError: input.message,
+        healthStatus: "ERROR",
+      },
+    });
 
-  await prisma.refreshLog.update({
-    where: { id: input.logId },
-    data: {
-      status: JobStatus.FAILED,
-      finishedAt: new Date(),
-      errorMessage: input.message,
-    },
-  });
-
-  if (input.refreshJob) {
-    await prisma.refreshJob.update({
-      where: { id: input.refreshJob.id },
+    await tx.refreshLog.update({
+      where: { id: input.logId },
       data: {
         status: JobStatus.FAILED,
-        completedAt: new Date(),
+        finishedAt: failureAt,
         errorMessage: input.message,
       },
     });
-  }
+
+    if (input.refreshJob) {
+      await tx.refreshJob.update({
+        where: { id: input.refreshJob.id },
+        data: {
+          status: JobStatus.FAILED,
+          completedAt: failureAt,
+          errorMessage: input.message,
+        },
+      });
+    }
+  });
 }
 
 export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJobId?: string) {

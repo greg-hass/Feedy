@@ -51,6 +51,13 @@ type TimelineItemRecord = Prisma.ItemGetPayload<{
   select: typeof timelineItemSelect;
 }>;
 
+type ReaderItemRecord = Prisma.ItemGetPayload<{
+  select: typeof readerItemSelect;
+}> & {
+  bookmarks: Array<{ id: string }>;
+  readStates: Array<{ id: string }>;
+};
+
 type TimelineItemQueryOptions = {
   feedId?: string;
   folderId?: string;
@@ -61,6 +68,20 @@ type TimelineItemQueryOptions = {
   cursor?: string;
   pageSize?: number;
 };
+
+function buildFeedWhere(
+  userId: string,
+  options?: TimelineItemQueryOptions,
+  sourceTypeFilter?: FeedSourceType | { in: FeedSourceType[] },
+) {
+  return {
+    userId,
+    ...(options?.feedId ? { id: options.feedId } : {}),
+    ...(options?.folderId ? { folderId: options.folderId } : {}),
+    ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
+    ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
+  };
+}
 
 function buildSourceTypeFilter(
   sourceFilter?: TimelineSourceFilter | FeedSourceFilter,
@@ -93,21 +114,12 @@ function buildSourceTypeFilter(
 
 async function buildTimelineQuery(
   userId: string,
+  hideYouTubeShorts: boolean,
   options?: TimelineItemQueryOptions,
   pageSize = 100,
   includeExtraItem = false,
-  hideYouTubeShorts?: boolean,
 ){
   const sourceTypeFilter = buildSourceTypeFilter(options?.sourceFilter);
-  const resolvedHideYouTubeShorts =
-    hideYouTubeShorts ??
-    (
-      await prisma.user.findUnique({
-        where: { id: userId },
-        select: { settings: { select: { hideYouTubeShorts: true } } },
-      })
-    )?.settings?.hideYouTubeShorts ??
-    false;
 
   const stateWhere =
     options?.saved
@@ -124,11 +136,7 @@ async function buildTimelineQuery(
       ? (
           await prisma.feed.findMany({
             where: {
-              userId,
-              ...(options?.feedId ? { id: options.feedId } : {}),
-              ...(options?.folderId ? { folderId: options.folderId } : {}),
-              ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
-              ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
+              ...buildFeedWhere(userId, options, sourceTypeFilter),
               OR: [
                 { title: { contains: searchQuery, mode: "insensitive" as const } },
                 { label: { contains: searchQuery, mode: "insensitive" as const } },
@@ -157,16 +165,10 @@ async function buildTimelineQuery(
 
   const query = {
     where: {
-      feed: {
-        userId,
-        ...(options?.feedId ? { id: options.feedId } : {}),
-        ...(options?.folderId ? { folderId: options.folderId } : {}),
-        ...(!options?.feedId && !options?.folderId ? { excludeFromTimeline: false } : {}),
-        ...(sourceTypeFilter ? { sourceType: sourceTypeFilter } : {}),
-      },
+      feed: buildFeedWhere(userId, options, sourceTypeFilter),
       ...stateWhere,
       ...(!options?.saved && !options?.feedId && !options?.folderId ? { mutedByRule: false } : {}),
-      ...(resolvedHideYouTubeShorts ? { youtubeIsShort: false } : {}),
+      ...(hideYouTubeShorts ? { youtubeIsShort: false } : {}),
       ...searchWhere,
     },
     orderBy: [
@@ -191,35 +193,35 @@ async function buildTimelineQuery(
 
 async function loadTimelineItemRecords(
   userId: string,
+  hideYouTubeShorts: boolean,
   options?: TimelineItemQueryOptions,
   pageSize = 100,
   includeExtraItem = false,
-  hideYouTubeShorts?: boolean,
 ) : Promise<TimelineItemRecord[]> {
   const { query } = await buildTimelineQuery(
     userId,
+    hideYouTubeShorts,
     options,
     pageSize,
     includeExtraItem,
-    hideYouTubeShorts,
   );
   return prisma.item.findMany(query);
 }
 export async function getTimelineItems(
   userId: string,
+  hideYouTubeShorts: boolean,
   options?: TimelineItemQueryOptions,
-  hideYouTubeShorts?: boolean,
 ): Promise<TimelineItemRecord[]> {
-  return loadTimelineItemRecords(userId, options, 100, false, hideYouTubeShorts);
+  return loadTimelineItemRecords(userId, hideYouTubeShorts, options, 100, false);
 }
 
 export async function getTimelineItemPage(
   userId: string,
+  hideYouTubeShorts: boolean,
   options?: TimelineItemQueryOptions,
-  hideYouTubeShorts?: boolean,
 ) {
   const pageSize = options?.pageSize ?? 100;
-  const records = await loadTimelineItemRecords(userId, options, pageSize, true, hideYouTubeShorts);
+  const records = await loadTimelineItemRecords(userId, hideYouTubeShorts, options, pageSize, true);
   return buildTimelinePage(records, pageSize);
 }
 
@@ -259,7 +261,7 @@ export async function getFeedSearch(
   });
 }
 
-export async function getReaderItem(userId: string, itemId: string) {
+export async function getReaderItem(userId: string, itemId: string): Promise<ReaderItemRecord | null> {
   return prisma.item.findFirst({
     where: {
       id: itemId,
