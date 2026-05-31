@@ -1,17 +1,19 @@
 import { UnrecoverableError, Worker } from "bullmq";
 
-import { JobStatus, JobTrigger } from "@prisma/client";
+import { JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndCacheIcon } from "@/lib/feed/icons";
 import { refreshFeed } from "@/lib/feed/service";
 import { probeYouTubeShort } from "@/lib/feed/youtube";
 import { loadPrimaryUser, syncSingleUserFromEnv } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { enqueueFeedRefresh, getRefreshQueue, iconQueueName, refreshQueueName } from "@/lib/queue";
+import { getRefreshQueue, iconQueueName, refreshQueueName } from "@/lib/queue";
 import { getRedis } from "@/lib/redis";
 import { pruneUserData } from "@/lib/retention";
 import { ensureDataDirs } from "@/lib/storage";
 import { runBackgroundTask } from "@/lib/background-task";
+import { recoverStaleRefreshJobs } from "@/lib/worker-maintenance";
+import { queueSingleFeedRefresh } from "@/lib/refresh-orchestration";
 
 async function scheduleDueFeeds() {
   const user = await loadPrimaryUser();
@@ -34,7 +36,12 @@ async function scheduleDueFeeds() {
 
   const feeds = await prisma.feed.findMany({
     where: { userId: user.id },
-    include: { user: { include: { settings: true } } },
+    select: {
+      id: true,
+      lastRefreshedAt: true,
+      lastFailureAt: true,
+      refreshIntervalMinutes: true,
+    },
   });
 
   const now = Date.now();
@@ -42,7 +49,7 @@ async function scheduleDueFeeds() {
   for (const feed of feeds) {
     const interval =
       feed.refreshIntervalMinutes ??
-      feed.user.settings?.refreshIntervalMinutes ??
+      user.settings?.refreshIntervalMinutes ??
       env.REFRESH_DEFAULT_INTERVAL_MINUTES;
     const dueAt =
       (feed.lastRefreshedAt
@@ -61,28 +68,22 @@ async function scheduleDueFeeds() {
       break;
     }
 
-    const refreshJob = await prisma.refreshJob.create({
-      data: {
-        userId: user.id,
-        feedId: feed.id,
-        trigger: JobTrigger.AUTO,
-        status: JobStatus.QUEUED,
-      },
-    });
-    const queued = await enqueueFeedRefresh({
-      feedId: feed.id,
-      trigger: "auto",
-      refreshJobId: refreshJob.id,
-    });
-    if (!queued.enqueued) {
-      await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
-    } else {
+    const queued = await queueSingleFeedRefresh(user.id, feed.id, JobTrigger.AUTO);
+    if (queued) {
       queuedCount++;
     }
   }
 
   if (queuedCount > 0) {
     console.log(`[worker] Auto-refresh queued ${queuedCount} feeds (backlog was ${backlog})`);
+  }
+}
+
+async function recoverStaleRefreshJobsOnBoot() {
+  const count = await recoverStaleRefreshJobs(prisma);
+
+  if (count > 0) {
+    console.log(`[worker] Requeued ${count} stale refresh jobs after startup`);
   }
 }
 
@@ -163,6 +164,7 @@ async function backfillYouTubeShortFlags() {
 async function boot() {
   ensureDataDirs();
   await syncSingleUserFromEnv();
+  await recoverStaleRefreshJobsOnBoot();
 
   const refreshWorker = new Worker(
     refreshQueueName,
@@ -211,12 +213,36 @@ async function boot() {
   void runBackgroundTask("initial feed scheduling", scheduleDueFeeds);
   void runBackgroundTask("initial retention cleanup", runRetentionCleanup);
   void runBackgroundTask("YouTube Shorts backfill", backfillYouTubeShortFlags);
-  setInterval(() => {
+  const feedScheduleTimer = setInterval(() => {
     void runBackgroundTask("scheduled feed scheduling", scheduleDueFeeds);
   }, 60_000);
-  setInterval(() => {
+  const retentionTimer = setInterval(() => {
     void runBackgroundTask("scheduled retention cleanup", runRetentionCleanup);
   }, 6 * 60 * 60 * 1000);
+
+  const shutdown = async (signal: NodeJS.Signals) => {
+    console.log(`[worker] Received ${signal}, shutting down`);
+    feedScheduleTimer.unref();
+    retentionTimer.unref();
+    const forcedExit = setTimeout(() => {
+      console.error("[worker] Shutdown timed out, forcing exit");
+      process.exit(1);
+    }, 10_000);
+
+    try {
+      await Promise.allSettled([refreshWorker.close(), iconWorker.close()]);
+      process.exit(0);
+    } finally {
+      clearTimeout(forcedExit);
+    }
+  };
+
+  process.once("SIGTERM", () => {
+    void shutdown("SIGTERM");
+  });
+  process.once("SIGINT", () => {
+    void shutdown("SIGINT");
+  });
 
   console.log("Feedy worker started");
 }

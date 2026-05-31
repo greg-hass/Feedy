@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser, parseJson } from "@/lib/api";
-import { getNavigationData } from "@/lib/data";
+import { apiError, apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
+import { getNavigationData } from "@/lib/navigation-data";
 import { createFeedForUser } from "@/lib/feed/service";
 import { feedSchema } from "@/lib/schemas";
 
@@ -11,7 +11,7 @@ export async function GET() {
     const navigation = await getNavigationData(user.id);
     return NextResponse.json(navigation.feeds);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Unauthorized", 401);
+    return apiErrorFrom(error, "Unauthorized");
   }
 }
 

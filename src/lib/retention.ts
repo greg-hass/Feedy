@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 const REFRESH_RECORD_RETENTION_DAYS = 30;
 const IMPORT_RECORD_RETENTION_DAYS = 30;
 const PRUNE_BATCH_SIZE = 1000;
+const PRUNE_ITEM_CAP_PER_RUN = 10_000;
 
 export async function pruneUserData(userId: string, itemRetentionDays: number) {
   const itemCutoff = subDays(new Date(), itemRetentionDays);
@@ -13,6 +14,10 @@ export async function pruneUserData(userId: string, itemRetentionDays: number) {
 
   let deletedItems = 0;
   for (;;) {
+    if (deletedItems >= PRUNE_ITEM_CAP_PER_RUN) {
+      break;
+    }
+
     const staleItems = await prisma.item.findMany({
       where: {
         feed: { userId },
@@ -26,7 +31,7 @@ export async function pruneUserData(userId: string, itemRetentionDays: number) {
         ],
       },
       select: { id: true },
-      take: PRUNE_BATCH_SIZE,
+      take: Math.min(PRUNE_BATCH_SIZE, PRUNE_ITEM_CAP_PER_RUN - deletedItems),
     });
 
     if (staleItems.length === 0) {

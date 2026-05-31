@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser } from "@/lib/api";
+import { apiErrorFrom, assertApiUser } from "@/lib/api";
 import { prisma } from "@/lib/db";
 
 type StorageStatsRow = {
@@ -44,6 +44,6 @@ export async function GET() {
       retentionDays,
     });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Unauthorized", 401);
+    return apiErrorFrom(error, "Unauthorized");
   }
 }

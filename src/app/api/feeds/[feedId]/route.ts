@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
-import { apiError, assertApiUser, parseJson } from "@/lib/api";
+import { apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { assertOwnedFolder } from "@/lib/ownership";
 import { updateFeedSchema } from "@/lib/schemas";
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, context: { params: Params }) {
 
     return NextResponse.json(feed);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not update feed");
+    return apiErrorFrom(error, "Could not update feed");
   }
 }
 
@@ -44,6 +44,6 @@ export async function DELETE(_request: Request, context: { params: Params }) {
     });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not delete feed");
+    return apiErrorFrom(error, "Could not delete feed");
   }
 }

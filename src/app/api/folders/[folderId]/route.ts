@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser, parseJson } from "@/lib/api";
+import { apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { updateFolderSchema } from "@/lib/schemas";
 
@@ -22,7 +22,7 @@ export async function PATCH(request: Request, context: { params: Params }) {
 
     return NextResponse.json(folder);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not update folder");
+    return apiErrorFrom(error, "Could not update folder");
   }
 }
 
@@ -44,6 +44,6 @@ export async function DELETE(_request: Request, context: { params: Params }) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not delete folder");
+    return apiErrorFrom(error, "Could not delete folder");
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireApiUser } from "@/lib/api";
-import { getNavigationData } from "@/lib/data";
+import { getNavigationData } from "@/lib/navigation-data";
 import { measurePerf } from "@/lib/perf";
 
 export async function GET() {

@@ -1,19 +1,19 @@
-import { Prisma, JobStatus, JobTrigger } from "@prisma/client";
+import { FeedSourceType, Prisma, JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndParseFeedConditionally, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
-import { enqueueFeedRefresh, enqueueIconFetch } from "@/lib/queue";
-import type { FeedValidationResult } from "@/lib/feed/types";
+import { enqueueIconFetch } from "@/lib/queue";
+import { queueSingleFeedRefresh } from "@/lib/refresh-orchestration";
+import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import { evaluateFeedMuteRules, normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
-import { probeYouTubeShort } from "@/lib/feed/youtube";
 import { assertOwnedFolder } from "@/lib/ownership";
 import {
   assertWithinLimit,
-  mapInBatches,
   MAX_FEED_ITEMS_PER_REFRESH,
-  REMOTE_PROBE_BATCH_SIZE,
 } from "@/lib/workload-limits";
+
+const REFRESH_UPSERT_BATCH_SIZE = 50;
 
 async function createValidatedFeedForUser(
   userId: string,
@@ -90,22 +90,7 @@ async function createValidatedFeedForUser(
   }
 
   if (options?.queueInitialRefresh !== false) {
-    const refreshJob = await prisma.refreshJob.create({
-      data: {
-        userId,
-        feedId: feed.id,
-        trigger: JobTrigger.MANUAL,
-        status: JobStatus.QUEUED,
-      },
-    });
-    const refresh = await enqueueFeedRefresh({
-      feedId: feed.id,
-      trigger: "manual",
-      refreshJobId: refreshJob.id,
-    });
-    if (!refresh.enqueued) {
-      await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
-    }
+    await queueSingleFeedRefresh(userId, feed.id, JobTrigger.MANUAL);
   }
 
   if (options?.queueInitialIconFetch !== false) {
@@ -141,6 +126,182 @@ export async function createFeedForUser(
 }
 
 export { createValidatedFeedForUser };
+
+export async function upsertFeedItemsInBatches(
+  client: Pick<typeof prisma, "$transaction">,
+  items: Array<Parameters<typeof prisma.item.upsert>[0]>,
+) {
+  const upserts: Array<{ id: string }> = [];
+
+  for (let index = 0; index < items.length; index += REFRESH_UPSERT_BATCH_SIZE) {
+    const batch = items.slice(index, index + REFRESH_UPSERT_BATCH_SIZE);
+    const batchResults = await client.$transaction(
+      batch.map((operation) => prisma.item.upsert(operation)),
+    );
+    upserts.push(...batchResults);
+  }
+
+  return upserts;
+}
+
+function evaluateRefreshItems(
+  muteRules: ReturnType<typeof normalizeFeedMuteRules>,
+  items: ParsedFeedItem[],
+) {
+  return items.map((item) => ({
+    item,
+    evaluation: evaluateFeedMuteRules(muteRules, item),
+  }));
+}
+
+async function finalizeNotModifiedRefresh(input: {
+  feed: { id: string };
+  refreshJob: { id: string; metadata: Prisma.JsonValue | null } | null;
+  logId: string;
+  trigger: JobTrigger;
+  freshAt: Date;
+  result: { etag: string | null; lastModified: string | null };
+}) {
+  await prisma.feed.update({
+    where: { id: input.feed.id },
+    data: {
+      etag: input.result.etag,
+      lastModified: input.result.lastModified,
+      lastRefreshedAt: input.freshAt,
+      lastSuccessfulRefreshAt: input.freshAt,
+      lastError: null,
+      healthStatus: "HEALTHY",
+    },
+  });
+
+  if (input.refreshJob) {
+    await prisma.refreshJob.update({
+      where: { id: input.refreshJob.id },
+      data: {
+        status: JobStatus.SUCCEEDED,
+        completedAt: input.freshAt,
+        metadata: {
+          ...(input.refreshJob.metadata && typeof input.refreshJob.metadata === "object" ? input.refreshJob.metadata : {}),
+          trigger: input.trigger,
+          processedItems: 0,
+          newItems: 0,
+          notModified: true,
+        },
+      },
+    });
+  }
+
+  await prisma.refreshLog.update({
+    where: { id: input.logId },
+    data: {
+      status: JobStatus.SUCCEEDED,
+      finishedAt: input.freshAt,
+      newItems: 0,
+      metadata: { trigger: input.trigger, notModified: true },
+    },
+  });
+}
+
+async function finalizeSuccessfulRefresh(input: {
+  feed: { id: string; userId: string };
+  refreshJob: { id: string; metadata: Prisma.JsonValue | null } | null;
+  logId: string;
+  trigger: JobTrigger;
+  freshAt: Date;
+  result: {
+      feed: {
+        title: string;
+        description: string | null;
+        siteUrl: string | null;
+        iconUrl: string | null;
+        sourceType: FeedSourceType;
+      };
+    etag: string | null;
+    lastModified: string | null;
+    items: ParsedFeedItem[];
+  };
+  upserts: Array<{ id: string }>;
+  newItemsCount: number;
+}) {
+  await prisma.feed.update({
+    where: { id: input.feed.id },
+    data: {
+      title: input.result.feed.title,
+      description: input.result.feed.description,
+      siteUrl: input.result.feed.siteUrl,
+      iconHintUrl: input.result.feed.iconUrl,
+      sourceType: input.result.feed.sourceType,
+      etag: input.result.etag,
+      lastModified: input.result.lastModified,
+      lastRefreshedAt: input.freshAt,
+      lastSuccessfulRefreshAt: input.freshAt,
+      lastError: null,
+      healthStatus: "HEALTHY",
+    },
+  });
+
+  if (input.refreshJob) {
+    await prisma.refreshJob.update({
+      where: { id: input.refreshJob.id },
+      data: {
+        status: JobStatus.SUCCEEDED,
+        completedAt: input.freshAt,
+        metadata: {
+          ...(input.refreshJob.metadata && typeof input.refreshJob.metadata === "object" ? input.refreshJob.metadata : {}),
+          trigger: input.trigger,
+          processedItems: input.upserts.length,
+          newItems: input.newItemsCount,
+        },
+      },
+    });
+  }
+
+  await prisma.refreshLog.update({
+    where: { id: input.logId },
+    data: {
+      status: JobStatus.SUCCEEDED,
+      finishedAt: input.freshAt,
+      newItems: input.newItemsCount,
+      metadata: { trigger: input.trigger },
+    },
+  });
+}
+
+async function recordFailedRefresh(input: {
+  feedId: string;
+  refreshJob: { id: string } | null;
+  logId: string;
+  message: string;
+}) {
+  await prisma.feed.update({
+    where: { id: input.feedId },
+    data: {
+      lastFailureAt: new Date(),
+      lastError: input.message,
+      healthStatus: "ERROR",
+    },
+  });
+
+  await prisma.refreshLog.update({
+    where: { id: input.logId },
+    data: {
+      status: JobStatus.FAILED,
+      finishedAt: new Date(),
+      errorMessage: input.message,
+    },
+  });
+
+  if (input.refreshJob) {
+    await prisma.refreshJob.update({
+      where: { id: input.refreshJob.id },
+      data: {
+        status: JobStatus.FAILED,
+        completedAt: new Date(),
+        errorMessage: input.message,
+      },
+    });
+  }
+}
 
 export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJobId?: string) {
   const refreshStartedAt = performance.now();
@@ -192,43 +353,15 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     if (result.notModified) {
       const finalizeStartedAt = performance.now();
 
-      await prisma.feed.update({
-        where: { id: feed.id },
-        data: {
-          etag: result.etag,
-          lastModified: result.lastModified,
-          lastRefreshedAt: freshAt,
-          lastSuccessfulRefreshAt: freshAt,
-          lastError: null,
-          healthStatus: "HEALTHY",
-        },
-      });
-
-      if (refreshJob) {
-        await prisma.refreshJob.update({
-          where: { id: refreshJob.id },
-          data: {
-            status: JobStatus.SUCCEEDED,
-            completedAt: freshAt,
-            metadata: {
-              ...(refreshJob.metadata && typeof refreshJob.metadata === "object" ? refreshJob.metadata : {}),
-              trigger,
-              processedItems: 0,
-              newItems: 0,
-              notModified: true,
-            },
-          },
-        });
-      }
-
-      await prisma.refreshLog.update({
-        where: { id: log.id },
-        data: {
-          status: JobStatus.SUCCEEDED,
-          finishedAt: freshAt,
-          newItems: 0,
-          metadata: { trigger, notModified: true },
-        },
+      await finalizeNotModifiedRefresh({
+        feed,
+        refreshJob: refreshJob
+          ? { id: refreshJob.id, metadata: refreshJob.metadata }
+          : null,
+        logId: log.id,
+        trigger,
+        freshAt,
+        result,
       });
 
       logPerf(
@@ -265,69 +398,48 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     );
     const dedupeLookupDurationMs = performance.now() - dedupeLookupStartedAt;
     const upsertStartedAt = performance.now();
-    const evaluatedItems = result.items.map((item) => {
-      const evaluation = evaluateFeedMuteRules(muteRules, item);
-      return {
-        item,
-        evaluation,
-      };
-    });
+    const evaluatedItems = evaluateRefreshItems(muteRules, result.items);
 
-    const youtubeShortFlags = new Map<string, boolean>();
-    await mapInBatches(
-      evaluatedItems,
-      REMOTE_PROBE_BATCH_SIZE,
-      async ({ item }) => {
-        if (!item.youtubeVideoId) {
-          return;
-        }
-
-        youtubeShortFlags.set(item.youtubeVideoId, await probeYouTubeShort(item.youtubeVideoId));
+    const operations = evaluatedItems.map(({ item, evaluation }) => ({
+      where: { uniqueKey: item.uniqueKey },
+      update: {
+        title: item.title,
+        summary: item.summary,
+        contentHtml: item.contentHtml,
+        author: item.author,
+        canonicalUrl: item.canonicalUrl,
+        commentsUrl: item.commentsUrl,
+        mediaUrl: item.mediaUrl,
+        youtubeVideoId: item.youtubeVideoId,
+        youtubeIsShort: item.youtubeIsShort ?? false,
+        youtubeShortCheckedAt: item.youtubeVideoId ? null : undefined,
+        redditPermalink: item.redditPermalink,
+        mutedByRule: evaluation.muteFromTimeline,
+        publishedAt: item.publishedAt ?? undefined,
+        fetchedAt: new Date(),
       },
-    );
+      create: {
+        feedId: feed.id,
+        uniqueKey: item.uniqueKey,
+        guid: item.guid,
+        externalId: item.externalId,
+        title: item.title,
+        summary: item.summary,
+        contentHtml: item.contentHtml,
+        author: item.author,
+        canonicalUrl: item.canonicalUrl,
+        commentsUrl: item.commentsUrl,
+        mediaUrl: item.mediaUrl,
+        youtubeVideoId: item.youtubeVideoId,
+        youtubeIsShort: item.youtubeIsShort ?? false,
+        youtubeShortCheckedAt: item.youtubeVideoId ? null : undefined,
+        redditPermalink: item.redditPermalink,
+        mutedByRule: evaluation.muteFromTimeline,
+        publishedAt: item.publishedAt ?? undefined,
+      },
+    }) satisfies Parameters<typeof prisma.item.upsert>[0]);
 
-    const operations = evaluatedItems.map(({ item, evaluation }) =>
-      prisma.item.upsert({
-        where: { uniqueKey: item.uniqueKey },
-        update: {
-          title: item.title,
-          summary: item.summary,
-          contentHtml: item.contentHtml,
-          author: item.author,
-          canonicalUrl: item.canonicalUrl,
-          commentsUrl: item.commentsUrl,
-          mediaUrl: item.mediaUrl,
-          youtubeVideoId: item.youtubeVideoId,
-          youtubeIsShort: youtubeShortFlags.get(item.youtubeVideoId || "") ?? false,
-          youtubeShortCheckedAt: item.youtubeVideoId ? new Date() : null,
-          redditPermalink: item.redditPermalink,
-          mutedByRule: evaluation.muteFromTimeline,
-          publishedAt: item.publishedAt ?? undefined,
-          fetchedAt: new Date(),
-        },
-        create: {
-          feedId: feed.id,
-          uniqueKey: item.uniqueKey,
-          guid: item.guid,
-          externalId: item.externalId,
-          title: item.title,
-          summary: item.summary,
-          contentHtml: item.contentHtml,
-          author: item.author,
-          canonicalUrl: item.canonicalUrl,
-          commentsUrl: item.commentsUrl,
-          mediaUrl: item.mediaUrl,
-          youtubeVideoId: item.youtubeVideoId,
-          youtubeIsShort: youtubeShortFlags.get(item.youtubeVideoId || "") ?? false,
-          youtubeShortCheckedAt: item.youtubeVideoId ? new Date() : null,
-          redditPermalink: item.redditPermalink,
-          mutedByRule: evaluation.muteFromTimeline,
-          publishedAt: item.publishedAt ?? undefined,
-        },
-      }),
-    );
-
-    const upserts = await prisma.$transaction(operations);
+    const upserts = await upsertFeedItemsInBatches(prisma, operations);
     const autoMarkReadIds = upserts
       .filter((upsert, index) => evaluatedItems[index]?.evaluation.autoMarkRead)
       .map((upsert) => ({ userId: feed.userId, itemId: upsert.id }));
@@ -342,47 +454,17 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     const newItemsCount = result.items.filter((item) => !existingKeys.has(item.uniqueKey)).length;
 
     const finalizeStartedAt = performance.now();
-    await prisma.feed.update({
-      where: { id: feed.id },
-      data: {
-        title: result.feed.title,
-        description: result.feed.description,
-        siteUrl: result.feed.siteUrl,
-        iconHintUrl: result.feed.iconUrl,
-        sourceType: result.feed.sourceType,
-        etag: result.etag,
-        lastModified: result.lastModified,
-        lastRefreshedAt: freshAt,
-        lastSuccessfulRefreshAt: freshAt,
-        lastError: null,
-        healthStatus: "HEALTHY",
-      },
-    });
-
-    if (refreshJob) {
-      await prisma.refreshJob.update({
-        where: { id: refreshJob.id },
-        data: {
-          status: JobStatus.SUCCEEDED,
-          completedAt: freshAt,
-          metadata: {
-            ...(refreshJob.metadata && typeof refreshJob.metadata === "object" ? refreshJob.metadata : {}),
-            trigger,
-            processedItems: upserts.length,
-            newItems: newItemsCount,
-          },
-        },
-      });
-    }
-
-    await prisma.refreshLog.update({
-      where: { id: log.id },
-      data: {
-        status: JobStatus.SUCCEEDED,
-        finishedAt: freshAt,
-        newItems: newItemsCount,
-        metadata: { trigger },
-      },
+    await finalizeSuccessfulRefresh({
+      feed,
+      refreshJob: refreshJob
+        ? { id: refreshJob.id, metadata: refreshJob.metadata }
+        : null,
+      logId: log.id,
+      trigger,
+      freshAt,
+      result,
+      upserts,
+      newItemsCount,
     });
     const finalizeDurationMs = performance.now() - finalizeStartedAt;
 
@@ -407,32 +489,12 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     return newItemsCount;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown refresh error";
-    await prisma.feed.update({
-      where: { id: feed.id },
-      data: {
-        lastFailureAt: new Date(),
-        lastError: message,
-        healthStatus: "ERROR",
-      },
+    await recordFailedRefresh({
+      feedId: feed.id,
+      refreshJob: refreshJob ? { id: refreshJob.id } : null,
+      logId: log.id,
+      message,
     });
-    await prisma.refreshLog.update({
-      where: { id: log.id },
-      data: {
-        status: JobStatus.FAILED,
-        finishedAt: new Date(),
-        errorMessage: message,
-      },
-    });
-    if (refreshJob) {
-      await prisma.refreshJob.update({
-        where: { id: refreshJob.id },
-        data: {
-          status: JobStatus.FAILED,
-          completedAt: new Date(),
-          errorMessage: message,
-        },
-      });
-    }
     logPerf(
       "worker.refreshFeed",
       performance.now() - refreshStartedAt,
@@ -450,7 +512,15 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
 
 export async function ensureReaderContent(itemId: string) {
   const startedAt = performance.now();
-  const item = await prisma.item.findUnique({ where: { id: itemId } });
+  const item = await prisma.item.findUnique({
+    where: { id: itemId },
+    select: {
+      id: true,
+      canonicalUrl: true,
+      readabilityHtml: true,
+      summary: true,
+    },
+  });
   if (!item?.canonicalUrl) {
     return item;
   }

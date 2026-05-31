@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser } from "@/lib/api";
+import { apiErrorFrom, assertApiUser } from "@/lib/api";
 import { prisma } from "@/lib/db";
+import { markItemsRead } from "@/lib/mark-read";
 
 type Params = Promise<{ folderId: string }>;
 
@@ -20,26 +21,14 @@ export async function POST(_request: Request, context: { params: Params }) {
       select: { id: true },
     });
 
-    await prisma.$transaction(
-      items.map((item) =>
-        prisma.readState.upsert({
-          where: {
-            userId_itemId: {
-              userId: user.id,
-              itemId: item.id,
-            },
-          },
-          update: { lastReadAt: new Date() },
-          create: {
-            userId: user.id,
-            itemId: item.id,
-          },
-        }),
-      ),
+    await markItemsRead(
+      prisma,
+      user.id,
+      items.map((item) => item.id),
     );
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not mark folder as read");
+    return apiErrorFrom(error, "Could not mark folder as read");
   }
 }

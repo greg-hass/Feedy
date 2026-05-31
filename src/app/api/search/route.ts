@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser, parseQuery } from "@/lib/api";
+import { apiErrorFrom, assertApiUser, parseQuery } from "@/lib/api";
 import { getFeedSearch } from "@/lib/data";
 import { measurePerf } from "@/lib/perf";
 import { searchSchema } from "@/lib/schemas";
@@ -20,6 +20,6 @@ export async function GET(request: Request) {
     );
     return NextResponse.json(results);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not search feeds");
+    return apiErrorFrom(error, "Could not search feeds");
   }
 }

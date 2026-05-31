@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser } from "@/lib/api";
+import { apiError, apiErrorFrom, assertApiUser } from "@/lib/api";
 import { getReaderItem } from "@/lib/data";
 import { ensureReaderContentForLoadedItem } from "@/lib/feed/service";
 import { measurePerf } from "@/lib/perf";
@@ -37,6 +37,6 @@ export async function GET(_request: Request, context: { params: Params }) {
     }
     return NextResponse.json(serializeItem(item));
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not load reader");
+    return apiErrorFrom(error, "Could not load reader");
   }
 }

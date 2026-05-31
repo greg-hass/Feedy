@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { apiError, assertApiUser, parseQuery } from "@/lib/api";
+import { apiErrorFrom, assertApiUser, parseQuery } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { measurePerf } from "@/lib/perf";
 
@@ -50,6 +50,6 @@ export async function GET(request: Request) {
       active: queued + running,
     });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not fetch refresh status");
+    return apiErrorFrom(error, "Could not fetch refresh status");
   }
 }

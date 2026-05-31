@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser } from "@/lib/api";
+import { apiErrorFrom, assertApiUser } from "@/lib/api";
 import { ImportExportStatus, ImportExportType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { buildOpml } from "@/lib/feed/opml";
@@ -53,6 +53,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not export OPML");
+    return apiErrorFrom(error, "Could not export OPML");
   }
 }

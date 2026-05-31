@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser } from "@/lib/api";
+import { apiError, apiErrorFrom, assertApiUser } from "@/lib/api";
 import { ImportExportStatus, ImportExportType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { MAX_JSON_EXPORT_ITEMS } from "@/lib/workload-limits";
@@ -61,6 +61,6 @@ export async function GET() {
       },
     );
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not export backup");
+    return apiErrorFrom(error, "Could not export backup");
   }
 }

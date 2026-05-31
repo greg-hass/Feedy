@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser } from "@/lib/api";
+import { apiError, apiErrorFrom, assertApiUser } from "@/lib/api";
 import { ImportExportStatus, ImportExportType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { parseOpml } from "@/lib/feed/opml";
@@ -211,6 +211,6 @@ export async function POST(request: Request) {
       }).catch(() => null);
     }
 
-    return apiError(error instanceof Error ? error.message : "Could not import OPML");
+    return apiErrorFrom(error, "Could not import OPML");
   }
 }

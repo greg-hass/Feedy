@@ -1,7 +1,9 @@
 import { compare, hash } from "bcryptjs";
+import type { Prisma, User, Settings } from "@prisma/client";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -16,40 +18,66 @@ type SessionPayload = {
   username: string;
 };
 
+const sessionPayloadSchema = z.object({
+  userId: z.string().min(1),
+  username: z.string().min(1),
+});
+
+export function validateSessionPayload(payload: unknown) {
+  const parsed = sessionPayloadSchema.safeParse(payload);
+  return parsed.success ? parsed.data : null;
+}
+
 type SingleUserClient = typeof prisma;
 
-export async function syncSingleUserFromEnv(client: SingleUserClient = prisma) {
-  const existing = await client.user.findFirst({
-    include: {
-      settings: true,
-    },
+type UserWithSettings = Pick<User, "id" | "username" | "createdAt"> & {
+  settings: Settings | null;
+};
+
+type SingleUserTx = Prisma.TransactionClient;
+
+async function withSingleUserLock<T>(client: SingleUserClient, task: (tx: SingleUserTx) => Promise<T>) {
+  return client.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(1807239607)`;
+    return task(tx);
   });
+}
+
+function buildSingleUserSettingsData() {
+  return {
+    theme: ThemePreference.SYSTEM,
+    accentColor: AccentPreference.EMERALD,
+    itemRetentionDays: 90,
+    hideYouTubeShorts: false,
+    refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
+  };
+}
+
+function buildExistingSettingsData(existingSettings: Settings | null) {
+  return existingSettings
+    ? {
+        update: {
+          refreshIntervalMinutes:
+            existingSettings.refreshIntervalMinutes || env.REFRESH_DEFAULT_INTERVAL_MINUTES,
+          itemRetentionDays: existingSettings.itemRetentionDays || 90,
+          hideYouTubeShorts: existingSettings.hideYouTubeShorts ?? false,
+        },
+      }
+    : {
+        create: buildSingleUserSettingsData(),
+      };
+}
+
+async function writeSingleUserFromEnv(tx: SingleUserTx, existingUser?: UserWithSettings) {
   const passwordHash = await hash(env.APP_PASSWORD, 12);
 
-  if (existing) {
-    return client.user.update({
-      where: { id: existing.id },
+  if (existingUser) {
+    return tx.user.update({
+      where: { id: existingUser.id },
       data: {
         username: env.APP_USERNAME,
         passwordHash,
-        settings: existing.settings
-            ? {
-              update: {
-                refreshIntervalMinutes:
-                  existing.settings.refreshIntervalMinutes || env.REFRESH_DEFAULT_INTERVAL_MINUTES,
-                itemRetentionDays: existing.settings.itemRetentionDays || 90,
-                hideYouTubeShorts: existing.settings.hideYouTubeShorts ?? false,
-              },
-            }
-          : {
-              create: {
-                theme: ThemePreference.SYSTEM,
-                accentColor: AccentPreference.EMERALD,
-                itemRetentionDays: 90,
-                hideYouTubeShorts: false,
-                refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
-              },
-            },
+        settings: buildExistingSettingsData(existingUser.settings),
       },
       include: {
         settings: true,
@@ -57,23 +85,61 @@ export async function syncSingleUserFromEnv(client: SingleUserClient = prisma) {
     });
   }
 
-  return client.user.create({
+  return tx.user.create({
     data: {
       username: env.APP_USERNAME,
       passwordHash,
       settings: {
-        create: {
-          theme: ThemePreference.SYSTEM,
-          accentColor: AccentPreference.EMERALD,
-          itemRetentionDays: 90,
-          hideYouTubeShorts: false,
-          refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
-        },
+        create: buildSingleUserSettingsData(),
       },
     },
     include: {
       settings: true,
     },
+  });
+}
+
+export async function syncSingleUserFromEnv(client: SingleUserClient = prisma) {
+  return withSingleUserLock(client, async (tx) => {
+    const userCount = await tx.user.count();
+    if (userCount > 1) {
+      throw new Error("Feedy is configured for single-user mode, but multiple user records exist.");
+    }
+
+    const existing = await tx.user.findFirst({
+      orderBy: { createdAt: "asc" },
+      include: {
+        settings: true,
+      },
+    });
+
+    return writeSingleUserFromEnv(tx, existing ?? undefined);
+  });
+}
+
+export async function repairSingleUserDatabase(client: SingleUserClient = prisma) {
+  return withSingleUserLock(client, async (tx) => {
+    const users = await tx.user.findMany({
+      orderBy: { createdAt: "asc" },
+      include: {
+        settings: true,
+      },
+    });
+
+    if (users.length === 0) {
+      return writeSingleUserFromEnv(tx);
+    }
+
+    const [primaryUser, ...extraUsers] = users;
+    if (extraUsers.length > 0) {
+      await tx.user.deleteMany({
+        where: {
+          id: { in: extraUsers.map((user) => user.id) },
+        },
+      });
+    }
+
+    return writeSingleUserFromEnv(tx, primaryUser);
   });
 }
 
@@ -86,12 +152,14 @@ export async function loadUserBySessionId(client: SingleUserClient, userId: stri
 
 export async function loadPrimaryUser(client: SingleUserClient = prisma) {
   return client.user.findFirst({
+    orderBy: { createdAt: "asc" },
     include: { settings: true },
   });
 }
 
 export async function loadUserForAuthentication(client: SingleUserClient = prisma) {
   return client.user.findFirst({
+    orderBy: { createdAt: "asc" },
     include: { settings: true },
   });
 }
@@ -131,7 +199,7 @@ export async function getSession() {
 
   try {
     const { payload } = await jwtVerify(token, secret);
-    return payload as unknown as SessionPayload;
+    return validateSessionPayload(payload);
   } catch {
     return null;
   }
@@ -158,12 +226,17 @@ export async function authenticate(
   client: SingleUserClient = prisma,
   createSessionFn: typeof createSession = createSession,
 ) {
-  const user = await loadUserForAuthentication(client);
+  const normalizedUsername = username.trim().toLowerCase();
+  const user = await client.user.findFirst({
+    where: {
+      username: {
+        equals: normalizedUsername,
+        mode: "insensitive",
+      },
+    },
+    include: { settings: true },
+  });
   if (!user) {
-    return null;
-  }
-
-  if (user.username !== username) {
     return null;
   }
 

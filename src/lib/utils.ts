@@ -24,14 +24,6 @@ export function relativeTime(date: Date | string | null | undefined) {
   return formatDistanceToNowStrict(new Date(date), { addSuffix: true });
 }
 
-export function absoluteUrl(path: string) {
-  return new URL(path, process.env.APP_URL).toString();
-}
-
-export function safeText(value: string | null | undefined, fallback = "") {
-  return value?.trim() || fallback;
-}
-
 export function decodeHtmlEntities(value: string | null | undefined) {
   if (!value) {
     return "";

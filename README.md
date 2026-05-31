@@ -4,6 +4,12 @@ Feedy is a production-oriented, self-hosted, mobile-first PWA feed reader for st
 
 Repository: [github.com/greg-hass/Feedy](https://github.com/greg-hass/Feedy)
 
+Operational docs:
+
+- [Architecture](./ARCHITECTURE.md)
+- [Deployment](./DEPLOYMENT.md)
+- [Troubleshooting](./TROUBLESHOOTING.md)
+
 ## Stack
 
 - Next.js 16 + App Router + TypeScript
@@ -95,6 +101,15 @@ The entrypoint runs:
 3. the web server or worker
 
 That means first boot will create the single user from `.env` automatically.
+If the database already contains more than one user, startup now fails instead of guessing which account to use.
+
+If you inherit a legacy database with multiple users, repair it before starting the stack:
+
+```bash
+npm run repair:single-user
+```
+
+That command keeps the oldest user row, removes the extras, and re-syncs the surviving account from the current environment values.
 
 ## Reverse Proxy
 
@@ -218,6 +233,8 @@ npm run build
 npx prisma validate
 npm audit --audit-level=low
 ```
+
+For an opt-in integration pass against real Postgres and Redis, set `FEEDY_INTEGRATION_TESTS=true` along with `TEST_DATABASE_URL` and `TEST_REDIS_URL`, then run `npm test`.
 
 ## Ubuntu Server Deploy
 

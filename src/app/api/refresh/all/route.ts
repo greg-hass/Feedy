@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
 
-import { apiError, assertApiUser } from "@/lib/api";
-import { JobStatus, JobTrigger } from "@prisma/client";
+import { apiError, apiErrorFrom, assertApiUser } from "@/lib/api";
 import { prisma } from "@/lib/db";
-import { enqueueFeedRefresh } from "@/lib/queue";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
-import {
-  mapInBatches,
-  MAX_MANUAL_REFRESH_FEEDS,
-  REFRESH_ENQUEUE_BATCH_SIZE,
-} from "@/lib/workload-limits";
+import { MAX_MANUAL_REFRESH_FEEDS } from "@/lib/workload-limits";
+import { queueRefreshBatch } from "@/lib/refresh-orchestration";
 
 const rateLimiter = createFixedWindowRateLimiter();
 
@@ -26,8 +20,6 @@ export async function POST() {
       response.headers.set("Retry-After", String(refreshAttempt.retryAfterSeconds));
       return response;
     }
-    const batchStartedAt = new Date();
-    const batchId = randomUUID();
     const feeds = await prisma.feed.findMany({
       where: { userId: user.id },
       select: { id: true },
@@ -39,41 +31,13 @@ export async function POST() {
       );
     }
 
-    const results = await mapInBatches(
-      feeds,
-      REFRESH_ENQUEUE_BATCH_SIZE,
-      async (feed) => {
-        const refreshJob = await prisma.refreshJob.create({
-          data: {
-            userId: user.id,
-            feedId: feed.id,
-            trigger: JobTrigger.MANUAL,
-            status: JobStatus.QUEUED,
-            requestedAt: batchStartedAt,
-            metadata: { batchId },
-          },
-        });
-        const queued = await enqueueFeedRefresh({
-          feedId: feed.id,
-          trigger: "manual",
-          refreshJobId: refreshJob.id,
-        });
-        if (!queued.enqueued) {
-          await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
-        }
-        return queued.enqueued;
-      },
+    return NextResponse.json(
+      await queueRefreshBatch({
+        userId: user.id,
+        feedIds: feeds,
+      }),
     );
-
-    return NextResponse.json({
-      ok: true,
-      queued: results.filter(Boolean).length,
-      skipped: feeds.length - results.filter(Boolean).length,
-      totalFeeds: feeds.length,
-      batchStartedAt: batchStartedAt.toISOString(),
-      batchId,
-    });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not queue refreshes");
+    return apiErrorFrom(error, "Could not queue refreshes");
   }
 }

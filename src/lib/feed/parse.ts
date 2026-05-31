@@ -12,7 +12,7 @@ import {
   parseYouTubeFeedTarget,
   validateYouTubeFeedUrl,
 } from "@/lib/feed/youtube";
-import { resolveYouTubePreviewUrl } from "@/lib/feed/youtube-preview";
+import { getYouTubeThumbnailUrls } from "@/lib/feed/youtube-thumbnail";
 import {
   assertWithinLimit,
   mapInBatches,
@@ -183,10 +183,6 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
   };
 }
 
-export async function fetchAndParseFeed(url: string, feedId: string) {
-  return fetchAndParseFeedConditionally(url, feedId);
-}
-
 export async function fetchAndParseFeedConditionally(
   url: string,
   feedId: string,
@@ -208,24 +204,7 @@ export async function fetchAndParseFeedConditionally(
 
     return {
       ...result,
-      items: await mapInBatches(
-        result.items,
-        REMOTE_PROBE_BATCH_SIZE,
-        async (item) => {
-          if (!item.youtubeVideoId) {
-            return item;
-          }
-
-          return {
-            ...item,
-            mediaUrl: await resolveYouTubePreviewUrl({
-              videoId: item.youtubeVideoId,
-              title: item.title,
-              feedThumbnailUrl: item.mediaUrl,
-            }),
-          };
-        },
-      ),
+      items: result.items,
     };
   }
 
@@ -272,11 +251,7 @@ export async function fetchAndParseFeedConditionally(
       ? higherResolutionRedditPreviewUrl(extra.contentEncoded ?? item["content"], feedThumbnailUrl)
       : null;
     const mediaUrl = videoId
-      ? await resolveYouTubePreviewUrl({
-          videoId,
-          title: decodeHtmlEntities(item.title?.trim()) || "Untitled item",
-          feedThumbnailUrl,
-        })
+      ? feedThumbnailUrl || getYouTubeThumbnailUrls(videoId)[0] || null
       : item.enclosure?.url || redditPreviewUrl || feedThumbnailUrl || null;
 
     const rawId =

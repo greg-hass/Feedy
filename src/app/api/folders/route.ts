@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser, parseJson } from "@/lib/api";
-import { getNavigationData } from "@/lib/data";
+import { apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
+import { getNavigationData } from "@/lib/navigation-data";
 import { prisma } from "@/lib/db";
 import { folderSchema } from "@/lib/schemas";
 
@@ -11,7 +11,7 @@ export async function GET() {
     const navigation = await getNavigationData(user.id);
     return NextResponse.json(navigation.folders);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Unauthorized", 401);
+    return apiErrorFrom(error, "Unauthorized");
   }
 }
 
@@ -34,6 +34,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(folder);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not create folder");
+    return apiErrorFrom(error, "Could not create folder");
   }
 }

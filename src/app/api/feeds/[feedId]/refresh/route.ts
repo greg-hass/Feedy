@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
 
-import { apiError, assertApiUser } from "@/lib/api";
-import { JobStatus, JobTrigger } from "@prisma/client";
+import { apiError, apiErrorFrom, assertApiUser } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { assertOwnedFeed } from "@/lib/ownership";
-import { enqueueFeedRefresh } from "@/lib/queue";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
+import { queueRefreshBatch } from "@/lib/refresh-orchestration";
 
 const rateLimiter = createFixedWindowRateLimiter();
 
@@ -26,35 +24,13 @@ export async function POST(_request: Request, context: { params: Params }) {
       response.headers.set("Retry-After", String(refreshAttempt.retryAfterSeconds));
       return response;
     }
-    const batchStartedAt = new Date();
-    const batchId = randomUUID();
-    const refreshJob = await prisma.refreshJob.create({
-      data: {
+    return NextResponse.json(
+      await queueRefreshBatch({
         userId: user.id,
-        feedId,
-        trigger: JobTrigger.MANUAL,
-        status: JobStatus.QUEUED,
-        requestedAt: batchStartedAt,
-        metadata: { batchId },
-      },
-    });
-    const queued = await enqueueFeedRefresh({
-      feedId,
-      trigger: "manual",
-      refreshJobId: refreshJob.id,
-    });
-    if (!queued.enqueued) {
-      await prisma.refreshJob.delete({ where: { id: refreshJob.id } }).catch(() => null);
-    }
-    return NextResponse.json({
-      ok: true,
-      queued: queued.enqueued ? 1 : 0,
-      skipped: queued.enqueued ? 0 : 1,
-      totalFeeds: 1,
-      batchStartedAt: batchStartedAt.toISOString(),
-      batchId,
-    });
+        feedIds: [{ id: feedId }],
+      }),
+    );
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not queue refresh");
+    return apiErrorFrom(error, "Could not queue refresh");
   }
 }

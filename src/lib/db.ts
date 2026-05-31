@@ -4,8 +4,6 @@ declare global {
   var __feedyPrisma: PrismaClient | undefined;
 }
 
-process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/feedy?schema=public";
-
 export const prisma =
   global.__feedyPrisma ??
   new PrismaClient({

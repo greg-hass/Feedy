@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:push": "prisma db push",
     "seed": "tsx prisma/seed.ts",
+    "repair:single-user": "tsx prisma/repair-single-user.ts",
     "worker": "tsx src/worker.ts"
   },
   "dependencies": {

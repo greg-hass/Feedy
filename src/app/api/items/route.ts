@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { apiError, assertApiUser, parseQuery } from "@/lib/api";
+import { apiErrorFrom, assertApiUser, parseQuery } from "@/lib/api";
 import { getTimelineItemPage, getTimelineItems } from "@/lib/data";
 import { measurePerf } from "@/lib/perf";
 import { serializeItem } from "@/lib/serializers";
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
             q: query.q,
             cursor: query.cursor,
             pageSize: query.pageSize,
-          }),
+          }, user.settings?.hideYouTubeShorts ?? false),
         {
           userId: user.id,
           feedId: query.feedId ?? null,
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
           sourceFilter: query.sourceFilter,
           stateFilter: query.stateFilter,
           q: query.q,
-        }),
+        }, user.settings?.hideYouTubeShorts ?? false),
       {
         userId: user.id,
         feedId: query.feedId ?? null,
@@ -79,6 +79,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(items.map(serializeItem));
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not fetch items");
+    return apiErrorFrom(error, "Could not fetch items");
   }
 }

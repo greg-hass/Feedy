@@ -1,11 +1,30 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSession, requireUser } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+
+export class ApiAuthError extends Error {
+  constructor(message = "Unauthorized") {
+    super(message);
+    this.name = "ApiAuthError";
+  }
+}
+
+export function isApiAuthError(error: unknown): error is ApiAuthError {
+  return error instanceof ApiAuthError;
+}
 
 export function apiError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+export function apiErrorFrom(error: unknown, fallbackMessage: string, status = 400) {
+  if (isApiAuthError(error)) {
+    return apiError(error.message, 401);
+  }
+
+  return apiError(error instanceof Error ? error.message : fallbackMessage, status);
 }
 
 export async function requireApiUser() {
@@ -27,7 +46,7 @@ export async function requireApiUser() {
 export async function assertApiUser() {
   const user = await requireApiUser();
   if (!user) {
-    throw new Error("UNAUTHORIZED");
+    throw new ApiAuthError();
   }
 
   return user;
@@ -43,8 +62,4 @@ export async function parseQuery<T>(
   schema: z.ZodSchema<T>,
 ) {
   return schema.parse(Object.fromEntries(input.entries()));
-}
-
-export async function assertServerUser() {
-  return requireUser();
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { apiError, assertApiUser, parseJson } from "@/lib/api";
+import { apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
 import { pruneUserData } from "@/lib/retention";
 
 const purgeSchema = z.object({
@@ -20,6 +20,6 @@ export async function POST(request: Request) {
       itemRetentionDays: retentionDays,
     });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not purge storage");
+    return apiErrorFrom(error, "Could not purge storage");
   }
 }

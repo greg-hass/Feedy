@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { apiError, assertApiUser, parseQuery } from "@/lib/api";
+import { apiError, apiErrorFrom, assertApiUser, parseQuery } from "@/lib/api";
 import { discoverFeeds } from "@/lib/feed/discover";
 import { measurePerf } from "@/lib/perf";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
@@ -32,6 +32,6 @@ export async function GET(request: Request) {
     );
     return NextResponse.json(results);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Could not discover feeds");
+    return apiErrorFrom(error, "Could not discover feeds");
   }
 }
