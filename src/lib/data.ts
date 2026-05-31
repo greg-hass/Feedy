@@ -153,8 +153,6 @@ async function buildTimelineQuery(
           OR: [
             { title: { contains: searchQuery, mode: "insensitive" as const } },
             { summary: { contains: searchQuery, mode: "insensitive" as const } },
-            { contentHtml: { contains: searchQuery, mode: "insensitive" as const } },
-            { readabilityHtml: { contains: searchQuery, mode: "insensitive" as const } },
             { author: { contains: searchQuery, mode: "insensitive" as const } },
             ...(matchingFeedIds.length > 0
               ? [{ feedId: { in: matchingFeedIds } }]
