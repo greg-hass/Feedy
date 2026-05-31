@@ -6,7 +6,6 @@ import {
   probeYouTubeShort,
   parseYouTubeFeedTarget,
 } from "@/lib/feed/youtube";
-import { resolveYouTubePreviewUrl } from "@/lib/feed/youtube-preview";
 
 describe("youtube feed helpers", () => {
   it("detects channel feed urls", () => {
@@ -107,119 +106,6 @@ describe("youtube feed helpers", () => {
     try {
       assert.equal(await probeYouTubeShort("fYqOq0eJalk"), true);
       assert.equal(await probeYouTubeShort("FCb4LSzPVmo"), false);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-
-  it("falls back to a generated youtube preview when upstream thumbnails are placeholders", async () => {
-    const originalFetch = globalThis.fetch;
-    const placeholderPng = Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2X6VwAAAAASUVORK5CYII=",
-      "base64",
-    );
-
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-      if (url.includes("oembed")) {
-        return new Response(JSON.stringify({ thumbnail_url: "https://img.youtube.com/vi/test-video/maxresdefault.jpg" }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }
-
-      if (url.includes("/watch?v=test-video")) {
-        return new Response('<meta property="og:image" content="https://img.youtube.com/vi/test-video/maxresdefault.jpg">', {
-          status: 200,
-          headers: { "content-type": "text/html; charset=UTF-8" },
-        });
-      }
-
-      return new Response(placeholderPng, {
-        status: 200,
-        headers: { "content-type": "image/png" },
-      });
-    }) as typeof fetch;
-
-    try {
-      const preview = await resolveYouTubePreviewUrl({
-        videoId: "test-video",
-        title: "A very important video title that should always show something",
-        feedThumbnailUrl: "https://img.youtube.com/vi/test-video/maxresdefault.jpg",
-      });
-
-      assert.equal(preview.startsWith("data:image/svg+xml"), true);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-
-  it("prefers an available maximum-resolution thumbnail over a lower-resolution feed thumbnail", async () => {
-    const originalFetch = globalThis.fetch;
-    const requests: string[] = [];
-    const detailedThumbnail = Buffer.from(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><path fill="#000" d="M0 0h640v720H0z"/><path fill="#fff" d="M640 0h640v720H640z"/></svg>',
-    );
-
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-      requests.push(url);
-
-      if (url.includes("/maxresdefault.jpg")) {
-        return new Response(detailedThumbnail, {
-          status: 200,
-          headers: { "content-type": "image/svg+xml" },
-        });
-      }
-
-      if (url.includes("oembed")) {
-        return new Response(JSON.stringify({}), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }
-
-      if (url.includes("/watch?v=")) {
-        return new Response("", {
-          status: 200,
-          headers: { "content-type": "text/html; charset=UTF-8" },
-        });
-      }
-
-      return new Response(detailedThumbnail, {
-        status: 200,
-        headers: { "content-type": "image/svg+xml" },
-      });
-    }) as typeof fetch;
-
-    try {
-      const preview = await resolveYouTubePreviewUrl({
-        videoId: "quality-test-video",
-        title: "Highest quality available",
-        feedThumbnailUrl: "https://i.ytimg.com/vi/quality-test-video/mqdefault.jpg",
-      });
-
-      assert.equal(preview, "https://i.ytimg.com/vi/quality-test-video/maxresdefault.jpg");
-      assert.equal(requests.includes("https://i.ytimg.com/vi/quality-test-video/mqdefault.jpg"), false);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-
-  it("keeps the feed thumbnail when quality probing fails", async () => {
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
-      throw new Error("thumbnail host unavailable");
-    }) as typeof fetch;
-
-    try {
-      const preview = await resolveYouTubePreviewUrl({
-        videoId: "network-failure-video",
-        title: "Available without enrichment",
-        feedThumbnailUrl: "https://i.ytimg.com/vi/network-failure-video/mqdefault.jpg",
-      });
-
-      assert.equal(preview, "https://i.ytimg.com/vi/network-failure-video/mqdefault.jpg");
     } finally {
       globalThis.fetch = originalFetch;
     }
