@@ -215,6 +215,41 @@ describe("feed parsing", () => {
     assert.match(result.items[0]?.contentHtml ?? "", /Been playing around with the CachyOS logo\./);
   });
 
+  it("removes Reddit body thumbnails when a different Reddit preview is promoted to mediaUrl", async () => {
+    const reddit = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>newest submissions : SelfHosted</title>
+  <entry>
+    <id>t3_thumbnail_duplicate</id>
+    <title>File manager</title>
+    <link href="https://www.reddit.com/r/selfhosted/comments/thumb/file_manager/" />
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://preview.redd.it/header.png?width=1080&amp;amp;format=png&amp;amp;auto=webp&quot;&gt;header&lt;/a&gt;&lt;/p&gt;&lt;p&gt;I kept wanting something lighter.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://external-preview.redd.it/thumb.jpg?width=140&amp;amp;height=78&amp;amp;auto=webp&quot;&gt;&lt;img src=&quot;https://external-preview.redd.it/thumb.jpg?width=140&amp;amp;height=78&amp;amp;auto=webp&quot; /&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <media:thumbnail url="https://external-preview.redd.it/thumb.jpg?width=140&amp;height=78&amp;auto=webp" />
+    <published>2026-06-02T18:45:00+00:00</published>
+  </entry>
+</feed>`;
+
+    mockFetch(() => new Response(reddit, { status: 200 }));
+
+    const result = await fetchAndParseFeedConditionally(
+      "https://www.reddit.com/r/selfhosted/new/.rss",
+      "reddit-feed",
+    );
+
+    assert.equal(result.notModified, false);
+    if (result.notModified) {
+      throw new Error("Expected parsed Reddit feed");
+    }
+
+    assert.equal(
+      result.items[0]?.mediaUrl,
+      "https://preview.redd.it/header.png?width=1080&format=png&auto=webp",
+    );
+    assert.equal(result.items[0]?.contentHtml?.includes("<img"), false);
+    assert.equal(result.items[0]?.contentHtml?.includes("external-preview.redd.it"), false);
+    assert.match(result.items[0]?.contentHtml ?? "", /I kept wanting something lighter\./);
+  });
+
   it("retains Reddit's small thumbnail when no larger preview is embedded", async () => {
     const reddit = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">

@@ -157,23 +157,8 @@ function higherResolutionRedditPreviewUrl(content: unknown, thumbnailUrl: string
   return bestCandidate?.url ?? null;
 }
 
-function redditImageIdentity(url: string) {
-  const candidate = redditImageCandidate(url);
-  if (!candidate) {
-    return null;
-  }
-
-  try {
-    const parsed = new URL(candidate.url);
-    return `${parsed.hostname.toLowerCase()}${parsed.pathname}`;
-  } catch {
-    return null;
-  }
-}
-
 function removeDuplicateRedditPreviewHtml(content: string | null, mediaUrl: string | null) {
-  const mediaIdentity = mediaUrl ? redditImageIdentity(mediaUrl) : null;
-  if (!content || !mediaIdentity) {
+  if (!content || !mediaUrl || !redditImageCandidate(mediaUrl)) {
     return content;
   }
 
@@ -183,7 +168,7 @@ function removeDuplicateRedditPreviewHtml(content: string | null, mediaUrl: stri
     const image = $(element);
     const src = image.attr("src");
 
-    if (!src || redditImageIdentity(src) !== mediaIdentity) {
+    if (!src || !redditImageCandidate(src)) {
       return;
     }
 
@@ -200,7 +185,7 @@ function removeDuplicateRedditPreviewHtml(content: string | null, mediaUrl: stri
     const link = $(element);
     const href = link.attr("href");
 
-    if (href && redditImageIdentity(href) === mediaIdentity) {
+    if (href && redditImageCandidate(href)) {
       link.remove();
     }
   });
