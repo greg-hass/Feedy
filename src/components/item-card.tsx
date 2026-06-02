@@ -10,7 +10,7 @@ import { memo, useEffect, useState } from "react";
 import { IconButton } from "@/components/ui/icon-button";
 import { SearchHighlight } from "@/components/search-highlight";
 import { api } from "@/lib/client";
-import { getYouTubeThumbnailUrls } from "@/lib/feed/youtube-thumbnail";
+import { getYouTubeThumbnailUrls, isLikelyLowResolutionYouTubePlaceholder } from "@/lib/feed/youtube-thumbnail";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
@@ -130,6 +130,15 @@ export const ItemCard = memo(function ItemCard({
       : item.mediaUrl;
   const feedTitle = decodeHtmlEntities(item.feed.label || item.feed.title);
   const itemTitle = decodeHtmlEntities(item.title);
+  const applyNextYouTubeThumbnailFallback = () => {
+    if (youtubeThumbnailUrls && thumbnailIndex < youtubeThumbnailUrls.length - 1) {
+      setImageLoaded(false);
+      setThumbnailIndex((current) => Math.min(current + 1, youtubeThumbnailUrls.length - 1));
+      return true;
+    }
+
+    return false;
+  };
 
   return (
     <article
@@ -188,11 +197,15 @@ export const ItemCard = memo(function ItemCard({
                         imageLoaded ? "opacity-100" : "opacity-0"
                       }`}
                       loading="lazy"
-                      onLoad={() => setImageLoaded(true)}
+                      onLoad={(event) => {
+                        if (isLikelyLowResolutionYouTubePlaceholder(thumbnailUrl, event.currentTarget)) {
+                          applyNextYouTubeThumbnailFallback();
+                          return;
+                        }
+                        setImageLoaded(true);
+                      }}
                       onError={() => {
-                        if (youtubeThumbnailUrls && thumbnailIndex < youtubeThumbnailUrls.length - 1) {
-                          setImageLoaded(false);
-                          setThumbnailIndex((current) => Math.min(current + 1, youtubeThumbnailUrls.length - 1));
+                        if (applyNextYouTubeThumbnailFallback()) {
                           return;
                         }
                         setImageLoaded(true);
@@ -232,11 +245,15 @@ export const ItemCard = memo(function ItemCard({
                   imageLoaded ? "opacity-100" : "opacity-0"
                 }`}
                 loading="lazy"
-                onLoad={() => setImageLoaded(true)}
+                onLoad={(event) => {
+                  if (isLikelyLowResolutionYouTubePlaceholder(thumbnailUrl, event.currentTarget)) {
+                    applyNextYouTubeThumbnailFallback();
+                    return;
+                  }
+                  setImageLoaded(true);
+                }}
                 onError={() => {
-                  if (youtubeThumbnailUrls && thumbnailIndex < youtubeThumbnailUrls.length - 1) {
-                    setImageLoaded(false);
-                    setThumbnailIndex((current) => Math.min(current + 1, youtubeThumbnailUrls.length - 1));
+                  if (applyNextYouTubeThumbnailFallback()) {
                     return;
                   }
                   setImageLoaded(true);
