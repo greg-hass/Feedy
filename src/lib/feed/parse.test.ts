@@ -281,4 +281,36 @@ describe("feed parsing", () => {
       "https://preview.redd.it/thumb.png?width=140&height=86&auto=webp",
     );
   });
+
+  it("uses an external Reddit link post URL as the canonical reader URL", async () => {
+    const reddit = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>newest submissions : Technology</title>
+  <entry>
+    <id>t3_external_link</id>
+    <title>Interesting article</title>
+    <link href="https://www.reddit.com/r/technology/comments/external/interesting_article/" />
+    <content type="html">&lt;span&gt;&lt;a href=&quot;https://example.com/articles/interesting?utm_source=reddit&quot;&gt;Article link&lt;/a&gt;&lt;/span&gt;&lt;p&gt;submitted by &lt;a href=&quot;https://www.reddit.com/user/alice&quot;&gt;/u/alice&lt;/a&gt;&lt;/p&gt;</content>
+    <published>2026-06-02T18:45:00+00:00</published>
+  </entry>
+</feed>`;
+
+    mockFetch(() => new Response(reddit, { status: 200 }));
+
+    const result = await fetchAndParseFeedConditionally(
+      "https://www.reddit.com/r/technology/new/.rss",
+      "reddit-feed",
+    );
+
+    assert.equal(result.notModified, false);
+    if (result.notModified) {
+      throw new Error("Expected parsed Reddit feed");
+    }
+
+    assert.equal(result.items[0]?.canonicalUrl, "https://example.com/articles/interesting?utm_source=reddit");
+    assert.equal(
+      result.items[0]?.redditPermalink,
+      "https://www.reddit.com/r/technology/comments/external/interesting_article/",
+    );
+  });
 });

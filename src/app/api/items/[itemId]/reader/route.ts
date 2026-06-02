@@ -4,6 +4,7 @@ import { apiError, apiErrorFrom, assertApiUser } from "@/lib/api";
 import { getReaderItem } from "@/lib/data";
 import { ensureReaderContentForLoadedItem } from "@/lib/feed/service";
 import { measurePerf } from "@/lib/perf";
+import { shouldFetchReadableContent } from "@/lib/reader-content";
 import { serializeItem } from "@/lib/serializers";
 
 type Params = Promise<{ itemId: string }>;
@@ -22,7 +23,7 @@ export async function GET(_request: Request, context: { params: Params }) {
     }
     const loadedItem = item;
 
-    if (loadedItem.canonicalUrl && !loadedItem.readabilityHtml) {
+    if (shouldFetchReadableContent(loadedItem)) {
       const updated = await measurePerf(
         "api.reader.ensureContent",
         () => ensureReaderContentForLoadedItem(loadedItem),

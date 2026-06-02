@@ -4,6 +4,7 @@ import { fetchAndParseFeedConditionally, validateFeedUrl } from "@/lib/feed/pars
 import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
 import { enqueueIconFetch, enqueueReaderExtraction } from "@/lib/queue";
+import { shouldFetchReadableContent } from "@/lib/reader-content";
 import { queueSingleFeedRefresh } from "@/lib/refresh-orchestration";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import { evaluateFeedMuteRules, normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
@@ -162,7 +163,20 @@ export function getReaderExtractionCandidateIds(input: {
   return input.upserts
     .filter((upsert, index) => {
       const item = input.items[index];
-      return Boolean(item?.canonicalUrl && !item.contentHtml && !input.existingKeys.has(item.uniqueKey));
+      if (!item || input.existingKeys.has(item.uniqueKey)) {
+        return false;
+      }
+
+      return shouldFetchReadableContent(
+        {
+          canonicalUrl: item.canonicalUrl ?? null,
+          readabilityHtml: null,
+          contentHtml: item.contentHtml ?? null,
+          redditPermalink: item.redditPermalink ?? null,
+          feed: { sourceType: item.redditPermalink ? FeedSourceType.REDDIT_RSS : FeedSourceType.RSS },
+        },
+        { allowRedditExternalArticles: true },
+      ) && (!item.contentHtml || Boolean(item.redditPermalink));
     })
     .map((upsert) => upsert.id);
 }
@@ -553,6 +567,12 @@ export async function ensureReaderContent(itemId: string) {
       canonicalUrl: true,
       readabilityHtml: true,
       summary: true,
+      redditPermalink: true,
+      feed: {
+        select: {
+          sourceType: true,
+        },
+      },
     },
   });
   if (!item?.canonicalUrl) {
@@ -569,14 +589,22 @@ export async function ensureReaderContentForLoadedItem(
     canonicalUrl: string | null;
     readabilityHtml: string | null;
     summary: string | null;
+    redditPermalink?: string | null;
+    feed: {
+      sourceType: string;
+    };
   },
   startedAt = performance.now(),
 ) {
-  if (!item.canonicalUrl || item.readabilityHtml) {
+  if (!shouldFetchReadableContent(item, { allowRedditExternalArticles: true })) {
+    return null;
+  }
+  const canonicalUrl = item.canonicalUrl;
+  if (!canonicalUrl) {
     return null;
   }
 
-  const readable = await extractReadableContent(item.canonicalUrl).catch(() => null);
+  const readable = await extractReadableContent(canonicalUrl).catch(() => null);
   if (!readable) {
     return null;
   }

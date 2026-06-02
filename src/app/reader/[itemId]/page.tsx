@@ -11,6 +11,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
+import { selectReaderHtml, shouldRenderReaderLeadMedia } from "@/lib/reader-content";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
 import type { ItemRecord } from "@/types/app";
 
@@ -183,7 +184,8 @@ export default function ReaderPage() {
   }
 
   const data = item.data;
-  const readerHtml = data.readabilityHtml || data.contentHtml;
+  const readerHtml = selectReaderHtml(data);
+  const showLeadMedia = shouldRenderReaderLeadMedia(data);
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
@@ -277,10 +279,10 @@ export default function ReaderPage() {
             </div>
           )}
 
-          {data.mediaUrl && !data.youtubeVideoId && (
+          {showLeadMedia && (
             <div className="mt-4 overflow-hidden rounded-[20px] border border-subtle">
               <Image
-                src={data.mediaUrl}
+                src={data.mediaUrl || ""}
                 alt=""
                 width={1200}
                 height={675}

@@ -132,6 +132,41 @@ function redditImageCandidate(url: string) {
   }
 }
 
+function isRedditHostedUrl(url: string) {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname === "reddit.com" || hostname.endsWith(".reddit.com") || REDDIT_IMAGE_HOSTS.has(hostname);
+  } catch {
+    return false;
+  }
+}
+
+function externalRedditArticleUrl(content: string | null) {
+  if (!content) {
+    return null;
+  }
+
+  const $ = cheerio.load(content);
+
+  for (const element of $("a").toArray()) {
+    const href = $(element).attr("href")?.trim();
+    if (!href) {
+      continue;
+    }
+
+    try {
+      const parsed = new URL(href);
+      if ((parsed.protocol === "http:" || parsed.protocol === "https:") && !isRedditHostedUrl(href)) {
+        return parsed.toString();
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 function higherResolutionRedditPreviewUrl(content: unknown, thumbnailUrl: string | null) {
   if (typeof content !== "string") {
     return null;
@@ -276,7 +311,13 @@ export async function fetchAndParseFeedConditionally(
   assertWithinLimit(parsedItems.length, MAX_FEED_ITEMS_PER_REFRESH, "Feed items");
   const items: ParsedFeedItem[] = await mapInBatches(parsedItems, REMOTE_PROBE_BATCH_SIZE, async (item) => {
     const extra = item as unknown as Record<string, unknown>;
+    const rawContentHtml = (extra.contentEncoded as string | undefined) ?? item["content"] ?? null;
+    const redditPermalink = item.link?.includes("reddit.com") ? item.link : null;
+    const redditExternalUrl = sourceType === FeedSourceType.REDDIT_RSS
+      ? externalRedditArticleUrl(rawContentHtml)
+      : null;
     const canonicalUrl =
+      redditExternalUrl ||
       item.link?.trim() ||
       (typeof item.enclosure?.url === "string" ? item.enclosure.url : null);
     const videoId =
@@ -296,7 +337,6 @@ export async function fetchAndParseFeedConditionally(
       (typeof extra.id === "string" ? extra.id : null) ||
       canonicalUrl ||
       `${item.title ?? ""}:${item.pubDate ?? ""}:${item.isoDate ?? ""}`;
-    const rawContentHtml = (extra.contentEncoded as string | undefined) ?? item["content"] ?? null;
     const contentHtml = sanitizeReaderHtml(
       sourceType === FeedSourceType.REDDIT_RSS
         ? removeDuplicateRedditPreviewHtml(rawContentHtml, mediaUrl)
@@ -317,7 +357,7 @@ export async function fetchAndParseFeedConditionally(
       commentsUrl: typeof extra.comments === "string" ? extra.comments.trim() : null,
       mediaUrl,
       youtubeVideoId: videoId,
-      redditPermalink: item.link?.includes("reddit.com") ? item.link : null,
+      redditPermalink,
       publishedAt: item.isoDate ? new Date(item.isoDate) : item.pubDate ? new Date(item.pubDate) : null,
     };
   });

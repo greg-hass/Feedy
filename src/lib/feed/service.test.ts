@@ -33,7 +33,14 @@ describe("upsertFeedItemsInBatches", () => {
 describe("getReaderExtractionCandidateIds", () => {
   it("queues only new canonical-url items without feed-provided content", () => {
     const ids = getReaderExtractionCandidateIds({
-      upserts: [{ id: "new-empty" }, { id: "new-content" }, { id: "old-empty" }, { id: "new-no-url" }],
+      upserts: [
+        { id: "new-empty" },
+        { id: "new-content" },
+        { id: "old-empty" },
+        { id: "new-no-url" },
+        { id: "reddit-external" },
+        { id: "reddit-self" },
+      ],
       existingKeys: new Set(["old-empty-key"]),
       items: [
         {
@@ -56,9 +63,23 @@ describe("getReaderExtractionCandidateIds", () => {
           uniqueKey: "new-no-url-key",
           title: "New no URL",
         },
+        {
+          uniqueKey: "reddit-external-key",
+          title: "Reddit external",
+          canonicalUrl: "https://example.com/from-reddit",
+          contentHtml: "<p>Reddit preview</p>",
+          redditPermalink: "https://www.reddit.com/r/example/comments/abc/post/",
+        },
+        {
+          uniqueKey: "reddit-self-key",
+          title: "Reddit self",
+          canonicalUrl: "https://www.reddit.com/r/example/comments/def/post/",
+          contentHtml: "<p>Self post body</p>",
+          redditPermalink: "https://www.reddit.com/r/example/comments/def/post/",
+        },
       ],
     });
 
-    assert.deepEqual(ids, ["new-empty"]);
+    assert.deepEqual(ids, ["new-empty", "reddit-external"]);
   });
 });
