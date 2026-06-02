@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import * as cheerio from "cheerio";
 import Parser from "rss-parser";
 
 import { FeedSourceType } from "@prisma/client";
@@ -156,6 +157,57 @@ function higherResolutionRedditPreviewUrl(content: unknown, thumbnailUrl: string
   return bestCandidate?.url ?? null;
 }
 
+function redditImageIdentity(url: string) {
+  const candidate = redditImageCandidate(url);
+  if (!candidate) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(candidate.url);
+    return `${parsed.hostname.toLowerCase()}${parsed.pathname}`;
+  } catch {
+    return null;
+  }
+}
+
+function removeDuplicateRedditPreviewHtml(content: string | null, mediaUrl: string | null) {
+  const mediaIdentity = mediaUrl ? redditImageIdentity(mediaUrl) : null;
+  if (!content || !mediaIdentity) {
+    return content;
+  }
+
+  const $ = cheerio.load(content);
+
+  $("img").each((_index, element) => {
+    const image = $(element);
+    const src = image.attr("src");
+
+    if (!src || redditImageIdentity(src) !== mediaIdentity) {
+      return;
+    }
+
+    const link = image.closest("a");
+    if (link.length > 0 && link.contents().length === 1) {
+      link.remove();
+      return;
+    }
+
+    image.remove();
+  });
+
+  $("a").each((_index, element) => {
+    const link = $(element);
+    const href = link.attr("href");
+
+    if (href && redditImageIdentity(href) === mediaIdentity) {
+      link.remove();
+    }
+  });
+
+  return $.root().html() || "";
+}
+
 export async function validateFeedUrl(url: string): Promise<FeedValidationResult> {
   const youtubeTarget = parseYouTubeFeedTarget(url);
   if (youtubeTarget) {
@@ -259,6 +311,12 @@ export async function fetchAndParseFeedConditionally(
       (typeof extra.id === "string" ? extra.id : null) ||
       canonicalUrl ||
       `${item.title ?? ""}:${item.pubDate ?? ""}:${item.isoDate ?? ""}`;
+    const rawContentHtml = (extra.contentEncoded as string | undefined) ?? item["content"] ?? null;
+    const contentHtml = sanitizeReaderHtml(
+      sourceType === FeedSourceType.REDDIT_RSS
+        ? removeDuplicateRedditPreviewHtml(rawContentHtml, mediaUrl)
+        : rawContentHtml,
+    ) || null;
 
     return {
       uniqueKey: hashUniqueKey(feedId, rawId),
@@ -266,7 +324,7 @@ export async function fetchAndParseFeedConditionally(
       externalId: (typeof extra.id === "string" ? extra.id : null) ?? item.guid ?? null,
       title: decodeHtmlEntities(item.title?.trim()) || "Untitled item",
       summary: decodeHtmlEntities(item.contentSnippet?.trim() || item.summary?.trim()) || null,
-      contentHtml: sanitizeReaderHtml((extra.contentEncoded as string | undefined) ?? item["content"] ?? null) || null,
+      contentHtml,
       author:
         decodeHtmlEntities(item.creator?.trim()) ||
         (typeof extra.author === "string" ? decodeHtmlEntities(extra.author.trim()) : null),

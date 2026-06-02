@@ -181,6 +181,40 @@ describe("feed parsing", () => {
     );
   });
 
+  it("removes a Reddit body image when the same image is promoted to mediaUrl", async () => {
+    const reddit = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>newest submissions : CachyOS</title>
+  <entry>
+    <id>t3_duplicate</id>
+    <title>Cachy Logo</title>
+    <link href="https://www.reddit.com/r/CachyOS/comments/duplicate/cachy_logo/" />
+    <content type="html">&lt;table&gt;&lt;tr&gt;&lt;td&gt;&lt;a href=&quot;https://preview.redd.it/cachy.png?width=1080&amp;amp;format=png&amp;amp;auto=webp&quot;&gt;&lt;img src=&quot;https://preview.redd.it/cachy.png?width=640&amp;amp;crop=smart&amp;amp;auto=webp&quot; /&gt;&lt;/a&gt;&lt;/td&gt;&lt;td&gt;Been playing around with the CachyOS logo.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</content>
+    <media:thumbnail url="https://preview.redd.it/cachy.png?width=140&amp;height=78&amp;crop=smart&amp;auto=webp" />
+    <published>2026-06-02T18:30:00+00:00</published>
+  </entry>
+</feed>`;
+
+    mockFetch(() => new Response(reddit, { status: 200 }));
+
+    const result = await fetchAndParseFeedConditionally(
+      "https://www.reddit.com/r/CachyOS/new/.rss",
+      "reddit-feed",
+    );
+
+    assert.equal(result.notModified, false);
+    if (result.notModified) {
+      throw new Error("Expected parsed Reddit feed");
+    }
+
+    assert.equal(
+      result.items[0]?.mediaUrl,
+      "https://preview.redd.it/cachy.png?width=1080&format=png&auto=webp",
+    );
+    assert.equal(result.items[0]?.contentHtml?.includes("<img"), false);
+    assert.match(result.items[0]?.contentHtml ?? "", /Been playing around with the CachyOS logo\./);
+  });
+
   it("retains Reddit's small thumbnail when no larger preview is embedded", async () => {
     const reddit = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
