@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { fetchAndParseFeedConditionally, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
-import { enqueueIconFetch } from "@/lib/queue";
+import { enqueueIconFetch, enqueueReaderExtraction } from "@/lib/queue";
 import { queueSingleFeedRefresh } from "@/lib/refresh-orchestration";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import { evaluateFeedMuteRules, normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
@@ -152,6 +152,19 @@ function evaluateRefreshItems(
     item,
     evaluation: evaluateFeedMuteRules(muteRules, item),
   }));
+}
+
+export function getReaderExtractionCandidateIds(input: {
+  upserts: Array<{ id: string }>;
+  items: ParsedFeedItem[];
+  existingKeys: Set<string>;
+}) {
+  return input.upserts
+    .filter((upsert, index) => {
+      const item = input.items[index];
+      return Boolean(item?.canonicalUrl && !item.contentHtml && !input.existingKeys.has(item.uniqueKey));
+    })
+    .map((upsert) => upsert.id);
 }
 
 async function finalizeNotModifiedRefresh(input: {
@@ -459,6 +472,11 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     }
     const upsertDurationMs = performance.now() - upsertStartedAt;
     const newItemsCount = result.items.filter((item) => !existingKeys.has(item.uniqueKey)).length;
+    const readerExtractionItemIds = getReaderExtractionCandidateIds({
+      upserts,
+      items: result.items,
+      existingKeys,
+    });
 
     const finalizeStartedAt = performance.now();
     await finalizeSuccessfulRefresh({
@@ -476,6 +494,14 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
     const finalizeDurationMs = performance.now() - finalizeStartedAt;
 
     await enqueueIconFetch({ feedId: feed.id }).catch(() => null);
+    await Promise.all(
+      readerExtractionItemIds.map((itemId) =>
+        enqueueReaderExtraction({ itemId }).catch((error) => {
+          const message = error instanceof Error ? error.message : "Unknown queue error";
+          console.error(`[worker] Could not queue reader extraction for ${itemId}: ${message}`);
+        }),
+      ),
+    );
 
     logPerf(
       "worker.refreshFeed",
@@ -489,6 +515,7 @@ export async function refreshFeed(feedId: string, trigger: JobTrigger, refreshJo
         dedupeMs: Math.round(dedupeLookupDurationMs),
         upsertMs: Math.round(upsertDurationMs),
         finalizeMs: Math.round(finalizeDurationMs),
+        readerExtractionQueued: readerExtractionItemIds.length,
       },
       false,
     );

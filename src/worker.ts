@@ -3,11 +3,17 @@ import { UnrecoverableError, Worker } from "bullmq";
 import { JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndCacheIcon } from "@/lib/feed/icons";
-import { refreshFeed } from "@/lib/feed/service";
+import { ensureReaderContent, refreshFeed } from "@/lib/feed/service";
 import { probeYouTubeShort } from "@/lib/feed/youtube";
 import { loadPrimaryUser, syncSingleUserFromEnv } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { getRefreshQueue, iconQueueName, refreshQueueName } from "@/lib/queue";
+import {
+  enqueueReaderExtraction,
+  getRefreshQueue,
+  iconQueueName,
+  readerExtractionQueueName,
+  refreshQueueName,
+} from "@/lib/queue";
 import { getRedis } from "@/lib/redis";
 import { pruneUserData } from "@/lib/retention";
 import { ensureDataDirs } from "@/lib/storage";
@@ -161,6 +167,59 @@ async function backfillYouTubeShortFlags() {
   }
 }
 
+function getReaderExtractionBackfillWhere() {
+  return {
+    canonicalUrl: { not: null },
+    readabilityHtml: null,
+    contentHtml: null,
+  };
+}
+
+async function enqueueReaderExtractionBackfill() {
+  const batchSize = 100;
+  let candidateCount = 0;
+  let queuedCount = 0;
+  let cursor: { id: string } | undefined;
+
+  while (true) {
+    const pendingItems = await prisma.item.findMany({
+      where: getReaderExtractionBackfillWhere(),
+      select: {
+        id: true,
+      },
+      orderBy: [{ discoveredAt: "desc" }, { id: "desc" }],
+      ...(cursor ? { cursor, skip: 1 } : {}),
+      take: batchSize,
+    });
+
+    if (pendingItems.length === 0) {
+      break;
+    }
+
+    candidateCount += pendingItems.length;
+
+    for (const item of pendingItems) {
+      const queued = await enqueueReaderExtraction({ itemId: item.id }).catch((error) => {
+        const message = error instanceof Error ? error.message : "Unknown queue error";
+        console.error(`[worker] Could not queue reader extraction backfill for ${item.id}: ${message}`);
+        return null;
+      });
+
+      if (queued?.enqueued) {
+        queuedCount++;
+      }
+    }
+
+    cursor = { id: pendingItems[pendingItems.length - 1]!.id };
+  }
+
+  if (candidateCount > 0) {
+    console.log(
+      `[worker] Queued ${queuedCount} reader extraction backfill jobs from ${candidateCount} candidates`,
+    );
+  }
+}
+
 async function boot() {
   ensureDataDirs();
   await syncSingleUserFromEnv();
@@ -202,6 +261,17 @@ async function boot() {
     },
   );
 
+  const readerExtractionWorker = new Worker(
+    readerExtractionQueueName,
+    async (job) => {
+      await ensureReaderContent(job.data.itemId);
+    },
+    {
+      connection: getRedis(),
+      concurrency: env.READER_EXTRACTION_WORKER_CONCURRENCY,
+    },
+  );
+
   refreshWorker.on("failed", (job, error) => {
     console.error("Refresh job failed", job?.id, error);
   });
@@ -210,9 +280,14 @@ async function boot() {
     console.error("Icon job failed", job?.id, error);
   });
 
+  readerExtractionWorker.on("failed", (job, error) => {
+    console.error("Reader extraction job failed", job?.id, error);
+  });
+
   void runBackgroundTask("initial feed scheduling", scheduleDueFeeds);
   void runBackgroundTask("initial retention cleanup", runRetentionCleanup);
   void runBackgroundTask("YouTube Shorts backfill", backfillYouTubeShortFlags);
+  void runBackgroundTask("reader extraction backfill", enqueueReaderExtractionBackfill);
   const feedScheduleTimer = setInterval(() => {
     void runBackgroundTask("scheduled feed scheduling", scheduleDueFeeds);
   }, 60_000);
@@ -230,7 +305,11 @@ async function boot() {
     }, 10_000);
 
     try {
-      await Promise.allSettled([refreshWorker.close(), iconWorker.close()]);
+      await Promise.allSettled([
+        refreshWorker.close(),
+        iconWorker.close(),
+        readerExtractionWorker.close(),
+      ]);
       process.exit(0);
     } finally {
       clearTimeout(forcedExit);

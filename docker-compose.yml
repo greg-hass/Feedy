@@ -65,6 +65,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/feedy?schema=public}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       APP_URL: ${APP_URL:-http://192.168.1.186:4000}
+      READER_EXTRACTION_WORKER_CONCURRENCY: ${READER_EXTRACTION_WORKER_CONCURRENCY:-2}
       DATA_DIR: /app/data
     depends_on:
       postgres:

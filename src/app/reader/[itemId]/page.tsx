@@ -11,7 +11,6 @@ import { IconButton } from "@/components/ui/icon-button";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
 import { updateItemStateCaches, updateReaderStateCache } from "@/lib/item-state-cache";
-import { sanitizeReaderHtml } from "@/lib/sanitize-reader-html";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
 import type { ItemRecord } from "@/types/app";
 
@@ -184,6 +183,7 @@ export default function ReaderPage() {
   }
 
   const data = item.data;
+  const readerHtml = data.readabilityHtml || data.contentHtml;
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10" style={{ paddingTop: readerTopInset }}>
@@ -292,11 +292,11 @@ export default function ReaderPage() {
           )}
         </div>
 
-        {data.readabilityHtml || data.contentHtml ? (
+        {readerHtml ? (
           <article
             className="reader-content mt-4 px-5 pb-5"
             dangerouslySetInnerHTML={{
-              __html: sanitizeReaderHtml(data.readabilityHtml || data.contentHtml || `<p>${data.summary || ""}</p>`),
+              __html: readerHtml,
             }}
           />
         ) : data.summary ? (
