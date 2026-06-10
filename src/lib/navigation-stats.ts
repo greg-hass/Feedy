@@ -29,7 +29,17 @@ export async function getNavigationStats(
 		});
 
 		if (existing) {
-			return existing;
+			const unreadCount = Math.max(0, existing.unreadCount);
+			const savedCount = Math.max(0, existing.savedCount);
+			if (unreadCount !== existing.unreadCount || savedCount !== existing.savedCount) {
+				await client.navigationStats.upsert({
+					where: { userId },
+					update: { unreadCount, savedCount },
+					create: { userId, unreadCount, savedCount },
+				});
+			}
+
+			return { unreadCount, savedCount };
 		}
 	}
 
@@ -70,13 +80,13 @@ export async function getNavigationStats(
 	return client.navigationStats.upsert({
 		where: { userId },
 		update: {
-			unreadCount: Number(row?.unreadCount ?? 0),
-			savedCount: Number(row?.savedCount ?? 0),
+			unreadCount: Math.max(0, Number(row?.unreadCount ?? 0)),
+			savedCount: Math.max(0, Number(row?.savedCount ?? 0)),
 		},
 		create: {
 			userId,
-			unreadCount: Number(row?.unreadCount ?? 0),
-			savedCount: Number(row?.savedCount ?? 0),
+			unreadCount: Math.max(0, Number(row?.unreadCount ?? 0)),
+			savedCount: Math.max(0, Number(row?.savedCount ?? 0)),
 		},
 	});
 }
@@ -97,16 +107,18 @@ export async function adjustNavigationStats(
 		return;
 	}
 
-	await client.navigationStats.upsert({
-		where: { userId },
-		update: {
-			...(unreadDelta !== 0 ? { unreadCount: { increment: unreadDelta } } : {}),
-			...(savedDelta !== 0 ? { savedCount: { increment: savedDelta } } : {}),
-		},
-		create: {
-			userId,
-			unreadCount: Math.max(0, unreadDelta),
-			savedCount: Math.max(0, savedDelta),
-		},
-	});
+	await client.$queryRaw(Prisma.sql`
+		INSERT INTO "NavigationStats" ("userId", "unreadCount", "savedCount", "updatedAt")
+		VALUES (
+			${userId},
+			GREATEST(${unreadDelta}, 0),
+			GREATEST(${savedDelta}, 0),
+			NOW()
+		)
+		ON CONFLICT ("userId") DO UPDATE
+		SET
+			"unreadCount" = GREATEST("NavigationStats"."unreadCount" + ${unreadDelta}, 0),
+			"savedCount" = GREATEST("NavigationStats"."savedCount" + ${savedDelta}, 0),
+			"updatedAt" = NOW()
+	`);
 }
