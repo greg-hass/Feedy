@@ -4,24 +4,33 @@ import { prisma } from "@/lib/db";
 
 type NavigationStatsClient = Pick<
 	typeof prisma,
-	"navigationStats" | "$queryRaw"
+	"$queryRaw"
 >;
 
+type NavigationStatsStoreClient = NavigationStatsClient & {
+	navigationStats?: Pick<
+		typeof prisma.navigationStats,
+		"findUnique" | "upsert"
+	>;
+};
+
 export async function getNavigationStats(
-	client: NavigationStatsClient,
+	client: NavigationStatsStoreClient,
 	userId: string,
 	hideYouTubeShorts: boolean,
 ) {
-	const existing = await client.navigationStats.findUnique({
-		where: { userId },
-		select: {
-			unreadCount: true,
-			savedCount: true,
-		},
-	});
+	if (client.navigationStats) {
+		const existing = await client.navigationStats.findUnique({
+			where: { userId },
+			select: {
+				unreadCount: true,
+				savedCount: true,
+			},
+		});
 
-	if (existing) {
-		return existing;
+		if (existing) {
+			return existing;
+		}
 	}
 
 	const [row] = await client.$queryRaw<
@@ -51,6 +60,13 @@ export async function getNavigationStats(
 			) AS "savedCount"
 	`);
 
+	if (!client.navigationStats) {
+		return {
+			unreadCount: Number(row?.unreadCount ?? 0),
+			savedCount: Number(row?.savedCount ?? 0),
+		};
+	}
+
 	return client.navigationStats.upsert({
 		where: { userId },
 		update: {
@@ -66,10 +82,14 @@ export async function getNavigationStats(
 }
 
 export async function adjustNavigationStats(
-	client: NavigationStatsClient,
+	client: NavigationStatsStoreClient,
 	userId: string,
 	delta: { unreadDelta?: number; savedDelta?: number },
 ) {
+	if (!client.navigationStats) {
+		return;
+	}
+
 	const unreadDelta = delta.unreadDelta ?? 0;
 	const savedDelta = delta.savedDelta ?? 0;
 
