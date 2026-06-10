@@ -22,9 +22,7 @@ export function getRedis() {
       lazyConnect: true,
     });
 
-  if (process.env.NODE_ENV !== "production") {
-    global.__feedyRedis = instance;
-  }
+  global.__feedyRedis = instance;
 
   if (!instance.listenerCount("error")) {
     attachRedisErrorLogging(instance);
