@@ -301,29 +301,32 @@ function useRefreshController(endpoint: string, invalidate: string[]) {
     if (status.total > 0 && status.active === 0) {
       const timeout = window.setTimeout(() => {
         setTrackedBatchId(null);
-      }, 500);
+      }, 1500);
 
       return () => window.clearTimeout(timeout);
     }
   }, [invalidate, queryClient, refreshStatus.data, trackedBatchId]);
 
+  const phase: "idle" | "queuing" | "refreshing" | "done" = (() => {
+    if (!trackedBatchId && !mutation.isPending) return "idle";
+    if (mutation.isPending) return "queuing";
+    const status = refreshStatus.data;
+    if (status && status.total > 0 && status.active === 0) return "done";
+    return "refreshing";
+  })();
+
   const progress = (() => {
-    if (!trackedBatchId) {
-      return 0;
-    }
-
-    if (!refreshStatus.data) {
-      return 8;
-    }
-
+    if (phase === "idle") return 0;
+    if (phase === "queuing") return 5;
+    if (phase === "done") return 100;
+    if (!refreshStatus.data) return 5;
     const total = Math.max(refreshStatus.data.total, 1);
-    return refreshStatus.data.active > 0
-      ? Math.min(94, Math.max(12, Math.round((refreshStatus.data.completed / total) * 100)))
-      : 100;
+    return Math.round((refreshStatus.data.completed / total) * 100);
   })();
 
   return {
     active: mutation.isPending || !!trackedBatchId,
+    phase,
     progress,
     summary: batchSummary,
     start: () => mutation.mutate(),
@@ -3031,24 +3034,30 @@ function RefreshButton({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[12px] font-semibold text-[var(--accent)]">
-                  {!refresh.status ? "Queueing refresh" : "Refreshing feeds"}
+                  {refresh.phase === "queuing"
+                    ? "Queueing refresh"
+                    : refresh.phase === "done"
+                      ? "Refresh complete"
+                      : "Refreshing feeds"}
                 </p>
                 <p className="mt-0.5 text-[11px] text-[var(--text-primary)]/72">
-                  {refresh.status ? (
-                    refresh.summary ? (
-                      <>
-                        {`${refresh.status.completed} of ${refresh.status.total} newly queued feeds finished`}
-                        {refresh.summary.totalFeeds !== refresh.summary.queued
-                          ? ` · ${refresh.summary.totalFeeds} total feeds`
-                          : null}
-                        {refresh.summary.skipped > 0 ? ` · ${refresh.summary.skipped} already refreshing` : null}
-                        {refresh.status.failed ? ` · ${refresh.status.failed} failed` : ""}
-                      </>
-                    ) : (
-                      `${refresh.status.completed} of ${refresh.status.total} feeds finished${refresh.status.failed ? ` · ${refresh.status.failed} failed` : ""}`
-                    )
-                  ) : refresh.summary ? (
-                    `${refresh.summary.queued} feeds queued from ${refresh.summary.totalFeeds} total`
+                  {refresh.phase === "queuing" ? (
+                    "Preparing your feeds for refresh…"
+                  ) : refresh.phase === "done" ? (
+                    <>
+                      All feeds refreshed
+                      {refresh.status?.failed ? ` · ${refresh.status.failed} failed` : ""}
+                    </>
+                  ) : refresh.status ? (
+                    <>
+                      {`${refresh.status.completed} of ${refresh.status.total} feeds done`}
+                      {refresh.status.running > 0
+                        ? ` · ${refresh.status.running} refreshing`
+                        : ""}
+                      {refresh.status.failed > 0
+                        ? ` · ${refresh.status.failed} failed`
+                        : ""}
+                    </>
                   ) : (
                     "Pulling in the latest items from your subscriptions."
                   )}
