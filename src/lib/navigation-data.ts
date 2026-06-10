@@ -3,17 +3,13 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
+import { getNavigationStats } from "@/lib/navigation-stats";
 
 type FeedFolderCountRow = {
 	feedId: string | null;
 	folderId: string | null;
 	totalCount: bigint;
 	unreadCount: bigint;
-};
-
-type LibraryCountRow = {
-	unreadTotal: bigint;
-	savedCount: bigint;
 };
 
 type FeedPerformanceRow = {
@@ -25,7 +21,7 @@ type FeedPerformanceRow = {
 
 type NavigationClient = Pick<
 	typeof prisma,
-	"folder" | "feed" | "user" | "$queryRaw"
+	"folder" | "feed" | "user" | "navigationStats" | "$queryRaw"
 >;
 
 const navigationFolderSelect = {
@@ -159,34 +155,15 @@ export async function getLibraryCounts(
 	hideYouTubeShorts: boolean | undefined,
 	client: NavigationClient = prisma,
 ) {
-	const [row] = await client.$queryRaw<LibraryCountRow[]>(Prisma.sql`
-    SELECT
-      (
-        SELECT COUNT(*)::bigint
-        FROM "Item" i
-        INNER JOIN "Feed" f ON f.id = i."feedId"
-        LEFT JOIN "ReadState" rs
-          ON rs."itemId" = i.id
-          AND rs."userId" = ${userId}
-        WHERE f."userId" = ${userId}
-          AND f."excludeFromTimeline" = false
-          AND i."mutedByRule" = false
-          AND (
-            NOT ${hideYouTubeShorts}
-            OR COALESCE(i."youtubeIsShort", false) = false
-          )
-          AND rs.id IS NULL
-      ) AS "unreadTotal",
-      (
-        SELECT COUNT(*)::bigint
-        FROM "Bookmark" b
-        WHERE b."userId" = ${userId}
-      ) AS "savedCount"
-  `);
+	const navigationStats = await getNavigationStats(
+		client,
+		userId,
+		hideYouTubeShorts ?? false,
+	);
 
 	return {
-		unreadTotal: Number(row?.unreadTotal ?? 0),
-		savedCount: Number(row?.savedCount ?? 0),
+		unreadTotal: navigationStats.unreadCount,
+		savedCount: navigationStats.savedCount,
 	};
 }
 

@@ -8,6 +8,10 @@ describe("markItemsRead", () => {
     const operations: string[] = [];
     const client = {
       readState: {
+        findMany: (args: { where: { userId: string; itemId: { in: string[] } }; select: { itemId: true } }) => {
+          operations.push(`findMany:${args.where.itemId.in.length}`);
+          return Promise.resolve([{ itemId: "item-1" }]);
+        },
         createMany: (args: { data: Array<{ itemId: string; userId: string; lastReadAt: Date }>; skipDuplicates: boolean }) => {
           operations.push(`createMany:${args.data.length}:${args.skipDuplicates}`);
           return Promise.resolve();
@@ -28,7 +32,7 @@ describe("markItemsRead", () => {
 
     await markItemsRead(client as never, "user-1", ["item-1", "item-2"]);
 
-    assert.deepEqual(operations, ["createMany:2:true", "updateMany:2", "transaction:2"]);
+    assert.deepEqual(operations, ["findMany:2", "createMany:1:true", "updateMany:1", "transaction:2"]);
   });
 
   it("skips writes when there are no item ids", async () => {

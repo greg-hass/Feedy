@@ -15,6 +15,7 @@ import {
 	normalizeFeedMuteRules,
 } from "@/lib/feed/mute-rules";
 import { assertOwnedFolder } from "@/lib/ownership";
+import { getNavigationStats } from "@/lib/navigation-stats";
 import {
 	assertWithinLimit,
 	MAX_FEED_ITEMS_PER_REFRESH,
@@ -331,6 +332,16 @@ async function finalizeSuccessfulRefresh(input: {
 			},
 		});
 	});
+
+	const hideYouTubeShorts =
+		(
+			await prisma.user.findUnique({
+				where: { id: input.feed.userId },
+				select: { settings: { select: { hideYouTubeShorts: true } } },
+			})
+		)?.settings?.hideYouTubeShorts ?? false;
+
+	await getNavigationStats(prisma, input.feed.userId, hideYouTubeShorts);
 }
 
 async function recordFailedRefresh(input: {

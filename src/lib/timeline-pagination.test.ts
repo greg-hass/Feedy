@@ -14,7 +14,7 @@ describe("timeline pagination", () => {
 
     assert.equal(page.items.length, 100);
     assert.equal(page.hasMore, true);
-    assert.equal(page.nextCursor, "unique-99");
+    assert.equal(page.nextCursor, "item-99");
   });
 
   it("returns no cursor when the page is complete", () => {

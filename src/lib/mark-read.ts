@@ -2,15 +2,33 @@ import { prisma } from "@/lib/db";
 
 type MarkReadClient = Pick<typeof prisma, "readState" | "$transaction">;
 
-export async function markItemsRead(client: MarkReadClient, userId: string, itemIds: string[]) {
+export async function markItemsRead(
+	client: MarkReadClient,
+	userId: string,
+	itemIds: string[],
+) {
   if (itemIds.length === 0) {
-    return;
+    return 0;
   }
 
   const now = new Date();
+  const existing =
+    "findMany" in client.readState
+      ? await client.readState.findMany({
+          where: {
+            userId,
+            itemId: { in: itemIds },
+          },
+          select: { itemId: true },
+        })
+      : [];
+
+  const existingIds = new Set(existing.map((row) => row.itemId));
+  const newItemIds = itemIds.filter((itemId) => !existingIds.has(itemId));
+
   await client.$transaction([
     client.readState.createMany({
-      data: itemIds.map((itemId) => ({
+      data: newItemIds.map((itemId) => ({
         userId,
         itemId,
         lastReadAt: now,
@@ -21,7 +39,7 @@ export async function markItemsRead(client: MarkReadClient, userId: string, item
       where: {
         userId,
         itemId: {
-          in: itemIds,
+          in: [...existingIds],
         },
       },
       data: {
@@ -29,4 +47,6 @@ export async function markItemsRead(client: MarkReadClient, userId: string, item
       },
     }),
   ]);
+
+  return newItemIds.length;
 }

@@ -83,6 +83,7 @@ model User {
   feeds        Feed[]
   readStates   ReadState[]
   bookmarks    Bookmark[]
+  navigationStats NavigationStats?
   refreshJobs  RefreshJob[]
   importJobs   ImportExportRecord[]
 }
@@ -197,7 +198,8 @@ model Item {
   readStates     ReadState[]
   bookmarks      Bookmark[]
 
-  @@index([feedId, publishedAt(sort: Desc), discoveredAt(sort: Desc)])
+  @@index([feedId, publishedAt(sort: Desc), id(sort: Desc)])
+  @@index([publishedAt(sort: Desc), id(sort: Desc)])
   @@index([feedId, mutedByRule, publishedAt(sort: Desc), discoveredAt(sort: Desc)])
   @@index([mutedByRule, publishedAt(sort: Desc), discoveredAt(sort: Desc)])
   @@index([discoveredAt(sort: Desc)])
@@ -216,6 +218,14 @@ model ReadState {
   @@unique([userId, itemId])
   @@index([itemId, userId])
   @@index([userId, lastReadAt(sort: Desc)])
+}
+
+model NavigationStats {
+  userId      String   @id
+  unreadCount Int      @default(0)
+  savedCount  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Bookmark {

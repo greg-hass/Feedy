@@ -20,11 +20,22 @@ export async function POST(_request: Request, context: { params: Params }) {
 			select: { id: true },
 		});
 
-		await markItemsRead(
+		const newlyReadCount = await markItemsRead(
 			prisma,
 			user.id,
 			items.map((item) => item.id),
 		);
+		await prisma.navigationStats.upsert({
+			where: { userId: user.id },
+			update: {
+				unreadCount: { decrement: newlyReadCount },
+			},
+			create: {
+				userId: user.id,
+				unreadCount: 0,
+				savedCount: 0,
+			},
+		});
 
 		invalidateNavigationCache(user.id);
 		return NextResponse.json({ ok: true });

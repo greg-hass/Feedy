@@ -4,7 +4,7 @@ export type TimelinePage<TItem> = {
   hasMore: boolean;
 };
 
-export function buildTimelinePage<TItem extends { uniqueKey: string }>(
+export function buildTimelinePage<TItem extends { id: string }>(
   records: TItem[],
   pageSize: number,
 ): TimelinePage<TItem> {
@@ -13,7 +13,7 @@ export function buildTimelinePage<TItem extends { uniqueKey: string }>(
 
   return {
     items,
-    nextCursor: hasMore ? items.at(-1)?.uniqueKey ?? null : null,
+    nextCursor: hasMore ? items.at(-1)?.id ?? null : null,
     hasMore,
   };
 }

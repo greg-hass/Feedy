@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { apiErrorFrom, assertApiUser, parseJson } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { invalidateNavigationCache } from "@/lib/navigation-data";
+import { getNavigationStats } from "@/lib/navigation-stats";
 import { assertOwnedFolder } from "@/lib/ownership";
 import { updateFeedSchema } from "@/lib/schemas";
 
@@ -29,6 +30,11 @@ export async function PATCH(request: Request, context: { params: Params }) {
 				...(muteRules ? { muteRules: muteRules as Prisma.InputJsonValue } : {}),
 			},
 		});
+		await getNavigationStats(
+			prisma,
+			user.id,
+			user.settings?.hideYouTubeShorts ?? false,
+		);
 
 		invalidateNavigationCache(user.id);
 		return NextResponse.json(feed);
@@ -44,6 +50,11 @@ export async function DELETE(_request: Request, context: { params: Params }) {
 		await prisma.feed.delete({
 			where: { id: feedId, userId: user.id },
 		});
+		await getNavigationStats(
+			prisma,
+			user.id,
+			user.settings?.hideYouTubeShorts ?? false,
+		);
 		invalidateNavigationCache(user.id);
 		return NextResponse.json({ ok: true });
 	} catch (error) {

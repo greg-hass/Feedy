@@ -171,11 +171,10 @@ async function buildTimelineQuery(
     },
     orderBy: [
       { publishedAt: { sort: "desc", nulls: "last" } },
-      { discoveredAt: "desc" },
-      { uniqueKey: "desc" },
+      { id: "desc" },
     ],
     take: includeExtraItem ? pageSize + 1 : pageSize,
-    ...(options?.cursor ? { cursor: { uniqueKey: options.cursor }, skip: 1 } : {}),
+    ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
     select: {
       ...timelineItemSelect,
       bookmarks: { where: { userId }, select: { id: true } },

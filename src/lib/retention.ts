@@ -38,12 +38,33 @@ export async function pruneUserData(userId: string, itemRetentionDays: number) {
       break;
     }
 
+    const unreadToDelete = await prisma.item.count({
+      where: {
+        id: { in: staleItems.map((item) => item.id) },
+        feed: { userId, excludeFromTimeline: false },
+        mutedByRule: false,
+        readStates: { none: { userId } },
+      },
+    });
+
     const result = await prisma.item.deleteMany({
       where: {
         id: { in: staleItems.map((item) => item.id) },
       },
     });
     deletedItems += result.count;
+
+    if (unreadToDelete > 0) {
+      await prisma.navigationStats.upsert({
+        where: { userId },
+        update: { unreadCount: { decrement: unreadToDelete } },
+        create: {
+          userId,
+          unreadCount: 0,
+          savedCount: 0,
+        },
+      });
+    }
   }
 
   const [refreshLogsResult, refreshJobsResult, importRecordsResult] = await prisma.$transaction([
