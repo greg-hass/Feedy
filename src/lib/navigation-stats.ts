@@ -19,30 +19,6 @@ export async function getNavigationStats(
 	userId: string,
 	hideYouTubeShorts: boolean,
 ) {
-	if (client.navigationStats) {
-		const existing = await client.navigationStats.findUnique({
-			where: { userId },
-			select: {
-				unreadCount: true,
-				savedCount: true,
-			},
-		});
-
-		if (existing) {
-			const unreadCount = Math.max(0, existing.unreadCount);
-			const savedCount = Math.max(0, existing.savedCount);
-			if (unreadCount !== existing.unreadCount || savedCount !== existing.savedCount) {
-				await client.navigationStats.upsert({
-					where: { userId },
-					update: { unreadCount, savedCount },
-					create: { userId, unreadCount, savedCount },
-				});
-			}
-
-			return { unreadCount, savedCount };
-		}
-	}
-
 	const [row] = await client.$queryRaw<
 		Array<{ unreadCount: bigint; savedCount: bigint }>
 	>(Prisma.sql`
@@ -70,25 +46,30 @@ export async function getNavigationStats(
 			) AS "savedCount"
 	`);
 
+	const unreadCount = Math.max(0, Number(row?.unreadCount ?? 0));
+	const savedCount = Math.max(0, Number(row?.savedCount ?? 0));
+
 	if (!client.navigationStats) {
-		return {
-			unreadCount: Number(row?.unreadCount ?? 0),
-			savedCount: Number(row?.savedCount ?? 0),
-		};
+		return { unreadCount, savedCount };
 	}
 
-	return client.navigationStats.upsert({
+	const existing = await client.navigationStats.findUnique({
 		where: { userId },
-		update: {
-			unreadCount: Math.max(0, Number(row?.unreadCount ?? 0)),
-			savedCount: Math.max(0, Number(row?.savedCount ?? 0)),
-		},
-		create: {
-			userId,
-			unreadCount: Math.max(0, Number(row?.unreadCount ?? 0)),
-			savedCount: Math.max(0, Number(row?.savedCount ?? 0)),
+		select: {
+			unreadCount: true,
+			savedCount: true,
 		},
 	});
+
+	if (!existing || existing.unreadCount !== unreadCount || existing.savedCount !== savedCount) {
+		await client.navigationStats.upsert({
+			where: { userId },
+			update: { unreadCount, savedCount },
+			create: { userId, unreadCount, savedCount },
+		});
+	}
+
+	return { unreadCount, savedCount };
 }
 
 export async function adjustNavigationStats(
