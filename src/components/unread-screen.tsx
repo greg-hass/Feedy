@@ -7,6 +7,9 @@ import { Bookmark, Loader2, Search, SlidersHorizontal } from "lucide-react";
 
 import { MobileShell, LoadingSkeleton, ErrorState, EmptyState } from "@/components/app-shell";
 import { ItemCard } from "@/components/item-card";
+import { usePullToRefresh } from "@/components/use-pull-to-refresh";
+import { useScrollRestoration } from "@/components/use-scroll-restoration";
+import { useTimelineFilters } from "@/components/use-timeline-filters";
 import { RefreshButton, useRefreshController } from "@/components/refresh-button";
 import { TimelineRefreshToast } from "@/components/timeline-refresh-toast";
 import { IconButton } from "@/components/ui/icon-button";
@@ -43,38 +46,38 @@ function getTimelineRefreshFingerprint(feeds: MeResponse["navigation"]["feeds"])
 }
 
 export function UnreadScreen() {
-  const timelineStateStorageKey = "feedy-timeline-state-v2";
-  const timelineSourceStorageKey = "feedy-timeline-source-v2";
   const timelineAnchorStorageKey = "feedy-timeline-anchor-item";
   const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
   const [timelineFixedTop, setTimelineFixedTop] = useState(146);
-  const [stateFilter, setStateFilter] = useState<"UNREAD" | "ALL" | "READ">(() => {
-    if (typeof window === "undefined") return "ALL";
-    const saved = window.sessionStorage.getItem(timelineStateStorageKey);
-    return saved === "UNREAD" || saved === "ALL" || saved === "READ" ? saved : "ALL";
-  });
-  const [sourceFilter, setSourceFilter] = useState<"ALL" | "RSS" | "REDDIT" | "YOUTUBE">(() => {
-    if (typeof window === "undefined") return "ALL";
-    const saved = window.sessionStorage.getItem(timelineSourceStorageKey);
-    return saved === "ALL" || saved === "RSS" || saved === "REDDIT" || saved === "YOUTUBE" ? saved : "ALL";
-  });
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const [timelinePanelHeight, setTimelinePanelHeight] = useState(0);
   const [refreshToast, setRefreshToast] = useState<{
     count: number;
     jumpTargetId: string;
   } | null>(null);
-  const restoredScrollRef = useRef(false);
   const timelinePanelRef = useRef<HTMLElement | null>(null);
-  const saveScrollFrameRef = useRef<number | null>(null);
-  const saveScrollYRef = useRef(0);
   const pendingRefreshIdsRef = useRef<string[] | null>(null);
   const pendingScrollAnchorRef = useRef<{ itemId: string; top: number } | null>(null);
   const lastRefreshFingerprintRef = useRef<string | null>(null);
   const refreshStartRef = useRef<(() => void) | null>(null);
+
+  // Extracted hooks
+  const {
+    stateFilter,
+    setStateFilter,
+    sourceFilter,
+    setSourceFilter,
+    filtersOpen,
+    setFiltersOpen,
+    searchOpen,
+    setSearchOpen,
+    query,
+    setQuery,
+    filtersActive,
+    timelinePanelOpen,
+  } = useTimelineFilters();
+
   const deferredQuery = useDeferredValue(query);
+
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => api<MeResponse>("/api/me"),
@@ -84,21 +87,6 @@ export function UnreadScreen() {
     refetchOnWindowFocus: "always",
     refetchOnReconnect: true,
   });
-
-  useEffect(() => {
-    window.sessionStorage.setItem(timelineStateStorageKey, stateFilter);
-    window.sessionStorage.setItem(timelineSourceStorageKey, sourceFilter);
-  }, [sourceFilter, stateFilter, timelineSourceStorageKey, timelineStateStorageKey]);
-
-  useEffect(() => {
-    if (!searchOpen) {
-      return;
-    }
-
-    requestAnimationFrame(() => {
-      document.getElementById("timeline-search-input")?.focus();
-    });
-  }, [searchOpen]);
 
   const items = useInfiniteQuery({
     queryKey: ["items", "timeline", stateFilter, sourceFilter, deferredQuery.trim()],
@@ -127,16 +115,12 @@ export function UnreadScreen() {
     refetchOnWindowFocus: "always",
     refetchOnReconnect: true,
   });
+
   const timelineItems = useMemo(() => flattenTimelinePages(items.data?.pages), [items.data?.pages]);
   const refetchItems = items.refetch;
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = items;
   const refresh = useRefreshController("/api/refresh/all", ["items"]);
   const queryClient = useQueryClient();
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isBottomVisible, setIsBottomVisible] = useState(false);
-  const bottomSentinelRef = useRef<HTMLDivElement | null>(null);
-  const filtersActive = stateFilter !== "ALL" || sourceFilter !== "ALL";
-  const timelinePanelOpen = filtersOpen || searchOpen || !!query.trim();
 
   const scrollStorageKey = `feedy-timeline-scroll:${stateFilter}:${sourceFilter}`;
   const timelineSectionGap = 12;
@@ -156,9 +140,24 @@ export function UnreadScreen() {
     refreshStartRef.current?.();
   }, [captureRefreshSnapshot]);
 
-  useEffect(() => {
-    restoredScrollRef.current = false;
-  }, [stateFilter, sourceFilter]);
+  // Scroll restoration (extracted hook)
+  useScrollRestoration({
+    scrollStorageKey,
+    anchorStorageKey: timelineAnchorStorageKey,
+    timelineFixedTop,
+    isItemsLoading: items.isLoading,
+    timelineItems,
+  });
+
+  // Pull-to-refresh (extracted hook)
+  const { pullDistance } = usePullToRefresh({
+    isRefreshActive: refresh.active,
+    onRefresh: startRefresh,
+    onPullCancel: () => {
+      void refetchItems();
+      void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
+    },
+  });
 
   useEffect(() => {
     refreshStartRef.current = refresh.start;
@@ -229,6 +228,10 @@ export function UnreadScreen() {
     };
   }, [filtersOpen, query, searchOpen]);
 
+  // Infinite scroll sentinel
+  const [isBottomVisible, setIsBottomVisible] = useState(false);
+  const bottomSentinelRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     const sentinel = bottomSentinelRef.current;
     if (!sentinel || typeof IntersectionObserver === "undefined") {
@@ -257,46 +260,7 @@ export function UnreadScreen() {
     }
   }, [fetchNextPage, hasNextPage, isBottomVisible, isFetchingNextPage]);
 
-  // scrollRestoration is set globally to "manual" in providers.tsx — no
-  // per-component effect needed here. A per-component effect with a cleanup
-  // that resets to "auto" was the root cause of the scroll-loss bug: the
-  // cleanup fired on unmount (when navigating to an article), and the browser
-  // would then auto-scroll to 0 on popstate before this component could set
-  // it back to "manual".
-
-  useEffect(() => {
-    const flushScroll = () => {
-      window.sessionStorage.setItem(scrollStorageKey, String(Math.max(0, Math.round(saveScrollYRef.current))));
-    };
-
-    const saveScroll = () => {
-      saveScrollYRef.current = window.scrollY;
-      if (saveScrollFrameRef.current != null) {
-        return;
-      }
-
-      saveScrollFrameRef.current = window.requestAnimationFrame(() => {
-        saveScrollFrameRef.current = null;
-        flushScroll();
-      });
-    };
-
-    window.addEventListener("scroll", saveScroll, { passive: true });
-    window.addEventListener("pagehide", flushScroll);
-    window.addEventListener("visibilitychange", flushScroll);
-    return () => {
-      if (saveScrollFrameRef.current != null) {
-        window.cancelAnimationFrame(saveScrollFrameRef.current);
-        saveScrollFrameRef.current = null;
-      }
-      saveScrollYRef.current = window.scrollY;
-      flushScroll();
-      window.removeEventListener("scroll", saveScroll);
-      window.removeEventListener("pagehide", flushScroll);
-      window.removeEventListener("visibilitychange", flushScroll);
-    };
-  }, [scrollStorageKey]);
-
+  // Pending read state from reader page
   useEffect(() => {
     if (!timelineItems.length) {
       return;
@@ -325,6 +289,7 @@ export function UnreadScreen() {
     window.sessionStorage.removeItem(timelinePendingReadStorageKey);
   }, [queryClient, timelineItems]);
 
+  // Refresh delta toast
   useLayoutEffect(() => {
     const previousIds = pendingRefreshIdsRef.current;
     if (!previousIds || !timelineItems.length || refresh.active || items.isFetching || items.isFetchingNextPage) {
@@ -356,175 +321,6 @@ export function UnreadScreen() {
       jumpTargetId: delta.jumpTargetId ?? nextIds[0],
     });
   }, [items.isFetching, items.isFetchingNextPage, refresh.active, timelineItems]);
-
-  useLayoutEffect(() => {
-    if (items.isLoading || restoredScrollRef.current) {
-      return;
-    }
-
-    restoredScrollRef.current = true;
-
-    // Parse saved anchor state — prefers element-based restoration (itemId)
-    // over pixel-based (scrollY) because it is immune to layout timing issues.
-    const anchorStateRaw = window.sessionStorage.getItem(timelineAnchorStorageKey);
-    let anchorItemId: string | null = null;
-    let anchorScrollY: number | null = null;
-
-    if (anchorStateRaw) {
-      try {
-        const parsed = JSON.parse(anchorStateRaw) as { itemId?: string; scrollY?: number };
-        anchorItemId = parsed.itemId ?? null;
-        anchorScrollY = typeof parsed.scrollY === "number" ? parsed.scrollY : null;
-      } catch {
-        // Ignore malformed saved anchor state.
-      }
-    }
-
-    const savedScroll = anchorScrollY ?? Number(window.sessionStorage.getItem(scrollStorageKey) || "0");
-
-    if (savedScroll <= 0 && !anchorItemId) {
-      window.sessionStorage.removeItem(timelineAnchorStorageKey);
-      return;
-    }
-
-    // Prefer the saved pixel offset when available; element positioning remains
-    // as a fallback for older anchors that only recorded an item id.
-    // Element-based positioning is kept as a last-resort fallback only, for cases
-    // where no scrollY was recorded but we have an itemId to navigate to.
-    const computeTarget = (): number => {
-      if (savedScroll > 0) {
-        return savedScroll;
-      }
-      if (anchorItemId) {
-        const el = document.querySelector<HTMLElement>(`[data-timeline-item-id="${anchorItemId}"]`);
-        if (el) {
-          // No saved scroll — best we can do is put the card near the top.
-          return Math.max(0, el.offsetTop - timelineFixedTop - 8);
-        }
-      }
-      return 0;
-    };
-
-    let guardActive = true;
-
-    const restoreScroll = () => {
-      if (!guardActive) return;
-      window.scrollTo({ top: computeTarget(), behavior: "auto" });
-    };
-
-    // Guard against any rogue scroll-to-0 fired by the browser or Next.js
-    // router during the restoration window.
-    const onUnwantedScroll = () => {
-      if (guardActive && window.scrollY < savedScroll * 0.5) {
-        restoreScroll();
-      }
-    };
-
-    window.addEventListener("scroll", onUnwantedScroll, { passive: true });
-
-    // Retry several times — layout may still be settling over the first few
-    // frames (fonts, lazy images, flex layout recalculation).
-    restoreScroll();
-    const frameOne = window.requestAnimationFrame(restoreScroll);
-    const frameTwo = window.requestAnimationFrame(() => window.requestAnimationFrame(restoreScroll));
-    const timeoutOne = window.setTimeout(restoreScroll, 60);
-    const timeoutTwo = window.setTimeout(restoreScroll, 200);
-    const timeoutThree = window.setTimeout(restoreScroll, 400);
-    const timeoutFour = window.setTimeout(() => {
-      guardActive = false;
-      window.removeEventListener("scroll", onUnwantedScroll);
-      window.sessionStorage.removeItem(timelineAnchorStorageKey);
-    }, 650);
-
-    return () => {
-      guardActive = false;
-      window.removeEventListener("scroll", onUnwantedScroll);
-      window.cancelAnimationFrame(frameOne);
-      window.cancelAnimationFrame(frameTwo);
-      window.clearTimeout(timeoutOne);
-      window.clearTimeout(timeoutTwo);
-      window.clearTimeout(timeoutThree);
-      window.clearTimeout(timeoutFour);
-    };
-  }, [items.isLoading, scrollStorageKey, timelineAnchorStorageKey, timelineFixedTop, timelineItems]);
-
-  useEffect(() => {
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
-
-    if (!isStandalone) {
-      return;
-    }
-
-    let startY: number | null = null;
-    let dragging = false;
-    let latestDistance = 0;
-
-    const onTouchStart = (event: TouchEvent) => {
-      if (window.scrollY > 4 || refresh.active) {
-        startY = null;
-        dragging = false;
-        latestDistance = 0;
-        return;
-      }
-
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select")) {
-        startY = null;
-        dragging = false;
-        latestDistance = 0;
-        return;
-      }
-
-      startY = event.touches[0]?.clientY ?? null;
-      dragging = false;
-      latestDistance = 0;
-    };
-
-    const onTouchMove = (event: TouchEvent) => {
-      if (startY == null || window.scrollY > 4) {
-        return;
-      }
-
-      const currentY = event.touches[0]?.clientY ?? startY;
-      const delta = currentY - startY;
-      if (delta <= 0) {
-        return;
-      }
-
-      dragging = true;
-      latestDistance = Math.min(88, Math.round(delta * 0.45));
-      setPullDistance(latestDistance);
-      event.preventDefault();
-    };
-
-    const finishDrag = () => {
-      if (dragging && latestDistance >= 56 && !refresh.active) {
-        startRefresh();
-      } else if (dragging && !refresh.active) {
-        void refetchItems();
-        void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
-      }
-
-      startY = null;
-      dragging = false;
-      latestDistance = 0;
-      setPullDistance(0);
-    };
-
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("touchend", finishDrag, { passive: true });
-    window.addEventListener("touchcancel", finishDrag, { passive: true });
-
-    return () => {
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", finishDrag);
-      window.removeEventListener("touchcancel", finishDrag);
-    };
-  }, [queryClient, refetchItems, refresh.active, startRefresh]);
 
   return (
     <MobileShell
