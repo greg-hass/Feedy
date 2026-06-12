@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { normalizeFeedMuteRules } from "@/lib/feed/mute-rules";
-import { getNavigationStats } from "@/lib/navigation-stats";
+import { readNavigationStats } from "@/lib/navigation-stats";
 
 type FeedFolderCountRow = {
 	feedId: string | null;
@@ -151,18 +151,14 @@ export async function getFeedAndFolderCounts(
 
 export async function getLibraryCounts(
 	userId: string,
-	hideYouTubeShorts: boolean | undefined,
+	_hideYouTubeShorts?: boolean,
 	client: NavigationClient = prisma,
 ) {
-	const navigationStats = await getNavigationStats(
-		client,
-		userId,
-		hideYouTubeShorts ?? false,
-	);
+	const stats = await readNavigationStats(client, userId);
 
 	return {
-		unreadTotal: navigationStats.unreadCount,
-		savedCount: navigationStats.savedCount,
+		unreadTotal: stats.unreadCount,
+		savedCount: stats.savedCount,
 	};
 }
 

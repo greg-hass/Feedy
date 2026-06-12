@@ -24,6 +24,16 @@ describe("getNavigationData", () => {
           settings: { hideYouTubeShorts: false },
         }),
       },
+      navigationStats: {
+        findUnique: async () => {
+          calls.push("stats");
+          return { unreadCount: 0, savedCount: 0 };
+        },
+        upsert: async () => {
+          calls.push("stats-upsert");
+          return {};
+        },
+      },
       $queryRaw: async () => {
         calls.push("query");
         return [];
@@ -41,13 +51,13 @@ describe("getNavigationData", () => {
       ]);
 
       assert.deepEqual(first, second);
-      assert.deepEqual(calls, ["folders", "feeds", "query", "query", "query"]);
+      assert.deepEqual(calls, ["folders", "feeds", "query", "query", "stats"]);
 
       now += 31_000;
       calls.length = 0;
 
       await getNavigationData("user-cache", client as never);
-      assert.deepEqual(calls, ["folders", "feeds", "query", "query", "query"]);
+      assert.deepEqual(calls, ["folders", "feeds", "query", "query", "stats"]);
     } finally {
       Date.now = originalNow;
     }

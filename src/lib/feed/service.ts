@@ -19,7 +19,7 @@ import {
 	normalizeFeedMuteRules,
 } from "@/lib/feed/mute-rules";
 import { assertOwnedFolder } from "@/lib/ownership";
-import { getNavigationStats } from "@/lib/navigation-stats";
+import { adjustNavigationStats } from "@/lib/navigation-stats";
 import {
 	assertWithinLimit,
 	MAX_FEED_ITEMS_PER_REFRESH,
@@ -346,15 +346,17 @@ async function finalizeSuccessfulRefresh(input: {
 		"SUCCEEDED",
 	);
 
-	const hideYouTubeShorts =
-		(
-			await prisma.user.findUnique({
-				where: { id: input.feed.userId },
-				select: { settings: { select: { hideYouTubeShorts: true } } },
-			})
-		)?.settings?.hideYouTubeShorts ?? false;
+	// New items that aren't muted and belong to timeline-visible feeds
+	// increase the unread count. We can't know the exact delta without
+	// checking mute rules and timeline visibility per-item, but for the
+	// common case (unmuted, visible feed) the delta is accurate.
+	// The next full reconciliation (settings change, purge) will correct
+	// any drift.
+	const unreadDelta = input.newItemsCount > 0 ? input.newItemsCount : 0;
 
-	await getNavigationStats(prisma, input.feed.userId, hideYouTubeShorts);
+	if (unreadDelta > 0) {
+		await adjustNavigationStats(prisma, input.feed.userId, { unreadDelta });
+	}
 }
 
 async function recordFailedRefresh(input: {

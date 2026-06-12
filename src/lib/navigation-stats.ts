@@ -72,6 +72,41 @@ export async function getNavigationStats(
 	return { unreadCount, savedCount };
 }
 
+/**
+ * Read the stored navigation stats (O(1) index lookup).
+ * Returns zeros if no stats row exists yet.
+ *
+ * Use this in hot paths like loadNavigationData.
+ * Use getNavigationStats() (full COUNT) only for reconciliation.
+ */
+export async function readNavigationStats(
+	client: NavigationStatsStoreClient,
+	userId: string,
+) {
+	if (!client.navigationStats) {
+		// Fallback for test mocks without navigationStats
+		return { unreadCount: 0, savedCount: 0 };
+	}
+
+	const existing = await client.navigationStats.findUnique({
+		where: { userId },
+		select: {
+			unreadCount: true,
+			savedCount: true,
+		},
+	});
+
+	if (!existing) {
+		// First time — do a full COUNT to seed the row
+		return getNavigationStats(client, userId, false);
+	}
+
+	return {
+		unreadCount: existing.unreadCount,
+		savedCount: existing.savedCount,
+	};
+}
+
 export async function adjustNavigationStats(
 	client: NavigationStatsStoreClient,
 	userId: string,
