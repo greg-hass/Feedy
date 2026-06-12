@@ -3,11 +3,19 @@ set -eu
 
 mkdir -p "${DATA_DIR:-/app/data}/icons" "${DATA_DIR:-/app/data}/exports"
 
-npx prisma migrate deploy
-npm run seed
-
-if [ "${1:-web}" = "worker" ]; then
-  exec npm run worker
-fi
-
-exec npm run start
+case "${1:-web}" in
+  migrate)
+    npx prisma migrate deploy
+    npm run seed
+    ;;
+  worker)
+    exec npm run worker
+    ;;
+  web)
+    exec npm run start
+    ;;
+  *)
+    echo "Unknown entrypoint mode: ${1}" >&2
+    exit 64
+    ;;
+esac
