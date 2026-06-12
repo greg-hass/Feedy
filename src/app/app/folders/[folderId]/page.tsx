@@ -30,7 +30,6 @@ export default function FolderDetailPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
   const [showBulkMove, setShowBulkMove] = useState(false);
-  const [showBulkCadence, setShowBulkCadence] = useState(false);
 
   const me = useQuery({
     queryKey: ["me"],
@@ -117,31 +116,11 @@ export default function FolderDetailPage() {
     },
     onSuccess: async () => {
       setShowBulkMove(false);
-      setShowBulkCadence(false);
       setSelectionMode(false);
       setSelectedFeedIds([]);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
       await queryClient.invalidateQueries({ queryKey: ["items", "folder", params.folderId] });
-    },
-  });
-
-  const updateCadenceForFeeds = useMutation({
-    mutationFn: async (refreshIntervalMinutes: number) => {
-      await Promise.all(
-        selectedFeedIds.map((feedId) =>
-          api(`/api/feeds/${feedId}`, {
-            method: "PATCH",
-            body: JSON.stringify({ refreshIntervalMinutes }),
-          }),
-        ),
-      );
-    },
-    onSuccess: async () => {
-      setShowBulkCadence(false);
-      setSelectionMode(false);
-      setSelectedFeedIds([]);
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 
@@ -206,13 +185,6 @@ export default function FolderDetailPage() {
               <div className="flex items-center gap-2">
                 {selectionMode ? (
                   <>
-                    <button
-                      onClick={() => setShowBulkCadence(true)}
-                      disabled={!selectedCount}
-                      className="rounded-xl bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary disabled:opacity-50"
-                    >
-                      Cadence
-                    </button>
                     <button
                       onClick={() => setShowBulkMove(true)}
                       disabled={!selectedCount}
@@ -306,14 +278,6 @@ export default function FolderDetailPage() {
           />
         ) : null}
 
-        {showBulkCadence ? (
-          <FolderBulkCadenceSheet
-            selectedCount={selectedCount}
-            onClose={() => setShowBulkCadence(false)}
-            onApply={(refreshIntervalMinutes) => updateCadenceForFeeds.mutate(refreshIntervalMinutes)}
-            isPending={updateCadenceForFeeds.isPending}
-          />
-        ) : null}
       </div>
     </MobileShell>
   );
@@ -552,66 +516,6 @@ function FolderBulkMoveSheet({
                 <span className="text-[10px] uppercase tracking-[0.16em] text-secondary">Move</span>
               </button>
             ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FolderBulkCadenceSheet({
-  selectedCount,
-  onClose,
-  onApply,
-  isPending,
-}: {
-  selectedCount: number;
-  onClose: () => void;
-  onApply: (refreshIntervalMinutes: number) => void;
-  isPending: boolean;
-}) {
-  const options = [30, 60, 180, 360];
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="mb-3 flex justify-center">
-          <div className="h-1.5 w-11 rounded-full bg-[var(--surface-muted)]" />
-        </div>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-[15px] font-semibold">Adjust refresh cadence</h3>
-            <p className="mt-1 text-xs text-secondary">
-              Set a calmer refresh interval for {selectedCount} selected {selectedCount === 1 ? "feed" : "feeds"}.
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          {options.map((minutes) => (
-            <button
-              key={minutes}
-              onClick={() => onApply(minutes)}
-              disabled={isPending}
-              className="rounded-[20px] bg-[var(--surface)] px-4 py-4 text-left disabled:opacity-50"
-            >
-              <p className="text-sm font-semibold">{minutes} minutes</p>
-              <p className="mt-1 text-xs text-secondary">
-                {minutes >= 180 ? "Best for consistently slow feeds." : "Reduce refresh pressure."}
-              </p>
-            </button>
-          ))}
         </div>
       </div>
     </div>

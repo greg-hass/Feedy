@@ -8,7 +8,11 @@ import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
 import { enqueueIconFetch, enqueueReaderExtraction } from "@/lib/queue";
 import { shouldFetchReadableContent } from "@/lib/reader-content";
-import { queueSingleFeedRefresh } from "@/lib/refresh-orchestration";
+import {
+	getRefreshBatchId,
+	queueSingleFeedRefresh,
+	recordRefreshBatchResult,
+} from "@/lib/refresh-orchestration";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import {
 	evaluateFeedMuteRules,
@@ -29,7 +33,6 @@ async function createValidatedFeedForUser(
 		sourceUrl: string;
 		folderId?: string | null;
 		label?: string | null;
-		refreshIntervalMinutes?: number | null;
 	},
 	validated: FeedValidationResult,
 	options?: {
@@ -93,7 +96,6 @@ async function createValidatedFeedForUser(
 				siteUrl: validated.siteUrl,
 				iconHintUrl: validated.iconUrl,
 				sourceType: validated.sourceType,
-				refreshIntervalMinutes: input.refreshIntervalMinutes || null,
 			},
 		});
 	} catch (error) {
@@ -138,7 +140,6 @@ export async function createFeedForUser(
 		sourceUrl: string;
 		folderId?: string | null;
 		label?: string | null;
-		refreshIntervalMinutes?: number | null;
 	},
 ) {
 	const validated = await validateFeedUrl(input.sourceUrl);
@@ -262,6 +263,12 @@ async function finalizeNotModifiedRefresh(input: {
 			},
 		});
 	});
+
+	await recordRefreshBatchResult(
+		prisma,
+		getRefreshBatchId(input.refreshJob?.metadata),
+		"SUCCEEDED",
+	);
 }
 
 async function finalizeSuccessfulRefresh(input: {
@@ -333,6 +340,12 @@ async function finalizeSuccessfulRefresh(input: {
 		});
 	});
 
+	await recordRefreshBatchResult(
+		prisma,
+		getRefreshBatchId(input.refreshJob?.metadata),
+		"SUCCEEDED",
+	);
+
 	const hideYouTubeShorts =
 		(
 			await prisma.user.findUnique({
@@ -346,7 +359,7 @@ async function finalizeSuccessfulRefresh(input: {
 
 async function recordFailedRefresh(input: {
 	feedId: string;
-	refreshJob: { id: string } | null;
+	refreshJob: { id: string; metadata: Prisma.JsonValue | null } | null;
 	logId: string;
 	message: string;
 }) {
@@ -404,6 +417,12 @@ async function recordFailedRefresh(input: {
 				);
 			});
 	}
+
+	await recordRefreshBatchResult(
+		prisma,
+		getRefreshBatchId(input.refreshJob?.metadata),
+		"FAILED",
+	);
 }
 
 export async function refreshFeed(
@@ -629,7 +648,7 @@ export async function refreshFeed(
 			error instanceof Error ? error.message : "Unknown refresh error";
 		await recordFailedRefresh({
 			feedId: feed.id,
-			refreshJob: refreshJob ? { id: refreshJob.id } : null,
+			refreshJob: refreshJob ? { id: refreshJob.id, metadata: refreshJob.metadata } : null,
 			logId: log.id,
 			message,
 		});

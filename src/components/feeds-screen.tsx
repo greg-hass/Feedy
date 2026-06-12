@@ -1,0 +1,435 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useDeferredValue, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { FolderPlus, Plus, Rss, Search } from "lucide-react";
+
+import { EmptyState, ErrorState, LoadingSkeleton, MobileShell, useMe } from "@/components/app-shell";
+import { BulkMoveSheet, FeedRow, FolderRow, SelectableFeedRow, SelectableFolderRow } from "@/components/feed-library-components";
+import { SectionLabel } from "@/components/screen-primitives";
+import { IconButton } from "@/components/ui/icon-button";
+import { Input } from "@/components/ui/input";
+import { api } from "@/lib/client";
+import { formatSourceType } from "@/lib/feed-source";
+import { decodeHtmlEntities } from "@/lib/utils";
+import type { NavFeed } from "@/types/app";
+
+const AddFeedForm = dynamic(() => import("@/components/forms").then((module) => module.AddFeedForm), {
+  ssr: false,
+});
+const AddFolderForm = dynamic(() => import("@/components/forms").then((module) => module.AddFolderForm), {
+  ssr: false,
+});
+
+function compareFeedLabels(a: NavFeed, b: NavFeed) {
+  const aLabel = decodeHtmlEntities(a.label || a.title).toLocaleLowerCase();
+  const bLabel = decodeHtmlEntities(b.label || b.title).toLocaleLowerCase();
+  return aLabel.localeCompare(bLabel, undefined, { sensitivity: "base" });
+}
+
+export function FeedsScreen() {
+  const me = useMe();
+  const [showAddFeed, setShowAddFeed] = useState(false);
+  const [showAddFolder, setShowAddFolder] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
+  const [showBulkMove, setShowBulkMove] = useState(false);
+  const [query, setQuery] = useState("");
+  const [showSwipeHint, setShowSwipeHint] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return !window.localStorage.getItem("feedy-swipe-hint-dismissed");
+  });
+  const queryClient = useQueryClient();
+  const deferredQuery = useDeferredValue(query);
+
+  const feeds = useMemo(() => me.data?.navigation.feeds ?? [], [me.data?.navigation.feeds]);
+  const folders = useMemo(() => me.data?.navigation.folders ?? [], [me.data?.navigation.folders]);
+  const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const healthCounts = useMemo(
+    () => ({
+      all: feeds.length,
+      healthy: feeds.filter((feed) => feed.healthStatus === "HEALTHY").length,
+      issues: feeds.filter((feed) => feed.healthStatus !== "HEALTHY").length,
+      slow: feeds.filter((feed) => feed.performance.isSlow).length,
+    }),
+    [feeds],
+  );
+
+  const matchingFeeds = useMemo(() => {
+    if (!normalizedQuery) {
+      return feeds.slice().sort(compareFeedLabels);
+    }
+
+    return feeds
+      .filter((feed) =>
+        [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
+          .filter(Boolean)
+          .some((value) => value!.toLowerCase().includes(normalizedQuery)),
+      )
+      .sort(compareFeedLabels);
+  }, [feeds, normalizedQuery]);
+
+  const pinnedFeeds = useMemo(
+    () => matchingFeeds.filter((feed) => feed.isPinned),
+    [matchingFeeds],
+  );
+  const uncategorizedFeeds = useMemo(
+    () => matchingFeeds.filter((feed) => !feed.folderId && !feed.isPinned),
+    [matchingFeeds],
+  );
+  const looseSelectableFeeds = useMemo(
+    () => matchingFeeds.filter((feed) => !feed.folderId),
+    [matchingFeeds],
+  );
+  const effectiveSelectedFeedIds = useMemo(
+    () => selectedFeedIds.filter((id) => matchingFeeds.some((feed) => feed.id === id)),
+    [matchingFeeds, selectedFeedIds],
+  );
+  const selectedSet = useMemo(() => new Set(effectiveSelectedFeedIds), [effectiveSelectedFeedIds]);
+  const selectedCount = effectiveSelectedFeedIds.length;
+  const feedsByFolderId = useMemo(() => {
+    const grouped = new Map<string, NavFeed[]>();
+
+    for (const feed of feeds) {
+      if (!feed.folderId) {
+        continue;
+      }
+
+      const current = grouped.get(feed.folderId);
+      if (current) {
+        current.push(feed);
+      } else {
+        grouped.set(feed.folderId, [feed]);
+      }
+    }
+
+    return grouped;
+  }, [feeds]);
+  const visibleFolders = useMemo(
+    () =>
+      folders
+        .map((folder) => {
+          const folderFeeds = feedsByFolderId.get(folder.id) ?? [];
+          const matchingFolderFeeds = folderFeeds
+            .filter((feed) =>
+              !normalizedQuery ||
+              [feed.label, feed.title, feed.description, feed.sourceUrl, feed.siteUrl, formatSourceType(feed.sourceType)]
+                .filter(Boolean)
+                .some((value) => value!.toLowerCase().includes(normalizedQuery)),
+            )
+            .sort(compareFeedLabels);
+          const folderMatches = folder.title.toLowerCase().includes(normalizedQuery);
+
+          return {
+            ...folder,
+            matchingFeeds: matchingFolderFeeds,
+            visible:
+              !normalizedQuery ||
+              folderMatches ||
+              matchingFolderFeeds.length > 0,
+          };
+        })
+        .filter((folder) => folder.visible),
+    [feedsByFolderId, folders, normalizedQuery],
+  );
+
+  const moveFeeds = useMutation({
+    mutationFn: async (folderId: string | null) => {
+      await Promise.all(
+        effectiveSelectedFeedIds.map((feedId) =>
+          api(`/api/feeds/${feedId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ folderId }),
+          }),
+        ),
+      );
+    },
+    onSuccess: async () => {
+      setShowBulkMove(false);
+      setSelectionMode(false);
+      setSelectedFeedIds([]);
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      await queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+
+  if (me.isLoading) return <MobileShell title="Feeds"><LoadingSkeleton /></MobileShell>;
+  if (me.error) return <MobileShell title="Feeds"><ErrorState message={me.error.message} onRetry={() => me.refetch()} /></MobileShell>;
+
+  return (
+    <MobileShell
+      title="Feeds"
+      subtitle="Manage subscriptions and folders"
+      actions={
+        <div className="flex h-10 items-center gap-2">
+          {selectionMode ? (
+            <>
+              <button
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedFeedIds([]);
+                  setShowBulkMove(false);
+                }}
+                className="inline-flex h-10 items-center rounded-2xl bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowBulkMove(true)}
+                disabled={!selectedCount}
+                className="inline-flex h-10 items-center rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] px-3 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)] disabled:opacity-50"
+              >
+                Move {selectedCount ? `(${selectedCount})` : ""}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setSelectionMode(true)}
+                className="inline-flex h-10 items-center rounded-2xl bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
+              >
+                Select
+              </button>
+              <IconButton onClick={() => setShowAddFolder(true)} aria-label="Create folder">
+                <FolderPlus className="size-4" />
+              </IconButton>
+              <IconButton variant="accent" onClick={() => setShowAddFeed(true)} aria-label="Add feed">
+                <Plus className="size-4" />
+              </IconButton>
+            </>
+          )}
+        </div>
+      }
+    >
+      {showAddFolder && (
+        <div className="mb-3">
+          <AddFolderForm onClose={() => setShowAddFolder(false)} />
+        </div>
+      )}
+
+      {showAddFeed && (
+        <div className="mb-3">
+          <AddFeedForm
+            folders={folders}
+            onClose={() => setShowAddFeed(false)}
+          />
+        </div>
+      )}
+
+      <section className="mb-4 rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center gap-3 rounded-[20px] bg-[var(--surface-strong)] px-3.5">
+          <Search className="size-4 shrink-0 text-secondary" />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search feeds, folders, or source names"
+            className="h-11 border-0 bg-transparent px-0"
+          />
+        </div>
+        <div className="mt-3">
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "All", value: healthCounts.all, tone: "text-[var(--text-primary)]" },
+              { label: "Healthy", value: healthCounts.healthy, tone: "text-[var(--status-healthy)]" },
+              { label: "Issues", value: healthCounts.issues, tone: "text-[var(--status-warning)]" },
+              { label: "Slow", value: healthCounts.slow, tone: "text-[var(--status-warning)]" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl bg-[var(--surface-strong)] px-3 py-2.5 text-center"
+              >
+                <p className={`text-sm font-semibold ${item.tone}`}>{item.value}</p>
+                <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-secondary">
+                  {item.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {!selectionMode && showSwipeHint ? (
+        <section className="mb-4 flex items-center justify-between gap-3 rounded-[20px] bg-[var(--accent-soft)]/35 px-3.5 py-3 text-sm">
+          <p className="text-[13px] text-secondary">
+            Swipe a row left for edit and delete actions.
+          </p>
+          <button
+            onClick={() => {
+              setShowSwipeHint(false);
+              window.localStorage.setItem("feedy-swipe-hint-dismissed", "1");
+            }}
+            className="rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-medium text-secondary"
+          >
+            Got it
+          </button>
+        </section>
+      ) : null}
+
+      {selectionMode ? (
+        <>
+          <section className="mb-4 rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
+                  Multi-select
+                </p>
+                <h2 className="mt-1 text-[1.05rem] font-semibold tracking-[-0.03em]">Select folders or loose feeds</h2>
+                <p className="mt-1 text-xs text-secondary">
+                  {selectedCount} selected across {visibleFolders.length} visible folders and {looseSelectableFeeds.length} loose feeds.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowBulkMove(true)}
+                  disabled={!selectedCount}
+                  className="rounded-2xl bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] disabled:opacity-50"
+                >
+                  Move
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <div className="space-y-4">
+            {visibleFolders.length > 0 ? (
+              <section>
+                <SectionLabel eyebrow="Library" title="Folders" meta={`${visibleFolders.length} groups`} />
+                <div className="space-y-2">
+                  {visibleFolders.map((folder) => {
+                    const folderFeedIds = folder.matchingFeeds.map((feed) => feed.id);
+                    const folderSelected =
+                      folderFeedIds.length > 0 && folderFeedIds.every((id) => selectedSet.has(id));
+
+                    return (
+                      <SelectableFolderRow
+                        key={folder.id}
+                        folder={folder}
+                        selected={folderSelected}
+                        selectedCount={folderFeedIds.filter((id) => selectedSet.has(id)).length}
+                        onToggle={() =>
+                          setSelectedFeedIds((current) => {
+                            const currentSet = new Set(current);
+                            if (folderSelected) {
+                              folderFeedIds.forEach((id) => currentSet.delete(id));
+                            } else {
+                              folderFeedIds.forEach((id) => currentSet.add(id));
+                            }
+                            return Array.from(currentSet);
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {looseSelectableFeeds.length > 0 ? (
+              <section>
+                <SectionLabel
+                  eyebrow={visibleFolders.length > 0 ? "Loose feeds" : "Library"}
+                  title={visibleFolders.length > 0 ? "Uncategorized" : "Feeds"}
+                  meta={`${looseSelectableFeeds.length} feeds`}
+                />
+                <div className="space-y-2">
+                  {looseSelectableFeeds.map((feed) => (
+                    <SelectableFeedRow
+                      key={feed.id}
+                      feed={feed}
+                      selected={selectedSet.has(feed.id)}
+                      folderTitle={null}
+                      onToggle={() =>
+                        setSelectedFeedIds((current) =>
+                          current.includes(feed.id)
+                            ? current.filter((id) => id !== feed.id)
+                            : [...current, feed.id],
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {!visibleFolders.length && !looseSelectableFeeds.length && (
+              <EmptyState
+                title="No feeds in this view"
+                body="Try another search or filter, then select folders or loose feeds."
+                icon={<Rss className="size-6" />}
+              />
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="space-y-4">
+          {pinnedFeeds.length > 0 && (
+            <section>
+              <SectionLabel eyebrow="Quick access" title="Pinned" meta={`${pinnedFeeds.length} feeds`} />
+              <div className="space-y-2">
+                {pinnedFeeds.map((feed, index) => (
+                  <FeedRow key={feed.id} feed={feed} feeds={pinnedFeeds} index={index} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {visibleFolders.length > 0 && (
+            <section>
+              <SectionLabel eyebrow="Library" title="Folders" meta={`${visibleFolders.length} groups`} />
+              <div className="space-y-2">
+                {visibleFolders.map((folder, index) => (
+                  <FolderRow key={folder.id} folder={folder} folders={visibleFolders} index={index} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {uncategorizedFeeds.length > 0 && (
+            <section>
+              <SectionLabel
+                eyebrow={folders.length > 0 ? "Loose feeds" : "Library"}
+                title={folders.length > 0 ? "Uncategorized" : "All feeds"}
+                meta={`${uncategorizedFeeds.length} feeds`}
+              />
+              <div className="space-y-2">
+                {uncategorizedFeeds.map((feed, index) => (
+                  <FeedRow key={feed.id} feed={feed} feeds={uncategorizedFeeds} index={index} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {!feeds.length && (
+            <EmptyState
+              title="No feeds yet"
+              body="Add a standard RSS/Atom feed, a Reddit RSS URL, or a YouTube RSS URL."
+              icon={<Rss className="size-6" />}
+            />
+          )}
+
+          {!!feeds.length && normalizedQuery && !pinnedFeeds.length && !visibleFolders.length && !uncategorizedFeeds.length && (
+            <EmptyState
+              title="No feeds match this search"
+              body="Try a feed title, folder name, source URL, or source type."
+              icon={<Search className="size-6" />}
+            />
+          )}
+        </div>
+      )}
+
+      {showBulkMove ? (
+        <BulkMoveSheet
+          folders={folders}
+          selectedCount={selectedCount}
+          onClose={() => setShowBulkMove(false)}
+          onMove={(folderId) => moveFeeds.mutate(folderId)}
+          isPending={moveFeeds.isPending}
+        />
+      ) : null}
+    </MobileShell>
+  );
+}

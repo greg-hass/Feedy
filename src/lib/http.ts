@@ -8,8 +8,10 @@ type SemaphoreSlot = {
 };
 
 const domainSemaphores = new Map<string, { running: number; queue: SemaphoreSlot[] }>();
+const domainRateLimitUntil = new Map<string, number>();
 const MAX_OUTBOUND_RESPONSE_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
+const MAX_RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
 
 function getDomainSemaphore(hostname: string) {
   let sem = domainSemaphores.get(hostname);
@@ -18,6 +20,62 @@ function getDomainSemaphore(hostname: string) {
     domainSemaphores.set(hostname, sem);
   }
   return sem;
+}
+
+function isRedditHost(hostname: string) {
+  const normalized = hostname.toLowerCase();
+  return normalized === "reddit.com" || normalized.endsWith(".reddit.com");
+}
+
+function getEffectiveDomainConcurrency(hostname: string) {
+  if (isRedditHost(hostname)) {
+    return 1;
+  }
+
+  return env.REFRESH_DOMAIN_CONCURRENCY;
+}
+
+function getRateLimitCooldownMs(response: Response) {
+  const retryAfter = response.headers.get("retry-after");
+  if (retryAfter) {
+    const seconds = Number.parseInt(retryAfter, 10);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.min(seconds * 1000, MAX_RATE_LIMIT_COOLDOWN_MS);
+    }
+
+    const dateMs = Date.parse(retryAfter);
+    if (Number.isFinite(dateMs)) {
+      return Math.min(Math.max(dateMs - Date.now(), 0), MAX_RATE_LIMIT_COOLDOWN_MS);
+    }
+  }
+
+  const redditReset = response.headers.get("x-ratelimit-reset");
+  if (redditReset) {
+    const seconds = Number.parseFloat(redditReset);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.min(Math.ceil(seconds * 1000), MAX_RATE_LIMIT_COOLDOWN_MS);
+    }
+  }
+
+  return 60_000;
+}
+
+function rememberRateLimit(hostname: string, cooldownMs: number) {
+  const until = Date.now() + cooldownMs;
+  domainRateLimitUntil.set(hostname, Math.max(domainRateLimitUntil.get(hostname) ?? 0, until));
+}
+
+function assertNotRateLimited(hostname: string) {
+  const limitedUntil = domainRateLimitUntil.get(hostname) ?? 0;
+  const remainingMs = limitedUntil - Date.now();
+  if (remainingMs <= 0) {
+    if (limitedUntil > 0) {
+      domainRateLimitUntil.delete(hostname);
+    }
+    return;
+  }
+
+  throw new Error(`Host ${hostname} is rate limited; retry after ${Math.ceil(remainingMs / 1000)} seconds`);
 }
 
 function isPrivateAddress(address: string) {
@@ -147,6 +205,7 @@ async function fetchWithPolicy(
   const url = new URL(urlString);
 
   await assertSafeOutboundDestination(url);
+  assertNotRateLimited(url.hostname);
 
   const release = await acquireDomainSlot(url.hostname);
   const controller = new AbortController();
@@ -168,6 +227,11 @@ async function fetchWithPolicy(
       headers,
       next: { revalidate: 0 },
     });
+
+    if (response.status === 429) {
+      const cooldownMs = getRateLimitCooldownMs(response);
+      rememberRateLimit(url.hostname, cooldownMs);
+    }
 
     if (
       response.status >= 300 &&
@@ -207,7 +271,7 @@ async function fetchWithPolicy(
 
 async function acquireDomainSlot(hostname: string): Promise<() => void> {
   const sem = getDomainSemaphore(hostname);
-  const limit = env.REFRESH_DOMAIN_CONCURRENCY;
+  const limit = getEffectiveDomainConcurrency(hostname);
 
   if (sem.running < limit) {
     sem.running++;

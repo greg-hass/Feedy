@@ -6,6 +6,7 @@ import { invalidateNavigationCache } from "@/lib/navigation-data";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
 import { MAX_MANUAL_REFRESH_FEEDS } from "@/lib/workload-limits";
 import { queueRefreshBatch } from "@/lib/refresh-orchestration";
+import { buildFolderRefreshFeedWhere } from "@/lib/refresh-scope";
 
 const rateLimiter = createFixedWindowRateLimiter();
 
@@ -34,7 +35,7 @@ export async function POST(_request: Request, context: { params: Params }) {
 		}
 		const { folderId } = await context.params;
 		const feeds = await prisma.feed.findMany({
-			where: { userId: user.id, folderId },
+			where: buildFolderRefreshFeedWhere(user.id, folderId),
 			select: { id: true },
 		});
 		if (feeds.length > MAX_MANUAL_REFRESH_FEEDS) {

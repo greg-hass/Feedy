@@ -26,9 +26,6 @@ async function scheduleDueFeeds() {
   if (!user) {
     return;
   }
-  if (user.settings?.autoRefreshEnabled === false) {
-    return;
-  }
 
   const queue = getRefreshQueue();
   const waiting = await queue.getWaitingCount();
@@ -46,17 +43,15 @@ async function scheduleDueFeeds() {
       id: true,
       lastRefreshedAt: true,
       lastFailureAt: true,
-      refreshIntervalMinutes: true,
     },
   });
 
   const now = Date.now();
+  const interval =
+    user.settings?.refreshIntervalMinutes ??
+    env.REFRESH_DEFAULT_INTERVAL_MINUTES;
   let queuedCount = 0;
   for (const feed of feeds) {
-    const interval =
-      feed.refreshIntervalMinutes ??
-      user.settings?.refreshIntervalMinutes ??
-      env.REFRESH_DEFAULT_INTERVAL_MINUTES;
     const dueAt =
       (feed.lastRefreshedAt
         ? new Date(feed.lastRefreshedAt).getTime()

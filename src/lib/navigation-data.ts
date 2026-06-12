@@ -44,7 +44,6 @@ const navigationFeedSelect = {
 	excludeFromTimeline: true,
 	muteRules: true,
 	position: true,
-	refreshIntervalMinutes: true,
 	lastRefreshedAt: true,
 	lastSuccessfulRefreshAt: true,
 	lastFailureAt: true,

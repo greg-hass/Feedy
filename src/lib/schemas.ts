@@ -24,7 +24,6 @@ export const feedSchema = z.object({
   sourceUrl: z.string().url(),
   folderId: z.string().nullable().optional(),
   label: z.string().max(120).nullable().optional(),
-  refreshIntervalMinutes: z.number().int().min(5).max(1440).nullable().optional(),
 });
 
 export const updateFeedSchema = z.object({
@@ -34,7 +33,6 @@ export const updateFeedSchema = z.object({
   position: z.number().int().min(0).optional(),
   isPinned: z.boolean().optional(),
   excludeFromTimeline: z.boolean().optional(),
-  refreshIntervalMinutes: z.number().int().min(5).max(1440).nullable().optional(),
   muteRules: feedMuteRulesSchema.optional(),
 });
 
@@ -56,7 +54,6 @@ export const settingsSchema = z.object({
   itemRetentionDays: z.number().int().min(14).max(365).optional(),
   hideYouTubeShorts: z.boolean().optional(),
   refreshIntervalMinutes: z.number().int().min(5).max(1440).optional(),
-  autoRefreshEnabled: z.boolean().optional(),
   readerOpenOriginalByDefault: z.boolean().optional(),
   keepScreenAwake: z.boolean().optional(),
 });

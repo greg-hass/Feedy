@@ -43,7 +43,21 @@ export async function requireApiUser() {
 		select: {
 			id: true,
 			username: true,
-			settings: true,
+			settings: {
+				select: {
+					id: true,
+					userId: true,
+					theme: true,
+					accentColor: true,
+					refreshIntervalMinutes: true,
+					itemRetentionDays: true,
+					hideYouTubeShorts: true,
+					readerOpenOriginalByDefault: true,
+					keepScreenAwake: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
 		},
 	});
 }

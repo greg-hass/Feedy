@@ -15,7 +15,6 @@ export type NavFeed = {
     autoMarkRead: boolean;
   } | null;
   position: number;
-  refreshIntervalMinutes: number | null;
   lastRefreshedAt: string | null;
   lastSuccessfulRefreshAt: string | null;
   lastFailureAt: string | null;
@@ -99,7 +98,6 @@ export type MeResponse = {
       itemRetentionDays: number;
       hideYouTubeShorts: boolean;
       refreshIntervalMinutes: number;
-      autoRefreshEnabled: boolean;
       readerOpenOriginalByDefault: boolean;
       keepScreenAwake: boolean;
     };

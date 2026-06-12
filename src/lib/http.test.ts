@@ -56,4 +56,30 @@ describe("fetchWithTimeout", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it("backs off a host after a rate-limit response", async () => {
+    const originalFetch = globalThis.fetch;
+    let fetchCount = 0;
+    globalThis.fetch = (async () => {
+      fetchCount++;
+      return new Response("rate limited", {
+        status: 429,
+        headers: { "x-ratelimit-reset": "30" },
+      });
+    }) as typeof fetch;
+
+    try {
+      const url = "https://8.8.4.4/rate-limited-feed";
+      const first = await fetchWithTimeout(url, {}, 1_000);
+      assert.equal(first.status, 429);
+
+      await assert.rejects(
+        fetchWithTimeout(url, {}, 1_000),
+        /rate limited; retry after/i,
+      );
+      assert.equal(fetchCount, 1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });

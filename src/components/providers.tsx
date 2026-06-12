@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { createContext, useContext, useLayoutEffect, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { createPortal } from "react-dom";
 
@@ -163,6 +163,40 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
   const [activeYouTubePlayback, setActiveYouTubePlayback] = useState<ActiveYouTubePlayback | null>(null);
   const [inlineYouTubeHost, setInlineYouTubeHost] = useState<InlineYouTubeHost>(null);
+  const lastResumeRefetchAtRef = useRef(0);
+
+  useEffect(() => {
+    const refetchFreshServerState = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastResumeRefetchAtRef.current < 750) {
+        return;
+      }
+      lastResumeRefetchAtRef.current = now;
+
+      void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
+      void queryClient.refetchQueries({ queryKey: ["items"], type: "active" });
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refetchFreshServerState();
+      }
+    };
+
+    window.addEventListener("focus", refetchFreshServerState);
+    window.addEventListener("pageshow", refetchFreshServerState);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", refetchFreshServerState);
+      window.removeEventListener("pageshow", refetchFreshServerState);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [queryClient]);
 
   useLayoutEffect(() => {
     if (!pathname.startsWith("/reader/")) {

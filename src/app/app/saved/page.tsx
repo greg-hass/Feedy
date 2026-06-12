@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 
 const SavedScreen = dynamic(
-  () => import("@/components/screens").then((module) => module.SavedScreen),
+  () => import("@/components/saved-screen").then((module) => module.SavedScreen),
 );
 
 export default function SavedPage() {
