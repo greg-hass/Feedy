@@ -26,6 +26,8 @@ export default function FeedDetailPage() {
     queryKey: ["items", "feed", params.feedId],
     queryFn: () => api<ItemRecord[]>(`/api/items?feedId=${params.feedId}`),
     staleTime: 15_000,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
 
   const me = useQuery({
@@ -35,6 +37,8 @@ export default function FeedDetailPage() {
         api<{ navigation: { feeds: NavFeed[] } }>("/api/me"),
       ),
     staleTime: 30_000,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
 
   const feed = me.data?.navigation.feeds.find((f) => f.id === params.feedId);

@@ -8,7 +8,7 @@ const envSchema = z.object({
   APP_USERNAME: z.string().min(1).default("admin"),
   APP_PASSWORD: z.string().min(1).default("change-me"),
   COOKIE_SECURE: z.enum(["true", "false"]).default("false"),
-  REFRESH_DEFAULT_INTERVAL_MINUTES: z.coerce.number().int().min(5).max(1440).default(60),
+  REFRESH_DEFAULT_INTERVAL_MINUTES: z.coerce.number().int().min(5).max(1440).default(15),
   REFRESH_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(100).default(16),
   ICON_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(24).default(4),
   READER_EXTRACTION_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(2),

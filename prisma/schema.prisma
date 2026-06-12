@@ -95,7 +95,7 @@ model Settings {
   accentColor                   AccentPreference @default(EMERALD)
   itemRetentionDays             Int             @default(90)
   hideYouTubeShorts             Boolean         @default(false)
-  refreshIntervalMinutes        Int             @default(60)
+  refreshIntervalMinutes        Int             @default(15)
   autoRefreshEnabled            Boolean         @default(true)
   readerOpenOriginalByDefault   Boolean         @default(false)
   keepScreenAwake               Boolean         @default(false)

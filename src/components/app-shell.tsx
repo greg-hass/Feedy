@@ -25,6 +25,8 @@ export function useMe() {
     queryKey: ["me"],
     queryFn: () => api<MeResponse>("/api/me"),
     staleTime: 30_000,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
 }
 

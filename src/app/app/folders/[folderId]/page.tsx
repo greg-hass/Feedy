@@ -36,6 +36,8 @@ export default function FolderDetailPage() {
     queryKey: ["me"],
     queryFn: () => api<{ navigation: { folders: NavFolder[]; feeds: NavFeed[] } }>("/api/me"),
     staleTime: 30_000,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
 
   const folder = me.data?.navigation.folders.find((f) => f.id === params.folderId);
@@ -69,6 +71,8 @@ export default function FolderDetailPage() {
     queryFn: () => api<ItemRecord[]>(`/api/items?folderId=${params.folderId}`),
     enabled: !!folderFeeds.length,
     staleTime: 15_000,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
 
   const refresh = useMutation({

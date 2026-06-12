@@ -33,8 +33,10 @@ export function getRefreshQueue() {
 				type: "exponential",
 				delay: 30_000,
 			},
-			removeOnComplete: 100,
-			removeOnFail: 100,
+			// The stable jobId intentionally dedupes active/waiting refreshes per feed.
+			// Completed and failed jobs must be removed so scheduled refreshes can run again.
+			removeOnComplete: true,
+			removeOnFail: true,
 		},
 	});
 

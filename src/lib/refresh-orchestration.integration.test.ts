@@ -50,7 +50,7 @@ testDescribe("refresh orchestration integration", () => {
             accentColor: "EMERALD",
             itemRetentionDays: 90,
             hideYouTubeShorts: false,
-            refreshIntervalMinutes: 60,
+            refreshIntervalMinutes: 15,
           },
         },
       },

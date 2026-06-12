@@ -375,8 +375,8 @@ export function UnreadScreen() {
     staleTime: 30_000,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
 
   useEffect(() => {
@@ -418,8 +418,8 @@ export function UnreadScreen() {
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
     staleTime: 15_000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
   const timelineItems = useMemo(() => flattenTimelinePages(items.data?.pages), [items.data?.pages]);
   const refetchItems = items.refetch;
@@ -1488,6 +1488,8 @@ export function SavedScreen() {
     queryKey: ["items", "saved", deferredQuery.trim()],
     queryFn: () => api<ItemRecord[]>(`/api/items?${params.toString()}`),
     staleTime: 15_000,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: true,
   });
   const { refetch: refetchSavedItems } = items;
 
@@ -1995,7 +1997,7 @@ export function SettingsScreen() {
         <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           <h3 className="text-sm font-semibold">Refresh cadence</h3>
           <p className="mt-2 text-xs text-secondary">
-            Current: {me.data?.user.settings.refreshIntervalMinutes ?? 60} minutes
+            Current: {me.data?.user.settings.refreshIntervalMinutes ?? 15} minutes
           </p>
           <div className="mt-3 flex gap-2">
             {[15, 30, 60, 180].map((minutes) => (
@@ -2718,7 +2720,7 @@ function FeedHealthSheet({
   const health = getHealthPresentation(feed.healthStatus);
   const queryClient = useQueryClient();
   const me = queryClient.getQueryData<MeResponse>(["me"]);
-  const effectiveRefreshMinutes = feed.refreshIntervalMinutes ?? me?.user.settings.refreshIntervalMinutes ?? 60;
+  const effectiveRefreshMinutes = feed.refreshIntervalMinutes ?? me?.user.settings.refreshIntervalMinutes ?? 15;
   const suggestedRefreshMinutes = getSuggestedRefreshInterval(effectiveRefreshMinutes, feed.performance);
   const updateCadence = useMutation({
     mutationFn: (refreshIntervalMinutes: number) =>

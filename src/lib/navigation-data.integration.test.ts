@@ -40,7 +40,7 @@ testDescribe("navigation data integration", () => {
             accentColor: "EMERALD",
             itemRetentionDays: 90,
             hideYouTubeShorts: false,
-            refreshIntervalMinutes: 60,
+            refreshIntervalMinutes: 15,
           },
         },
       },
