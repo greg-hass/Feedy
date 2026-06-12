@@ -148,3 +148,70 @@ describe("CSRF middleware", () => {
     assert.equal(response.status, 200);
   });
 });
+
+describe("Security headers", () => {
+  it("sets Content-Security-Policy on API responses", () => {
+    const request = makeRequest({ method: "GET", path: "/api/items" });
+    const response = middleware(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    assert.ok(csp, "CSP header should be present");
+    assert.ok(csp.includes("default-src 'self'"), "CSP should have default-src");
+    assert.ok(csp.includes("frame-ancestors 'none'"), "CSP should block framing");
+    assert.ok(csp.includes("form-action 'self'"), "CSP should restrict form actions");
+    assert.ok(csp.includes("object-src 'none'"), "CSP should block plugins");
+  });
+
+  it("sets Content-Security-Policy on page responses", () => {
+    const request = makeRequest({ method: "GET", path: "/app/unread" });
+    const response = middleware(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    assert.ok(csp, "CSP header should be present on page responses");
+  });
+
+  it("allows YouTube frame-src in CSP", () => {
+    const request = makeRequest({ method: "GET", path: "/api/items" });
+    const response = middleware(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    assert.ok(csp?.includes("frame-src https://www.youtube.com"), "CSP should allow YouTube embeds");
+  });
+
+  it("allows inline styles in CSP for reader content", () => {
+    const request = makeRequest({ method: "GET", path: "/api/items" });
+    const response = middleware(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    assert.ok(csp?.includes("style-src 'self' 'unsafe-inline'"), "CSP should allow inline styles");
+  });
+
+  it("allows https images for feed thumbnails", () => {
+    const request = makeRequest({ method: "GET", path: "/api/items" });
+    const response = middleware(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    assert.ok(csp?.includes("img-src 'self' data: blob: https:"), "CSP should allow external images");
+  });
+
+  it("sets X-Content-Type-Options", () => {
+    const request = makeRequest({ method: "GET", path: "/api/items" });
+    const response = middleware(request);
+    assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
+  });
+
+  it("sets X-Frame-Options", () => {
+    const request = makeRequest({ method: "GET", path: "/api/items" });
+    const response = middleware(request);
+    assert.equal(response.headers.get("X-Frame-Options"), "DENY");
+  });
+
+  it("sets Referrer-Policy", () => {
+    const request = makeRequest({ method: "GET", path: "/api/items" });
+    const response = middleware(request);
+    assert.equal(response.headers.get("Referrer-Policy"), "strict-origin-when-cross-origin");
+  });
+
+  it("sets security headers on CSRF rejection responses", () => {
+    const request = makeRequest({ method: "POST", path: "/api/feeds" });
+    const response = middleware(request);
+    assert.equal(response.status, 403);
+    assert.ok(response.headers.get("Content-Security-Policy"));
+    assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
+  });
+});

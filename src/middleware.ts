@@ -49,6 +49,17 @@ function originMatches(origin: string, allowedOrigin: string): boolean {
 }
 
 export function middleware(request: NextRequest) {
+  const response = handleRequest(request);
+
+  // Add security headers to all responses
+  if (response instanceof NextResponse) {
+    addSecurityHeaders(response);
+  }
+
+  return response;
+}
+
+function handleRequest(request: NextRequest) {
   // Only protect API routes with mutating methods
   if (!request.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.next();
@@ -93,5 +104,44 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/:path*",
+  matcher: ["/api/:path*", "/((?!_next/static|_next/image|favicon.ico|icons).*)"],
 };
+
+/**
+ * Add security headers to all responses.
+ *
+ * CSP rationale:
+ * - default-src 'self' — block everything by default
+ * - script-src 'self' — only our bundled JS (no inline scripts, no eval)
+ * - style-src 'self' 'unsafe-inline' — Tailwind + feed reader HTML needs inline styles
+ * - img-src 'self' data: blob: https: — feed images, favicons, PWA icons, YouTube thumbnails
+ * - font-src 'self' — bundled fonts only
+ * - connect-src 'self' — API calls from same origin only
+ * - frame-src https://www.youtube.com — YouTube embeds in reader
+ * - media-src blob: — inline video/audio from feed content
+ * - object-src 'none' — no Flash/Java/plugins
+ * - frame-ancestors 'none' — prevent clickjacking (our app is not embeddable)
+ * - base-uri 'self' — prevent base tag injection
+ * - form-action 'self' — login form posts to our own API only
+ */
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "frame-src https://www.youtube.com",
+  "media-src blob:",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
+function addSecurityHeaders(response: NextResponse) {
+  response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+}
