@@ -30,6 +30,18 @@ describe("production environment validation", () => {
     assert.equal(problems.length, 2);
   });
 
+  it("rejects reusing the auth secret as the login password", () => {
+    const sharedSecret = "same-random-production-secret-value";
+    const problems = getProductionEnvProblems({
+      APP_URL: "https://feeds.example.com",
+      AUTH_SECRET: sharedSecret,
+      APP_PASSWORD: sharedSecret,
+      COOKIE_SECURE: "true",
+    });
+
+    assert.ok(problems.includes("AUTH_SECRET and APP_PASSWORD must be different"));
+  });
+
   it("requires HTTPS and secure cookies for public production URLs", () => {
     assert.ok(
       getProductionEnvProblems({

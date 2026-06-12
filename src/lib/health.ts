@@ -47,3 +47,7 @@ export async function checkReadiness(
     checks,
   };
 }
+
+export function readinessExitCode(result: { ok: boolean }) {
+  return result.ok ? 0 : 1;
+}

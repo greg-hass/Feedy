@@ -83,6 +83,10 @@ export function getProductionEnvProblems(config: ProductionEnvConfig) {
     problems.push("APP_PASSWORD must not use the default placeholder");
   }
 
+  if (config.AUTH_SECRET === config.APP_PASSWORD) {
+    problems.push("AUTH_SECRET and APP_PASSWORD must be different");
+  }
+
   try {
     const url = new URL(config.APP_URL);
     const isPrivateOrLocal = isPrivateOrLocalDeploymentHost(url.hostname);

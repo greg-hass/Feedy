@@ -75,6 +75,11 @@ services:
     command: ["./docker/entrypoint.sh", "worker"]
     volumes:
       - app_data:/app/data
+    healthcheck:
+      test: ["CMD", "npx", "tsx", "src/healthcheck.ts"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 volumes:
   postgres_data:
