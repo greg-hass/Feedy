@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { JobTrigger } from "@prisma/client";
 
 import {
+  buildRefreshBatchCompletionUpdate,
   getRefreshBatchId,
   queueRefreshBatch,
   queueSingleFeedRefresh,
@@ -11,6 +12,27 @@ import {
 } from "@/lib/refresh-orchestration";
 
 describe("queueRefreshBatch", () => {
+  it("builds a completed batch update when no jobs are queued", () => {
+    const finishedAt = new Date("2026-01-01T00:01:00.000Z");
+    const startedAt = new Date("2026-01-01T00:00:00.000Z");
+
+    assert.deepEqual(
+      buildRefreshBatchCompletionUpdate({
+        queued: 0,
+        skipped: 2,
+        startedAt,
+        finishedAt,
+      }),
+      {
+        queued: 0,
+        skipped: 2,
+        status: "SUCCEEDED",
+        startedAt,
+        finishedAt,
+      },
+    );
+  });
+
   it("creates refresh jobs and enqueues them in batches", async () => {
     const calls: string[] = [];
     const deps = {
@@ -73,8 +95,8 @@ describe("queueRefreshBatch", () => {
         calls.push(`batch:${data.id}:${data.userId}:${data.totalFeeds}:${data.status}`);
         return null;
       },
-      updateRefreshBatch: async ({ where, data }: { where: { id: string }; data: { queued: number; skipped: number; status: string } }) => {
-        calls.push(`batch-update:${where.id}:${data.queued}:${data.skipped}:${data.status}`);
+      updateRefreshBatch: async ({ where, data }: { where: { id: string }; data: { queued: number; skipped: number; status: string; startedAt?: Date; finishedAt?: Date } }) => {
+        calls.push(`batch-update:${where.id}:${data.queued}:${data.skipped}:${data.status}:${data.startedAt?.toISOString() ?? ""}:${data.finishedAt instanceof Date}`);
         return null;
       },
       createRefreshJob: async () => {
@@ -116,7 +138,57 @@ describe("queueRefreshBatch", () => {
       "create",
       "enqueue",
       "delete:job-1",
-      "batch-update:batch-1:0:1:SUCCEEDED",
+      "batch-update:batch-1:0:1:SUCCEEDED:2026-01-01T00:00:00.000Z:true",
+    ]);
+  });
+
+  it("marks a batch failed when enqueue throws before any jobs are queued", async () => {
+    const calls: string[] = [];
+    const error = new Error("redis unavailable");
+    const deps = {
+      createRefreshBatch: async ({ data }: { data: { id: string; userId: string; totalFeeds: number; status: string } }) => {
+        calls.push(`batch:${data.id}:${data.userId}:${data.totalFeeds}:${data.status}`);
+        return null;
+      },
+      updateRefreshBatch: async ({ where, data }: { where: { id: string }; data: { queued: number; skipped: number; status: string; startedAt?: Date; finishedAt?: Date } }) => {
+        calls.push(`batch-update:${where.id}:${data.queued}:${data.skipped}:${data.status}:${data.startedAt?.toISOString() ?? ""}:${data.finishedAt instanceof Date}`);
+        return null;
+      },
+      createRefreshJob: async () => {
+        calls.push("create");
+        return { id: "job-1" };
+      },
+      deleteRefreshJob: async ({ where }: { where: { id: string } }) => {
+        calls.push(`delete:${where.id}`);
+        return null;
+      },
+      enqueueRefresh: async () => {
+        calls.push("enqueue");
+        throw error;
+      },
+      batchMap: async <T, R>(items: T[], _batchSize: number, mapper: (item: T) => Promise<R>) =>
+        Promise.all(items.map(mapper)),
+    };
+
+    await assert.rejects(
+      queueRefreshBatch(
+        {
+          userId: "user-1",
+          feedIds: [{ id: "feed-1" }],
+          batchStartedAt: new Date("2026-01-01T00:00:00.000Z"),
+          batchId: "batch-1",
+        },
+        deps as never,
+      ),
+      error,
+    );
+
+    assert.deepEqual(calls, [
+      "batch:batch-1:user-1:1:QUEUED",
+      "create",
+      "enqueue",
+      "delete:job-1",
+      "batch-update:batch-1:0:1:FAILED:2026-01-01T00:00:00.000Z:true",
     ]);
   });
 
@@ -144,6 +216,36 @@ describe("queueRefreshBatch", () => {
 
     assert.equal(result, true);
     assert.deepEqual(calls, ["create:feed-1:AUTO", "enqueue:feed-1:auto"]);
+  });
+
+  it("cleans up a single refresh job when enqueue throws", async () => {
+    const calls: string[] = [];
+    const error = new Error("redis unavailable");
+
+    await assert.rejects(
+      queueSingleFeedRefresh(
+        "user-1",
+        "feed-1",
+        JobTrigger.MANUAL,
+        {
+          createRefreshJob: async () => {
+            calls.push("create");
+            return { id: "job-1" };
+          },
+          deleteRefreshJob: async ({ where }: { where: { id: string } }) => {
+            calls.push(`delete:${where.id}`);
+            return null;
+          },
+          enqueueRefresh: async () => {
+            calls.push("enqueue");
+            throw error;
+          },
+        },
+      ),
+      error,
+    );
+
+    assert.deepEqual(calls, ["create", "enqueue", "delete:job-1"]);
   });
 
   it("extracts batch ids only from valid refresh metadata", () => {

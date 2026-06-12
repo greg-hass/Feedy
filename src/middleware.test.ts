@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { middleware } from "./middleware";
+import { proxy } from "./proxy";
 import { NextRequest } from "next/server";
 
 function makeRequest(options: {
@@ -27,37 +27,37 @@ function makeRequest(options: {
 describe("CSRF middleware", () => {
   it("allows GET requests without Origin", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 
   it("allows HEAD requests without Origin", () => {
     const request = makeRequest({ method: "HEAD", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 
   it("allows OPTIONS requests without Origin", () => {
     const request = makeRequest({ method: "OPTIONS", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 
   it("allows non-API routes without Origin", () => {
     const request = makeRequest({ method: "POST", path: "/app/unread" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 
   it("allows /api/health without Origin (exempt)", () => {
     const request = makeRequest({ method: "GET", path: "/api/health" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 
   it("rejects POST to API without Origin header", async () => {
     const request = makeRequest({ method: "POST", path: "/api/feeds" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 403);
     const body = await response.json();
     assert.equal(body.error, "Missing Origin header");
@@ -65,7 +65,7 @@ describe("CSRF middleware", () => {
 
   it("rejects PATCH to API without Origin header", async () => {
     const request = makeRequest({ method: "PATCH", path: "/api/settings" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 403);
     const body = await response.json();
     assert.equal(body.error, "Missing Origin header");
@@ -73,7 +73,7 @@ describe("CSRF middleware", () => {
 
   it("rejects DELETE to API without Origin header", async () => {
     const request = makeRequest({ method: "DELETE", path: "/api/feeds/abc123" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 403);
     const body = await response.json();
     assert.equal(body.error, "Missing Origin header");
@@ -86,7 +86,7 @@ describe("CSRF middleware", () => {
       origin: "https://evil.com",
       host: "feedy.local:3000",
     });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 403);
     const body = await response.json();
     assert.equal(body.error, "CSRF check failed");
@@ -99,7 +99,7 @@ describe("CSRF middleware", () => {
       origin: "http://feedy.local:3000",
       host: "feedy.local:3000",
     });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 
@@ -111,7 +111,7 @@ describe("CSRF middleware", () => {
       host: "feedy.example.com",
       forwardedProto: "https",
     });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 
@@ -122,7 +122,7 @@ describe("CSRF middleware", () => {
       origin: "http://feedy.local:4000",
       host: "feedy.local:3000",
     });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 403);
   });
 
@@ -133,7 +133,7 @@ describe("CSRF middleware", () => {
       origin: "http://other.local:3000",
       host: "feedy.local:3000",
     });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 403);
   });
 
@@ -144,7 +144,7 @@ describe("CSRF middleware", () => {
       origin: "http://feedy.local:3000",
       host: "feedy.local:3000",
     });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 200);
   });
 });
@@ -152,7 +152,7 @@ describe("CSRF middleware", () => {
 describe("Security headers", () => {
   it("sets Content-Security-Policy on API responses", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     const csp = response.headers.get("Content-Security-Policy");
     assert.ok(csp, "CSP header should be present");
     assert.ok(csp.includes("default-src 'self'"), "CSP should have default-src");
@@ -163,53 +163,53 @@ describe("Security headers", () => {
 
   it("sets Content-Security-Policy on page responses", () => {
     const request = makeRequest({ method: "GET", path: "/app/unread" });
-    const response = middleware(request);
+    const response = proxy(request);
     const csp = response.headers.get("Content-Security-Policy");
     assert.ok(csp, "CSP header should be present on page responses");
   });
 
   it("allows YouTube frame-src in CSP", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     const csp = response.headers.get("Content-Security-Policy");
     assert.ok(csp?.includes("frame-src https://www.youtube.com"), "CSP should allow YouTube embeds");
   });
 
   it("allows inline styles in CSP for reader content", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     const csp = response.headers.get("Content-Security-Policy");
     assert.ok(csp?.includes("style-src 'self' 'unsafe-inline'"), "CSP should allow inline styles");
   });
 
   it("allows https images for feed thumbnails", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     const csp = response.headers.get("Content-Security-Policy");
     assert.ok(csp?.includes("img-src 'self' data: blob: https:"), "CSP should allow external images");
   });
 
   it("sets X-Content-Type-Options", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
   });
 
   it("sets X-Frame-Options", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.headers.get("X-Frame-Options"), "DENY");
   });
 
   it("sets Referrer-Policy", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.headers.get("Referrer-Policy"), "strict-origin-when-cross-origin");
   });
 
   it("sets security headers on CSRF rejection responses", () => {
     const request = makeRequest({ method: "POST", path: "/api/feeds" });
-    const response = middleware(request);
+    const response = proxy(request);
     assert.equal(response.status, 403);
     assert.ok(response.headers.get("Content-Security-Policy"));
     assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");

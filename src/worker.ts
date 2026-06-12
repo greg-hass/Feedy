@@ -20,6 +20,8 @@ import { ensureDataDirs } from "@/lib/storage";
 import { runBackgroundTask } from "@/lib/background-task";
 import { recoverStaleRefreshJobs } from "@/lib/worker-maintenance";
 import { queueSingleFeedRefresh } from "@/lib/refresh-orchestration";
+import { selectDueFeeds } from "@/lib/refresh-scheduler";
+import { queueTriggerToJobTrigger } from "@/lib/refresh-trigger";
 
 async function scheduleDueFeeds() {
   const user = await loadPrimaryUser();
@@ -50,29 +52,22 @@ async function scheduleDueFeeds() {
   const interval =
     user.settings?.refreshIntervalMinutes ??
     env.REFRESH_DEFAULT_INTERVAL_MINUTES;
+  const { dueFeedIds, capped } = selectDueFeeds({
+    feeds,
+    now,
+    intervalMinutes: interval,
+    backlog,
+  });
   let queuedCount = 0;
-  for (const feed of feeds) {
-    const dueAt =
-      (feed.lastRefreshedAt
-        ? new Date(feed.lastRefreshedAt).getTime()
-        : feed.lastFailureAt
-          ? new Date(feed.lastFailureAt).getTime()
-          : 0) +
-      interval * 60 * 1000;
-
-    if (dueAt > now) {
-      continue;
-    }
-
-    if (backlog + queuedCount >= 100) {
-      console.log(`[worker] Auto-refresh capped at ${queuedCount} feeds to limit queue growth`);
-      break;
-    }
-
-    const queued = await queueSingleFeedRefresh(user.id, feed.id, JobTrigger.AUTO);
+  for (const feedId of dueFeedIds) {
+    const queued = await queueSingleFeedRefresh(user.id, feedId, JobTrigger.AUTO);
     if (queued) {
       queuedCount++;
     }
+  }
+
+  if (capped) {
+    console.log(`[worker] Auto-refresh capped at ${queuedCount} feeds to limit queue growth`);
   }
 
   if (queuedCount > 0) {
@@ -226,7 +221,7 @@ async function boot() {
       try {
         await refreshFeed(
           job.data.feedId,
-          job.data.trigger === "auto" ? JobTrigger.AUTO : JobTrigger.MANUAL,
+          queueTriggerToJobTrigger(job.data.trigger),
           job.data.refreshJobId,
         );
       } catch (error) {

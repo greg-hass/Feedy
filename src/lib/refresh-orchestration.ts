@@ -4,6 +4,7 @@ import { JobStatus, JobTrigger, Prisma, RefreshBatchStatus } from "@prisma/clien
 
 import { prisma } from "@/lib/db";
 import { enqueueFeedRefresh } from "@/lib/queue";
+import { jobTriggerToQueueTrigger } from "@/lib/refresh-trigger";
 import { mapInBatches, REFRESH_ENQUEUE_BATCH_SIZE } from "@/lib/workload-limits";
 
 type RefreshFeedRef = {
@@ -42,6 +43,45 @@ type SingleRefreshDeps = Pick<
 >;
 
 type RefreshBatchProgressClient = Pick<typeof prisma, "$executeRaw">;
+
+export function buildRefreshBatchCompletionUpdate({
+  queued,
+  skipped,
+  startedAt,
+  finishedAt,
+}: {
+  queued: number;
+  skipped: number;
+  startedAt: Date;
+  finishedAt: Date;
+}) {
+  return {
+    queued,
+    skipped,
+    status: queued > 0 ? RefreshBatchStatus.QUEUED : RefreshBatchStatus.SUCCEEDED,
+    ...(queued === 0 ? { startedAt, finishedAt } : {}),
+  };
+}
+
+export function buildRefreshBatchFailureUpdate({
+  queued,
+  skipped,
+  startedAt,
+  finishedAt,
+}: {
+  queued: number;
+  skipped: number;
+  startedAt: Date;
+  finishedAt: Date;
+}) {
+  return {
+    queued,
+    skipped,
+    status: queued > 0 ? RefreshBatchStatus.PARTIAL : RefreshBatchStatus.FAILED,
+    startedAt,
+    finishedAt,
+  };
+}
 
 export function getRefreshBatchId(metadata: unknown) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
@@ -103,11 +143,17 @@ async function queueRefreshForFeed(
     },
   });
 
-  const queued = await deps.enqueueRefresh({
-    feedId,
-    trigger: trigger === JobTrigger.AUTO ? "auto" : "manual",
-    refreshJobId: refreshJob.id,
-  });
+  let queued: Awaited<ReturnType<typeof enqueueFeedRefresh>>;
+  try {
+    queued = await deps.enqueueRefresh({
+      feedId,
+      trigger: jobTriggerToQueueTrigger(trigger),
+      refreshJobId: refreshJob.id,
+    });
+  } catch (error) {
+    await deps.deleteRefreshJob({ where: { id: refreshJob.id } }).catch(() => null);
+    throw error;
+  }
 
   if (!queued.enqueued) {
     await deps.deleteRefreshJob({ where: { id: refreshJob.id } }).catch(() => null);
@@ -137,11 +183,17 @@ export async function queueSingleFeedRefresh(
     },
   });
 
-  const queued = await resolvedDeps.enqueueRefresh({
-    feedId,
-    trigger: trigger === JobTrigger.AUTO ? "auto" : "manual",
-    refreshJobId: refreshJob.id,
-  });
+  let queued: Awaited<ReturnType<typeof enqueueFeedRefresh>>;
+  try {
+    queued = await resolvedDeps.enqueueRefresh({
+      feedId,
+      trigger: jobTriggerToQueueTrigger(trigger),
+      refreshJobId: refreshJob.id,
+    });
+  } catch (error) {
+    await resolvedDeps.deleteRefreshJob({ where: { id: refreshJob.id } }).catch(() => null);
+    throw error;
+  }
 
   if (!queued.enqueued) {
     await resolvedDeps.deleteRefreshJob({ where: { id: refreshJob.id } }).catch(() => null);
@@ -177,23 +229,37 @@ export async function queueRefreshBatch({
     },
   });
 
-  const results = await resolvedDeps.batchMap(
-    feedIds,
-    REFRESH_ENQUEUE_BATCH_SIZE,
-    async (feed) =>
-      queueRefreshForFeed(userId, feed.id, batchStartedAt, batchId, trigger, resolvedDeps),
-  );
+  let results: boolean[];
+  try {
+    results = await resolvedDeps.batchMap(
+      feedIds,
+      REFRESH_ENQUEUE_BATCH_SIZE,
+      async (feed) =>
+        queueRefreshForFeed(userId, feed.id, batchStartedAt, batchId, trigger, resolvedDeps),
+    );
+  } catch (error) {
+    await resolvedDeps.updateRefreshBatch({
+      where: { id: batchId },
+      data: buildRefreshBatchFailureUpdate({
+        queued: 0,
+        skipped: feedIds.length,
+        startedAt: batchStartedAt,
+        finishedAt: new Date(),
+      }),
+    }).catch(() => null);
+    throw error;
+  }
 
   const queued = results.filter(Boolean).length;
   const skipped = feedIds.length - queued;
   await resolvedDeps.updateRefreshBatch({
     where: { id: batchId },
-    data: {
+    data: buildRefreshBatchCompletionUpdate({
       queued,
       skipped,
-      status: queued > 0 ? RefreshBatchStatus.QUEUED : RefreshBatchStatus.SUCCEEDED,
-      ...(queued === 0 ? { finishedAt: new Date() } : {}),
-    },
+      startedAt: batchStartedAt,
+      finishedAt: new Date(),
+    }),
   });
 
   return {

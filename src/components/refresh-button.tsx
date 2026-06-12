@@ -6,6 +6,7 @@ import { RefreshCcw } from "lucide-react";
 
 import { IconButton } from "@/components/ui/icon-button";
 import { api } from "@/lib/client";
+import { calculateRefreshProgress } from "@/lib/refresh-progress";
 
 export function useRefreshController(endpoint: string, invalidate: string[]) {
   const queryClient = useQueryClient();
@@ -93,14 +94,10 @@ export function useRefreshController(endpoint: string, invalidate: string[]) {
     return "refreshing";
   })();
 
-  const progress = (() => {
-    if (phase === "idle") return 0;
-    if (phase === "queuing") return 5;
-    if (phase === "done") return 100;
-    if (!refreshStatus.data) return batchSummary ? 100 : 5;
-    const total = Math.max(refreshStatus.data.total, 1);
-    return Math.round((refreshStatus.data.completed / total) * 100);
-  })();
+  const progress = calculateRefreshProgress({
+    phase,
+    status: refreshStatus.data ?? null,
+  });
 
   return {
     active: mutation.isPending || !!trackedBatchId || !!batchSummary,

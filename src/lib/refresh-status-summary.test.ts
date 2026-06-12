@@ -37,19 +37,19 @@ describe("refresh status summaries", () => {
   });
 
   it("does not report negative active work when counters race ahead", () => {
-    assert.equal(
-      summarizeDurableRefreshBatch({
+    const summary = summarizeDurableRefreshBatch({
         totalFeeds: 2,
         queued: 1,
-        skipped: 0,
+        skipped: 1,
         succeeded: 2,
         failed: 0,
         status: "SUCCEEDED",
         startedAt: new Date("2026-06-12T10:00:00.000Z"),
         finishedAt: null,
-      }).active,
-      0,
-    );
+    });
+
+    assert.equal(summary.active, 0);
+    assert.equal(summary.completed, 2);
   });
 
   it("keeps legacy refresh job status as a fallback", () => {

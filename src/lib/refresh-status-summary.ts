@@ -15,6 +15,7 @@ type LegacyRefreshJob = {
 
 export function summarizeDurableRefreshBatch(batch: DurableRefreshBatch) {
   const active = Math.max(batch.queued - batch.succeeded - batch.failed, 0);
+  const completed = Math.min(batch.succeeded + batch.failed + batch.skipped, batch.totalFeeds);
 
   return {
     ok: true,
@@ -24,7 +25,7 @@ export function summarizeDurableRefreshBatch(batch: DurableRefreshBatch) {
     succeeded: batch.succeeded,
     failed: batch.failed,
     skipped: batch.skipped,
-    completed: batch.succeeded + batch.failed + batch.skipped,
+    completed,
     active,
     status: batch.status,
     startedAt: batch.startedAt,

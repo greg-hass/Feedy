@@ -48,7 +48,7 @@ function originMatches(origin: string, allowedOrigin: string): boolean {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const response = handleRequest(request);
 
   // Add security headers to all responses
