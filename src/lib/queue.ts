@@ -20,6 +20,10 @@ export type ReaderExtractionJobPayload = {
 	itemId: string;
 };
 
+type JobData<T> = {
+	data: T;
+};
+
 let refreshQueue: Queue<RefreshJobPayload> | undefined;
 let iconQueue: Queue<IconJobPayload> | undefined;
 let readerExtractionQueue: Queue<ReaderExtractionJobPayload> | undefined;
@@ -88,12 +92,23 @@ export async function enqueueFeedRefresh(payload: RefreshJobPayload) {
 		jobId: dedupeId,
 	});
 
-	if (!job) {
+	if (!job || !isReturnedRefreshJobNew(job, payload)) {
 		const existing = await queue.getJob(dedupeId);
 		return { enqueued: false, job: existing! };
 	}
 
 	return { enqueued: true, job };
+}
+
+export function isReturnedRefreshJobNew(
+	job: JobData<RefreshJobPayload>,
+	payload: RefreshJobPayload,
+) {
+	return (
+		job.data.feedId === payload.feedId &&
+		job.data.trigger === payload.trigger &&
+		job.data.refreshJobId === payload.refreshJobId
+	);
 }
 
 export async function enqueueIconFetch(payload: IconJobPayload) {

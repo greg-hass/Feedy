@@ -32,14 +32,15 @@ COPY --from=builder /app/.next/standalone /app/.next/standalone
 # Prisma schema and migrations for prisma migrate deploy
 COPY prisma/ prisma/
 
-# Generated Prisma client (needed by both web and worker)
-COPY --from=builder /app/node_modules/.prisma node_modules/.prisma
-
 # Worker-runtime dependencies: production deps + tsx + prisma CLI
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci --omit=dev --ignore-scripts && \
     npm install --no-save --ignore-scripts tsx prisma && \
     rm -rf /root/.npm
+
+# Generated Prisma client (needed by migrate, seed, and worker). Copy after
+# npm ci because npm replaces node_modules.
+COPY --from=builder /app/node_modules/.prisma node_modules/.prisma
 
 # Worker source files (web uses bundled standalone; worker runs via tsx)
 COPY src/worker.ts src/worker.ts
@@ -50,8 +51,10 @@ COPY src/types/ src/types/
 COPY docker/entrypoint.sh docker/entrypoint.sh
 RUN chmod +x docker/entrypoint.sh
 
-# Only /app/data needs to be writable at runtime (cached icons, exports)
-RUN mkdir -p /app/data/icons /app/data/exports && chown -R feedy:feedy /app/data
+# /app/data stores cached icons/exports. Prisma also writes engine metadata
+# during migrate deploy, so keep its runtime engine directories writable.
+RUN mkdir -p /app/data/icons /app/data/exports && \
+    chown -R feedy:feedy /app/data /app/node_modules/@prisma /app/node_modules/prisma
 
 EXPOSE 3000
 USER feedy
