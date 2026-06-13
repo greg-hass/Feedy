@@ -3,10 +3,15 @@ import { NextResponse } from "next/server";
 import { apiError, parseJson } from "@/lib/api";
 import { authenticate } from "@/lib/auth";
 import { checkLoginThrottle } from "@/lib/login-throttle";
+import { env } from "@/lib/env";
 import { loginSchema } from "@/lib/schemas";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
 
 const rateLimiter = createFixedWindowRateLimiter();
+
+function appRedirect(path: string) {
+  return new URL(path, env.APP_URL);
+}
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +30,7 @@ export async function POST(request: Request) {
         return response;
       }
 
-      const response = NextResponse.redirect(new URL("/login?error=rate_limited", request.url), {
+      const response = NextResponse.redirect(appRedirect("/login?error=rate_limited"), {
         status: 303,
       });
       response.headers.set("Retry-After", String(attempt.retryAfterSeconds));
@@ -37,7 +42,7 @@ export async function POST(request: Request) {
         return apiError("Invalid credentials", 401);
       }
 
-      return NextResponse.redirect(new URL("/login?error=invalid", request.url), {
+      return NextResponse.redirect(appRedirect("/login?error=invalid"), {
         status: 303,
       });
     }
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.redirect(new URL("/app/unread", request.url), {
+    return NextResponse.redirect(appRedirect("/app/unread"), {
       status: 303,
     });
   } catch (error) {
@@ -55,7 +60,7 @@ export async function POST(request: Request) {
       return apiError(message);
     }
 
-    return NextResponse.redirect(new URL("/login?error=failed", request.url), {
+    return NextResponse.redirect(appRedirect("/login?error=failed"), {
       status: 303,
     });
   }

@@ -8,6 +8,7 @@ import { fetchWithTimeout } from "@/lib/http";
 import { sanitizeReaderHtml } from "@/lib/sanitize-reader-html";
 import type { FeedValidationResult, ParsedFeedItem } from "@/lib/feed/types";
 import { decodeHtmlEntities } from "@/lib/utils";
+import { normalizeRedditFeed } from "@/lib/feed/discover-reddit";
 import {
   fetchYouTubeFeedConditionally,
   parseYouTubeFeedTarget,
@@ -234,7 +235,10 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
     return validateYouTubeFeedUrl(url);
   }
 
-  const response = await fetchWithTimeout(url);
+  const reddit = normalizeRedditFeed(url);
+  const validatedUrl = reddit?.feedUrl ?? url;
+
+  const response = await fetchWithTimeout(validatedUrl);
   if (!response.ok) {
     throw new Error(`Feed returned ${response.status}`);
   }
@@ -251,7 +255,7 @@ export async function validateFeedUrl(url: string): Promise<FeedValidationResult
     siteUrl: feed.link?.trim() || null,
     feedUrl: resolvedFeedUrl,
     iconUrl: ((feed as { image?: { url?: string } }).image?.url as string | undefined) ?? null,
-    sourceType,
+    sourceType: reddit ? "REDDIT_RSS" : sourceType,
   };
 }
 

@@ -1,9 +1,7 @@
 import { FeedSourceType, Prisma, JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import {
-	fetchAndParseFeedConditionally,
-	validateFeedUrl,
-} from "@/lib/feed/parse";
+import { normalizeRedditFeed } from "@/lib/feed/discover-reddit";
+import { fetchAndParseFeedConditionally, validateFeedUrl } from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
 import { enqueueIconFetch, enqueueReaderExtraction } from "@/lib/queue";
@@ -142,6 +140,22 @@ export async function createFeedForUser(
 		label?: string | null;
 	},
 ) {
+	const reddit = normalizeRedditFeed(input.sourceUrl);
+	if (reddit) {
+		return createValidatedFeedForUser(
+			userId,
+			input,
+			{
+				title: reddit.title,
+				description: reddit.description,
+				siteUrl: reddit.siteUrl,
+				feedUrl: reddit.feedUrl,
+				iconUrl: reddit.favicon,
+				sourceType: reddit.sourceType,
+			},
+		);
+	}
+
 	const validated = await validateFeedUrl(input.sourceUrl);
 	return createValidatedFeedForUser(userId, input, validated);
 }

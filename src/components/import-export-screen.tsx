@@ -89,7 +89,7 @@ export function ImportExportScreen() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".opml,.xml,text/xml"
+            accept="*/*"
             className="hidden"
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null);
@@ -136,16 +136,28 @@ export function ImportExportScreen() {
           >
             {status === "uploading" ? "Importing..." : "Import subscriptions"}
           </Button>
+          {status === "uploading" ? (
+            <div className="mt-3 rounded-2xl border border-subtle bg-[var(--surface-strong)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-medium text-[var(--text-primary)]">Importing feeds</p>
+                <p className="text-xs text-secondary">Working</p>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                <div className="import-progress-bar h-full w-1/3 rounded-full bg-[var(--accent)]" />
+              </div>
+              <p className="mt-2 text-xs text-secondary">This can take a moment for larger OPML files.</p>
+            </div>
+          ) : null}
           {status !== "idle" && (
             <div
               role={status === "error" ? "alert" : "status"}
               aria-live="polite"
-              className={`mt-3 rounded-xl px-3 py-2 text-xs ${
+              className={`mt-3 rounded-2xl border px-4 py-3 text-xs ${
                 status === "success"
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-subtle bg-[var(--surface-strong)] text-[var(--text-primary)]"
                   : status === "error"
-                    ? "bg-[var(--danger)]/10 text-[var(--danger)]"
-                    : "bg-[var(--surface-muted)] text-secondary"
+                    ? "border-[var(--danger)]/25 bg-[var(--danger)]/8 text-[var(--danger)]"
+                    : "border-subtle bg-[var(--surface-muted)] text-secondary"
               }`}
             >
               {statusMessage}

@@ -259,6 +259,20 @@ select {
   border-color: var(--border);
 }
 
+@keyframes import-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.import-progress-bar {
+  animation: import-progress 1.35s ease-in-out infinite;
+}
+
 .accent {
   color: var(--accent);
 }
