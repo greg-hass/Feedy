@@ -49,28 +49,39 @@ function originMatches(origin: string, allowedOrigin: string): boolean {
 }
 
 export function proxy(request: NextRequest) {
-  const response = handleRequest(request);
+  const nonce = crypto.randomUUID();
+  const response = handleRequest(request, nonce);
 
   // Add security headers to all responses
   if (response instanceof NextResponse) {
-    addSecurityHeaders(response);
+    addSecurityHeaders(response, nonce);
   }
 
   return response;
 }
 
-function handleRequest(request: NextRequest) {
+function nextResponseWithNonce(request: NextRequest, nonce: string) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
+
+function handleRequest(request: NextRequest, nonce: string) {
   // Only protect API routes with mutating methods
   if (!request.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.next();
+    return nextResponseWithNonce(request, nonce);
   }
 
   if (SAFE_METHODS.has(request.method)) {
-    return NextResponse.next();
+    return nextResponseWithNonce(request, nonce);
   }
 
   if (EXEMPT_PATHS.has(request.nextUrl.pathname)) {
-    return NextResponse.next();
+    return nextResponseWithNonce(request, nonce);
   }
 
   const origin = request.headers.get("origin");
@@ -100,7 +111,7 @@ function handleRequest(request: NextRequest) {
     );
   }
 
-  return NextResponse.next();
+  return nextResponseWithNonce(request, nonce);
 }
 
 export const config = {
@@ -112,7 +123,7 @@ export const config = {
  *
  * CSP rationale:
  * - default-src 'self' — block everything by default
- * - script-src 'self' — only our bundled JS (no inline scripts, no eval)
+ * - script-src 'self' 'nonce-{request nonce}' — bundled JS plus Next.js bootstrap scripts
  * - style-src 'self' 'unsafe-inline' — Tailwind + feed reader HTML needs inline styles
  * - img-src 'self' data: blob: https: — feed images, favicons, PWA icons, YouTube thumbnails
  * - font-src 'self' — bundled fonts only
@@ -124,23 +135,25 @@ export const config = {
  * - base-uri 'self' — prevent base tag injection
  * - form-action 'self' — login form posts to our own API only
  */
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "frame-src https://www.youtube.com",
-  "media-src blob:",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
+function getContentSecurityPolicy(nonce: string) {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}'`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "frame-src https://www.youtube.com",
+    "media-src blob:",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
 
-function addSecurityHeaders(response: NextResponse) {
-  response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+function addSecurityHeaders(response: NextResponse, nonce: string) {
+  response.headers.set("Content-Security-Policy", getContentSecurityPolicy(nonce));
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

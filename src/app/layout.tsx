@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import { headers } from "next/headers";
 
 import { Providers } from "@/components/providers";
 import { PwaRegister } from "@/components/pwa-register";
@@ -39,11 +40,13 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = appViewport;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -51,7 +54,7 @@ export default function RootLayout({
       className={`${manrope.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[var(--app-bg)] text-[var(--text-primary)]">
-        <Providers>
+        <Providers nonce={nonce}>
           {children}
           <PwaRegister />
         </Providers>

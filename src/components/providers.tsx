@@ -148,7 +148,7 @@ if (typeof window !== "undefined") {
   window.history.scrollRestoration = "manual";
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, nonce }: { children: React.ReactNode; nonce?: string }) {
   const pathname = usePathname();
   const [queryClient] = useState(
     () =>
@@ -245,7 +245,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem nonce={nonce}>
       <BackgroundPlaybackContext.Provider value={backgroundPlaybackApi}>
         <QueryClientProvider client={queryClient}>
           {children}

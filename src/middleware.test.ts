@@ -168,6 +168,39 @@ describe("Security headers", () => {
     assert.ok(csp, "CSP header should be present on page responses");
   });
 
+  it("allows nonce-bearing framework bootstrap scripts in CSP", () => {
+    const request = makeRequest({ method: "GET", path: "/app/unread" });
+    const response = proxy(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    const nonceMatch = csp?.match(/script-src 'self' 'nonce-([^']+)'/);
+
+    assert.ok(nonceMatch, "CSP should include a script nonce");
+    assert.ok(nonceMatch[1], "script nonce should not be empty");
+  });
+
+  it("passes the CSP nonce to Next.js through the request headers", () => {
+    const request = makeRequest({ method: "GET", path: "/app/unread" });
+    const response = proxy(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    const nonce = csp?.match(/'nonce-([^']+)'/)?.[1];
+
+    assert.ok(nonce, "CSP should include a nonce");
+    assert.equal(response.headers.get("x-middleware-request-x-nonce"), nonce);
+  });
+
+  it("does not allow arbitrary inline scripts", () => {
+    const request = makeRequest({ method: "GET", path: "/app/unread" });
+    const response = proxy(request);
+    const csp = response.headers.get("Content-Security-Policy");
+    const scriptSrc = csp
+      ?.split(";")
+      .map((directive) => directive.trim())
+      .find((directive) => directive.startsWith("script-src"));
+
+    assert.ok(scriptSrc, "CSP should include script-src");
+    assert.ok(!scriptSrc.includes("'unsafe-inline'"), "script-src should not allow arbitrary inline scripts");
+  });
+
   it("allows YouTube frame-src in CSP", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
     const response = proxy(request);
