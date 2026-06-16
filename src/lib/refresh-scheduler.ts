@@ -22,13 +22,14 @@ export function selectDueFeeds({
   let capped = false;
 
   for (const feed of feeds) {
-    const dueAt =
-      (feed.lastRefreshedAt
-        ? new Date(feed.lastRefreshedAt).getTime()
-        : feed.lastFailureAt
-          ? new Date(feed.lastFailureAt).getTime()
-          : 0) +
-      intervalMs;
+    const lastSuccessAt = feed.lastRefreshedAt
+      ? new Date(feed.lastRefreshedAt).getTime()
+      : 0;
+    const lastFailureAt = feed.lastFailureAt
+      ? new Date(feed.lastFailureAt).getTime()
+      : 0;
+    const lastAttemptAt = Math.max(lastSuccessAt, lastFailureAt);
+    const dueAt = lastAttemptAt + intervalMs;
 
     if (dueAt > now) {
       continue;

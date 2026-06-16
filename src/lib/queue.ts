@@ -38,7 +38,8 @@ export function getRefreshQueue() {
 				delay: 30_000,
 			},
 			// The stable jobId intentionally dedupes active/waiting refreshes per feed.
-			// Completed and failed jobs must be removed so scheduled refreshes can run again.
+			// Do NOT retain completed/failed refresh jobs: retained BullMQ hashes keep
+			// the same jobId occupied and block future refreshes for that feed.
 			removeOnComplete: true,
 			removeOnFail: true,
 		},
