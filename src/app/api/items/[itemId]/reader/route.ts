@@ -10,34 +10,33 @@ import { serializeItem } from "@/lib/serializers";
 type Params = Promise<{ itemId: string }>;
 
 export async function GET(_request: Request, context: { params: Params }) {
-  try {
-    const user = await assertApiUser();
-    const { itemId } = await context.params;
-    let item = await measurePerf(
-      "api.reader.load",
-      () => getReaderItem(user.id, itemId),
-      { userId: user.id, itemId },
-    );
-    if (!item) {
-      return apiError("Item not found", 404);
-    }
-    const loadedItem = item;
+	try {
+		const user = await assertApiUser();
+		const { itemId } = await context.params;
+		const item = await measurePerf(
+			"api.reader.load",
+			() => getReaderItem(user.id, itemId),
+			{ userId: user.id, itemId },
+		);
+		if (!item) {
+			return apiError("Item not found", 404);
+		}
+		const loadedItem = item;
 
-    if (shouldFetchReadableContent(loadedItem)) {
-      const updated = await measurePerf(
-        "api.reader.ensureContent",
-        () => ensureReaderContentForLoadedItem(loadedItem),
-        { userId: user.id, itemId },
-      );
-      if (updated) {
-        item = {
-          ...loadedItem,
-          ...updated,
-        };
-      }
-    }
-    return NextResponse.json(serializeItem(item));
-  } catch (error) {
-    return apiErrorFrom(error, "Could not load reader");
-  }
+		if (shouldFetchReadableContent(loadedItem)) {
+			void measurePerf(
+				"api.reader.ensureContent.background",
+				() => ensureReaderContentForLoadedItem(loadedItem),
+				{ userId: user.id, itemId },
+			).catch((error) => {
+				console.warn("[reader] background content extraction failed", {
+					itemId,
+					error: error instanceof Error ? error.message : String(error),
+				});
+			});
+		}
+		return NextResponse.json(serializeItem(item));
+	} catch (error) {
+		return apiErrorFrom(error, "Could not load reader");
+	}
 }
