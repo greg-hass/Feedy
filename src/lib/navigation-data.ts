@@ -108,8 +108,8 @@ export async function getFeedAndFolderCounts(
     SELECT
       CASE WHEN GROUPING(f."id") = 0 THEN f."id" ELSE NULL END AS "feedId",
       CASE WHEN GROUPING(f."id") = 1 THEN f."folderId" ELSE NULL END AS "folderId",
-      COUNT(*)::bigint AS "totalCount",
-      COUNT(*) FILTER (WHERE rs.id IS NULL)::bigint AS "unreadCount"
+      COUNT(i."id")::bigint AS "totalCount",
+      COUNT(i."id") FILTER (WHERE rs."id" IS NULL)::bigint AS "unreadCount"
     FROM "Feed" f
     LEFT JOIN "Item" i
       ON i."feedId" = f.id

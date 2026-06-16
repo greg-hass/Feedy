@@ -19,6 +19,7 @@ const envSchema = z.object({
   PERF_SLOW_MS: z.coerce.number().int().min(50).max(10_000).default(250),
   PERF_SLOW_FEED_MS: z.coerce.number().int().min(200).max(30_000).default(1200),
   DATA_DIR: z.string().default("./data"),
+  REDDIT_PROXY_URL: z.string().optional(),
 });
 
 const parsedEnv = envSchema.parse({
@@ -40,6 +41,7 @@ const parsedEnv = envSchema.parse({
   PERF_SLOW_MS: process.env.PERF_SLOW_MS,
   PERF_SLOW_FEED_MS: process.env.PERF_SLOW_FEED_MS,
   DATA_DIR: process.env.DATA_DIR,
+  REDDIT_PROXY_URL: process.env.REDDIT_PROXY_URL,
 });
 
 export const isProd = process.env.NODE_ENV === "production";
@@ -69,7 +71,7 @@ function isPrivateOrLocalDeploymentHost(hostname: string) {
   );
 }
 
-export function getProductionEnvProblems(config: ProductionEnvConfig) {
+export function getProductionEnvProblems(config: ProductionEnvConfig & { REDDIT_PROXY_URL?: string }) {
   const problems: string[] = [];
   if (
     config.AUTH_SECRET === "development-build-secret-0001" ||

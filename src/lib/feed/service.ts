@@ -1,7 +1,10 @@
 import { FeedSourceType, Prisma, JobStatus, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { normalizeRedditFeed } from "@/lib/feed/discover-reddit";
-import { fetchAndParseFeedConditionally, validateFeedUrl } from "@/lib/feed/parse";
+import {
+	fetchAndParseFeedConditionally,
+	validateFeedUrl,
+} from "@/lib/feed/parse";
 import { extractReadableContent } from "@/lib/feed/reader";
 import { logPerf } from "@/lib/perf";
 import { enqueueIconFetch, enqueueReaderExtraction } from "@/lib/queue";
@@ -142,18 +145,14 @@ export async function createFeedForUser(
 ) {
 	const reddit = normalizeRedditFeed(input.sourceUrl);
 	if (reddit) {
-		return createValidatedFeedForUser(
-			userId,
-			input,
-			{
-				title: reddit.title,
-				description: reddit.description,
-				siteUrl: reddit.siteUrl,
-				feedUrl: reddit.feedUrl,
-				iconUrl: reddit.favicon,
-				sourceType: reddit.sourceType,
-			},
-		);
+		return createValidatedFeedForUser(userId, input, {
+			title: reddit.title,
+			description: reddit.description,
+			siteUrl: reddit.siteUrl,
+			feedUrl: reddit.feedUrl,
+			iconUrl: reddit.favicon,
+			sourceType: reddit.sourceType,
+		});
 	}
 
 	const validated = await validateFeedUrl(input.sourceUrl);
@@ -199,7 +198,7 @@ export function getReaderExtractionCandidateIds(input: {
 	existingKeys: Set<string>;
 }) {
 	return input.upserts
-		.filter((upsert, index) => {
+		.filter((_upsert, index) => {
 			const item = input.items[index];
 			if (!item || input.existingKeys.has(item.uniqueKey)) {
 				return false;
@@ -305,6 +304,7 @@ async function finalizeSuccessfulRefresh(input: {
 	};
 	upserts: Array<{ id: string }>;
 	newItemsCount: number;
+	newMutedOrAutoReadCount: number;
 }) {
 	await prisma.$transaction(async (tx) => {
 		await tx.feed.update({
@@ -360,13 +360,14 @@ async function finalizeSuccessfulRefresh(input: {
 		"SUCCEEDED",
 	);
 
-	// New items that aren't muted and belong to timeline-visible feeds
-	// increase the unread count. We can't know the exact delta without
-	// checking mute rules and timeline visibility per-item, but for the
-	// common case (unmuted, visible feed) the delta is accurate.
-	// The next full reconciliation (settings change, purge) will correct
-	// any drift.
-	const unreadDelta = input.newItemsCount > 0 ? input.newItemsCount : 0;
+	// Only count items that are neither muted from timeline nor
+	// auto-marked-read toward the unread badge.  The next full
+	// reconciliation (settings change, purge) will correct any drift
+	// from edge cases (e.g. feed-level excludeFromTimeline).
+	const unreadDelta = Math.max(
+		0,
+		input.newItemsCount - input.newMutedOrAutoReadCount,
+	);
 
 	if (unreadDelta > 0) {
 		await adjustNavigationStats(prisma, input.feed.userId, { unreadDelta });
@@ -438,7 +439,12 @@ async function recordFailedRefresh(input: {
 		prisma,
 		getRefreshBatchId(input.refreshJob?.metadata),
 		"FAILED",
-	);
+	).catch((error: unknown) => {
+		console.error(
+			`[recordFailedRefresh] Could not record batch result:`,
+			error,
+		);
+	});
 }
 
 export async function refreshFeed(
@@ -594,7 +600,9 @@ export async function refreshFeed(
 
 		const upserts = await upsertFeedItemsInBatches(prisma, operations);
 		const autoMarkReadIds = upserts
-			.filter((upsert, index) => evaluatedItems[index]?.evaluation.autoMarkRead)
+			.filter(
+				(_upsert, index) => evaluatedItems[index]?.evaluation.autoMarkRead,
+			)
 			.map((upsert) => ({ userId: feed.userId, itemId: upsert.id }));
 
 		if (autoMarkReadIds.length > 0) {
@@ -606,6 +614,11 @@ export async function refreshFeed(
 		const upsertDurationMs = performance.now() - upsertStartedAt;
 		const newItemsCount = result.items.filter(
 			(item) => !existingKeys.has(item.uniqueKey),
+		).length;
+		const newMutedOrAutoReadCount = evaluatedItems.filter(
+			({ item, evaluation }) =>
+				!existingKeys.has(item.uniqueKey) &&
+				(evaluation.muteFromTimeline || evaluation.autoMarkRead),
 		).length;
 		const readerExtractionItemIds = getReaderExtractionCandidateIds({
 			upserts,
@@ -625,6 +638,7 @@ export async function refreshFeed(
 			result,
 			upserts,
 			newItemsCount,
+			newMutedOrAutoReadCount,
 		});
 		const finalizeDurationMs = performance.now() - finalizeStartedAt;
 
@@ -664,7 +678,9 @@ export async function refreshFeed(
 			error instanceof Error ? error.message : "Unknown refresh error";
 		await recordFailedRefresh({
 			feedId: feed.id,
-			refreshJob: refreshJob ? { id: refreshJob.id, metadata: refreshJob.metadata } : null,
+			refreshJob: refreshJob
+				? { id: refreshJob.id, metadata: refreshJob.metadata }
+				: null,
 			logId: log.id,
 			message,
 		});

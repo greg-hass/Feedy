@@ -1,3 +1,5 @@
+import { ProxyAgent } from "undici";
+
 import { env } from "@/lib/env";
 import dns from "node:dns/promises";
 import net from "node:net";
@@ -6,6 +8,11 @@ type SemaphoreSlot = {
   resolve: () => void;
   promise: Promise<void>;
 };
+
+let redditProxyAgent: ProxyAgent | undefined;
+if (env.REDDIT_PROXY_URL) {
+  redditProxyAgent = new ProxyAgent(env.REDDIT_PROXY_URL);
+}
 
 const domainSemaphores = new Map<string, { running: number; queue: SemaphoreSlot[] }>();
 const domainRateLimitUntil = new Map<string, number>();
@@ -220,13 +227,25 @@ async function fetchWithPolicy(
       headers.set(key, value);
     }
 
-    const response = await fetch(input, {
-      ...init,
-      signal: controller.signal,
-      redirect: "manual",
-      headers,
-      next: { revalidate: 0 },
-    });
+    const useProxy = isRedditHost(url.hostname) && redditProxyAgent;
+    const response = useProxy
+      ? await (async () => {
+          const undici = await import("undici");
+          return undici.fetch(url.href, {
+            ...(init as Record<string, unknown>),
+            signal: controller.signal,
+            redirect: "manual",
+            headers,
+            dispatcher: redditProxyAgent,
+          }) as unknown as Promise<Response>;
+        })()
+      : await fetch(input, {
+          ...init,
+          signal: controller.signal,
+          redirect: "manual",
+          headers,
+          next: { revalidate: 0 },
+        });
 
     if (response.status === 429) {
       const cooldownMs = getRateLimitCooldownMs(response);
