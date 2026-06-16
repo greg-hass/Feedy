@@ -1,7 +1,21 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { fetchWithTimeout } from "@/lib/http";
+import { buildRedditRssProxyUrl, fetchWithTimeout } from "@/lib/http";
+
+describe("buildRedditRssProxyUrl", () => {
+  it("adds the target Reddit URL as a url query parameter", () => {
+    const proxied = buildRedditRssProxyUrl(
+      "https://reddit-rss-proxy.example.workers.dev/fetch?token=abc",
+      "https://www.reddit.com/r/selfhosted/.rss?sort=new",
+    );
+
+    assert.equal(proxied.origin, "https://reddit-rss-proxy.example.workers.dev");
+    assert.equal(proxied.pathname, "/fetch");
+    assert.equal(proxied.searchParams.get("token"), "abc");
+    assert.equal(proxied.searchParams.get("url"), "https://www.reddit.com/r/selfhosted/.rss?sort=new");
+  });
+});
 
 describe("fetchWithTimeout", () => {
   it("rejects private destinations before calling fetch", async () => {

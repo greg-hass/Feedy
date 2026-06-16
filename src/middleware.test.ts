@@ -201,10 +201,11 @@ describe("Security headers", () => {
     assert.ok(!scriptSrc.includes("'unsafe-inline'"), "script-src should not allow arbitrary inline scripts");
   });
 
-  it("allows YouTube frame-src in CSP", () => {
+  it("allows YouTube iframe API and embeds in CSP", () => {
     const request = makeRequest({ method: "GET", path: "/api/items" });
     const response = proxy(request);
     const csp = response.headers.get("Content-Security-Policy");
+    assert.ok(csp?.includes("script-src 'self'") && csp.includes("https://www.youtube.com"), "CSP should allow YouTube iframe API script");
     assert.ok(csp?.includes("frame-src https://www.youtube.com"), "CSP should allow YouTube embeds");
   });
 

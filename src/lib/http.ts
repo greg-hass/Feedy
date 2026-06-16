@@ -37,6 +37,12 @@ function isRedditHost(hostname: string) {
 	return normalized === "reddit.com" || normalized.endsWith(".reddit.com");
 }
 
+export function buildRedditRssProxyUrl(proxyBaseUrl: string, targetUrl: string) {
+	const proxyUrl = new URL(proxyBaseUrl);
+	proxyUrl.searchParams.set("url", targetUrl);
+	return proxyUrl;
+}
+
 function getEffectiveDomainConcurrency(hostname: string) {
 	if (isRedditHost(hostname)) {
 		return 1;
@@ -248,6 +254,14 @@ async function fetchWithPolicy(
 	const release = await acquireDomainSlot(url.hostname);
 	await waitForRateLimitCooldown(url.hostname);
 
+	const proxiedUrl =
+		isRedditHost(url.hostname) && env.REDDIT_RSS_PROXY_URL
+			? buildRedditRssProxyUrl(env.REDDIT_RSS_PROXY_URL, url.href)
+			: null;
+	if (proxiedUrl) {
+		await assertSafeOutboundDestination(proxiedUrl);
+	}
+
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -262,7 +276,8 @@ async function fetchWithPolicy(
 			headers.set(key, value);
 		}
 
-		const useProxy = isRedditHost(url.hostname) && redditProxyAgent;
+		const useProxy = isRedditHost(url.hostname) && redditProxyAgent && !proxiedUrl;
+		const fetchUrl = proxiedUrl ?? input;
 		const response = useProxy
 			? await (async () => {
 					const undici = await import("undici");
@@ -274,7 +289,7 @@ async function fetchWithPolicy(
 						dispatcher: redditProxyAgent,
 					}) as unknown as Promise<Response>;
 				})()
-			: await fetch(input, {
+			: await fetch(fetchUrl, {
 					...init,
 					signal: controller.signal,
 					redirect: "manual",

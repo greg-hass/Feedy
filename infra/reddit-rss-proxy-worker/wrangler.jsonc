@@ -1,0 +1,11 @@
+{
+  "name": "feedy-reddit-rss-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-16",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ALLOWED_TARGET_HOSTS": "reddit.com,www.reddit.com,old.reddit.com"
+  }
+}

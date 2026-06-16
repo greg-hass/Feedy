@@ -123,12 +123,12 @@ export const config = {
  *
  * CSP rationale:
  * - default-src 'self' — block everything by default
- * - script-src 'self' 'nonce-{request nonce}' — bundled JS plus Next.js bootstrap scripts
+ * - script-src 'self' 'nonce-{request nonce}' https://www.youtube.com — bundled JS, Next.js bootstrap scripts, and YouTube iframe API
  * - style-src 'self' 'unsafe-inline' — Tailwind + feed reader HTML needs inline styles
  * - img-src 'self' data: blob: https: — feed images, favicons, PWA icons, YouTube thumbnails
  * - font-src 'self' — bundled fonts only
  * - connect-src 'self' — API calls from same origin only
- * - frame-src https://www.youtube.com — YouTube embeds in reader
+ * - frame-src https://www.youtube.com — YouTube embeds in reader and inline playback
  * - media-src blob: — inline video/audio from feed content
  * - object-src 'none' — no Flash/Java/plugins
  * - frame-ancestors 'none' — prevent clickjacking (our app is not embeddable)
@@ -138,7 +138,7 @@ export const config = {
 function getContentSecurityPolicy(nonce: string) {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}'`,
+    `script-src 'self' 'nonce-${nonce}' https://www.youtube.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self'",
