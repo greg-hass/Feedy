@@ -54,8 +54,8 @@ RUN chmod +x docker/entrypoint.sh
 
 # /app/data stores cached icons/exports. Prisma also writes engine metadata
 # during migrate deploy, so keep its runtime engine directories writable.
-RUN mkdir -p /app/data/icons /app/data/exports /home/feedy && \
-    chown -R feedy:feedy /app/data /home/feedy /app/node_modules/@prisma /app/node_modules/prisma
+RUN mkdir -p /app/data/icons /app/data/exports /app/.next/standalone/.next/cache /home/feedy && \
+    chown -R feedy:feedy /app/data /app/.next/standalone /home/feedy /app/node_modules/@prisma /app/node_modules/prisma
 
 ENV HOME=/home/feedy
 

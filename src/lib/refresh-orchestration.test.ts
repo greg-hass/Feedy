@@ -199,6 +199,7 @@ describe("queueRefreshBatch", () => {
       "feed-1",
       JobTrigger.AUTO,
       {
+        findActiveJob: async () => null,
         createRefreshJob: async ({ data }: { data: { feedId: string; trigger: JobTrigger } }) => {
           calls.push(`create:${data.feedId}:${data.trigger}`);
           return { id: "job-1" };
@@ -228,6 +229,7 @@ describe("queueRefreshBatch", () => {
         "feed-1",
         JobTrigger.MANUAL,
         {
+          findActiveJob: async () => null,
           createRefreshJob: async () => {
             calls.push("create");
             return { id: "job-1" };

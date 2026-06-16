@@ -18,7 +18,11 @@ import { getRedis } from "@/lib/redis";
 import { pruneUserData } from "@/lib/retention";
 import { ensureDataDirs } from "@/lib/storage";
 import { runBackgroundTask } from "@/lib/background-task";
-import { recoverStaleRefreshJobs } from "@/lib/worker-maintenance";
+import {
+	recoverStaleRefreshJobs,
+	failStaleQueuedRefreshJobs,
+	pruneOldRefreshRecords,
+} from "@/lib/worker-maintenance";
 import { isPermanentRefreshError } from "@/lib/permanent-refresh-error";
 import { queueSingleFeedRefresh } from "@/lib/refresh-orchestration";
 import { selectDueFeeds } from "@/lib/refresh-scheduler";
@@ -295,14 +299,42 @@ async function boot() {
 
 	void runBackgroundTask("initial feed scheduling", scheduleDueFeeds);
 	void runBackgroundTask("initial retention cleanup", runRetentionCleanup);
-	void runBackgroundTask("YouTube Shorts backfill", backfillYouTubeShortFlags);
-	void runBackgroundTask(
-		"reader extraction backfill",
-		enqueueReaderExtractionBackfill,
-	);
+
+	if (env.ENABLE_YOUTUBE_SHORTS_BACKFILL === "true") {
+		void runBackgroundTask(
+			"YouTube Shorts backfill",
+			backfillYouTubeShortFlags,
+		);
+	}
+
+	if (env.ENABLE_READER_EXTRACTION_BACKFILL === "true") {
+		void runBackgroundTask(
+			"reader extraction backfill",
+			enqueueReaderExtractionBackfill,
+		);
+	}
 	const feedScheduleTimer = setInterval(() => {
 		void runBackgroundTask("scheduled feed scheduling", scheduleDueFeeds);
 	}, 60_000);
+	const staleJobTimer = setInterval(() => {
+		void runBackgroundTask("stale queued cleanup", async () => {
+			const count = await failStaleQueuedRefreshJobs();
+			if (count > 0) {
+				console.log(`[worker] Failed ${count} stale queued refresh jobs`);
+			}
+		});
+	}, 5 * 60_000);
+	const pruneTimer = setInterval(
+		() => {
+			void runBackgroundTask("prune old refresh records", async () => {
+				const result = await pruneOldRefreshRecords();
+				if (result.deletedJobs > 0 || result.deletedLogs > 0) {
+					console.log("[worker] Pruned old refresh records", result);
+				}
+			});
+		},
+		6 * 60 * 60_000,
+	);
 	const retentionTimer = setInterval(
 		() => {
 			void runBackgroundTask(
@@ -316,6 +348,8 @@ async function boot() {
 	const shutdown = async (signal: NodeJS.Signals) => {
 		console.log(`[worker] Received ${signal}, shutting down`);
 		feedScheduleTimer.unref();
+		staleJobTimer.unref();
+		pruneTimer.unref();
 		retentionTimer.unref();
 		const forcedExit = setTimeout(() => {
 			console.error("[worker] Shutdown timed out, forcing exit");

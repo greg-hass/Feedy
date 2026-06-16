@@ -36,6 +36,36 @@ export async function POST() {
 			);
 		}
 
+		// Prevent duplicate batches: if there's a recent RUNNING batch, return it
+		const existingBatch = await prisma.refreshBatch.findFirst({
+			where: {
+				userId: user.id,
+				status: { in: ["QUEUED", "RUNNING"] },
+				createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) },
+			},
+			orderBy: { createdAt: "desc" },
+			select: {
+				id: true,
+				totalFeeds: true,
+				queued: true,
+				skipped: true,
+				createdAt: true,
+			},
+		});
+
+		if (existingBatch) {
+			invalidateNavigationCache(user.id);
+			return NextResponse.json({
+				ok: true,
+				batchId: existingBatch.id,
+				totalFeeds: existingBatch.totalFeeds,
+				queued: existingBatch.queued,
+				skipped: existingBatch.skipped,
+				batchStartedAt: existingBatch.createdAt.toISOString(),
+				reuseExisting: true,
+			});
+		}
+
 		invalidateNavigationCache(user.id);
 		return NextResponse.json(
 			await queueRefreshBatch({

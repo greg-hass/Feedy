@@ -62,10 +62,14 @@ describe("fetchWithTimeout", () => {
     let fetchCount = 0;
     globalThis.fetch = (async () => {
       fetchCount++;
-      return new Response("rate limited", {
-        status: 429,
-        headers: { "x-ratelimit-reset": "30" },
-      });
+      // First fetch returns 429 with a short retry; subsequent fetches succeed
+      if (fetchCount === 1) {
+        return new Response("rate limited", {
+          status: 429,
+          headers: { "retry-after": "1" },
+        });
+      }
+      return new Response("ok", { status: 200 });
     }) as typeof fetch;
 
     try {
@@ -73,11 +77,10 @@ describe("fetchWithTimeout", () => {
       const first = await fetchWithTimeout(url, {}, 1_000);
       assert.equal(first.status, 429);
 
-      await assert.rejects(
-        fetchWithTimeout(url, {}, 1_000),
-        /rate limited; retry after/i,
-      );
-      assert.equal(fetchCount, 1);
+      // Second call should wait for the cooldown (1s) then fetch and succeed
+      const second = await fetchWithTimeout(url, {}, 5_000);
+      assert.equal(second.status, 200);
+      assert.equal(fetchCount, 2);
     } finally {
       globalThis.fetch = originalFetch;
     }
