@@ -244,9 +244,10 @@ async function fetchWithPolicy(
 	const url = new URL(urlString);
 
 	await assertSafeOutboundDestination(url);
-	await waitForRateLimitCooldown(url.hostname);
 
 	const release = await acquireDomainSlot(url.hostname);
+	await waitForRateLimitCooldown(url.hostname);
+
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 

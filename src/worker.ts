@@ -75,15 +75,14 @@ async function scheduleDueFeeds() {
 		}
 	}
 
+	const skippedCount = dueFeedIds.length - queuedCount;
 	if (capped) {
 		console.log(
-			`[worker] Auto-refresh capped at ${queuedCount} feeds to limit queue growth`,
+			`[worker] Auto-refresh selected ${dueFeedIds.length} due feeds (cap reached, backlog ${backlog}); queued ${queuedCount}, skipped ${skippedCount}`,
 		);
-	}
-
-	if (queuedCount > 0) {
+	} else if (dueFeedIds.length > 0) {
 		console.log(
-			`[worker] Auto-refresh queued ${queuedCount} feeds (backlog was ${backlog})`,
+			`[worker] Auto-refresh selected ${dueFeedIds.length} due feeds (backlog ${backlog}); queued ${queuedCount}, skipped ${skippedCount}`,
 		);
 	}
 }
