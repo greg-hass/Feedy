@@ -193,11 +193,13 @@ export async function queueSingleFeedRefresh(
 			deps.findActiveJob ?? prisma.refreshJob.findFirst.bind(prisma.refreshJob),
 	};
 
-	// Skip if there's already an active job for this feed — prevents DB row churn
+	// Skip only if there's a very recent active job (created within the refresh window).
+	// Older QUEUED/RUNNING jobs are likely stale and will be cleaned up by maintenance.
 	const existing = await resolvedDeps.findActiveJob!({
 		where: {
 			feedId,
 			status: { in: [JobStatus.QUEUED, JobStatus.RUNNING] },
+			requestedAt: { gt: new Date(Date.now() - 5 * 60_000) },
 		},
 		select: { id: true },
 	});
