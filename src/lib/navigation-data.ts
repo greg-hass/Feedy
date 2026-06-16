@@ -167,32 +167,45 @@ export async function getFeedPerformanceStats(
 	client: NavigationClient = prisma,
 ) {
 	const rows = await client.$queryRaw<FeedPerformanceRow[]>(Prisma.sql`
-    WITH recent_logs AS (
+    SELECT
+      f.id AS "feedId",
+      latest."durationMs"::int AS "latestDurationMs",
+      avg10."averageDurationMs"::int AS "averageDurationMs",
+      COALESCE(slow."slowCount24h", 0)::bigint AS "slowCount24h"
+    FROM "Feed" f
+    LEFT JOIN LATERAL (
       SELECT
-        rl."feedId",
-        EXTRACT(EPOCH FROM (COALESCE(rl."finishedAt", rl."startedAt") - rl."startedAt")) * 1000 AS "durationMs",
-        rl."startedAt",
-        ROW_NUMBER() OVER (
-          PARTITION BY rl."feedId"
-          ORDER BY rl."startedAt" DESC
-        ) AS "rowNumber"
+        EXTRACT(EPOCH FROM (COALESCE(rl."finishedAt", rl."startedAt") - rl."startedAt")) * 1000 AS "durationMs"
       FROM "RefreshLog" rl
-      INNER JOIN "Feed" f ON f.id = rl."feedId"
-      WHERE f."userId" = ${userId}
+      WHERE rl."feedId" = f.id
         AND rl.status = 'SUCCEEDED'
         AND rl."finishedAt" IS NOT NULL
-        AND rl."startedAt" >= NOW() - INTERVAL '7 days'
-    )
-    SELECT
-      "feedId",
-      MAX(CASE WHEN "rowNumber" = 1 THEN "durationMs" END)::int AS "latestDurationMs",
-      ROUND(AVG(CASE WHEN "rowNumber" <= 10 THEN "durationMs" END))::int AS "averageDurationMs",
-      COUNT(*) FILTER (
-        WHERE "startedAt" >= NOW() - INTERVAL '24 hours'
-          AND "durationMs" >= ${env.PERF_SLOW_FEED_MS}
-      )::bigint AS "slowCount24h"
-    FROM recent_logs
-    GROUP BY "feedId"
+      ORDER BY rl."startedAt" DESC
+      LIMIT 1
+    ) latest ON true
+    LEFT JOIN LATERAL (
+      SELECT ROUND(AVG(recent."durationMs")) AS "averageDurationMs"
+      FROM (
+        SELECT
+          EXTRACT(EPOCH FROM (COALESCE(rl."finishedAt", rl."startedAt") - rl."startedAt")) * 1000 AS "durationMs"
+        FROM "RefreshLog" rl
+        WHERE rl."feedId" = f.id
+          AND rl.status = 'SUCCEEDED'
+          AND rl."finishedAt" IS NOT NULL
+        ORDER BY rl."startedAt" DESC
+        LIMIT 10
+      ) recent
+    ) avg10 ON true
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*) AS "slowCount24h"
+      FROM "RefreshLog" rl
+      WHERE rl."feedId" = f.id
+        AND rl.status = 'SUCCEEDED'
+        AND rl."finishedAt" IS NOT NULL
+        AND rl."startedAt" >= NOW() - INTERVAL '24 hours'
+        AND EXTRACT(EPOCH FROM (COALESCE(rl."finishedAt", rl."startedAt") - rl."startedAt")) * 1000 >= ${env.PERF_SLOW_FEED_MS}
+    ) slow ON true
+    WHERE f."userId" = ${userId}
   `);
 
 	return new Map(
