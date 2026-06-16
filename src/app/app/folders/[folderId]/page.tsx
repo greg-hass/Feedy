@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, EyeOff, FolderOpen, MoreHorizontal, RefreshCcw, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, EyeOff, MoreHorizontal, RefreshCcw, Trash2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
@@ -150,25 +150,6 @@ export default function FolderDetailPage() {
       }
     >
       <div className="space-y-3">
-        <div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
-              <FolderOpen className="size-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold">{folderTitle}</h1>
-              <p className="text-xs text-secondary">
-                {folder.counts.unreadCount} unread · {folderFeeds.length} feeds
-              </p>
-              {refreshQueued ? (
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-                  Refreshing
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
         {folderFeeds.length > 0 && (
           <section className="rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
             <div className="mb-2 flex items-center justify-between gap-3 px-1">
