@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, ExternalLink, Share2 } from "lucide-react";
+import { ArrowLeft, Bookmark, ExternalLink, Eye, EyeOff, Share2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useState } from "react";
 
@@ -252,6 +252,13 @@ export default function ReaderPage() {
 						</IconButton>
 						<div className="flex items-center gap-2">
 							<IconButton
+								variant={data.read ? "default" : "accent"}
+								onClick={() => state.mutate({ read: !data.read })}
+								aria-label={data.read ? "Mark unread" : "Mark read"}
+							>
+								{data.read ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+							</IconButton>
+							<IconButton
 								variant={isBookmarked ? "accent" : "default"}
 								onClick={() => {
 									vibrateIfSupported(window.navigator, 10);
@@ -301,7 +308,7 @@ export default function ReaderPage() {
 						</p>
 					</div>
 
-					<h1 className="mt-2 text-[2rem] font-semibold leading-[1.08] tracking-[-0.04em]">
+					<h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight">
 						{data.title}
 					</h1>
 
@@ -316,18 +323,6 @@ export default function ReaderPage() {
 						<span className="rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
 							{data.feed.sourceType.replaceAll("_", " ")}
 						</span>
-					</div>
-
-					<div className="mt-2">
-						<Button
-							variant="secondary"
-							size="sm"
-							className="rounded-full px-4"
-							onClick={() => state.mutate({ read: !data.read })}
-							disabled={state.isPending}
-						>
-							{data.read ? "Mark unread" : "Mark read"}
-						</Button>
 					</div>
 
 					{data.youtubeVideoId && (
