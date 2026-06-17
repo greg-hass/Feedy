@@ -2,12 +2,7 @@
 
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import {
-	ArrowLeft,
-	Bookmark,
-	ExternalLink,
-	Share2,
-} from "lucide-react";
+import { ArrowLeft, Bookmark, ExternalLink, Share2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useState } from "react";
 

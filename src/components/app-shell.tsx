@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Bookmark, Compass, Flame, LogOut, Rss, Settings } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,11 +33,13 @@ export function MobileShell({
 	title,
 	subtitle: _subtitle,
 	actions,
+	backButton,
 	children,
 }: {
 	title: string;
 	subtitle?: string;
 	actions?: React.ReactNode;
+	backButton?: React.ReactNode;
 	children: React.ReactNode;
 }) {
 	const pathname = usePathname();
@@ -71,28 +72,7 @@ export function MobileShell({
 				>
 					<div className="mx-auto max-w-md px-5 pb-0 pt-[max(12px,env(safe-area-inset-top))]">
 						<div className="flex items-center justify-between gap-3">
-							<div
-								className="flex h-10 shrink-0 items-center gap-2 rounded-2xl px-3"
-								style={{
-									border:
-										"1px solid color-mix(in srgb, var(--accent) 24%, transparent)",
-									backgroundColor: "var(--accent-dim)",
-								}}
-							>
-								<Image
-									src={`/icon-variants/${accent.toLowerCase()}-64.png`}
-									alt=""
-									width={20}
-									height={20}
-									className="size-5 shrink-0 rounded-[6px]"
-								/>
-								<span
-									className="whitespace-nowrap text-[12px] font-semibold uppercase tracking-[0.15em]"
-									style={{ color: "var(--accent)" }}
-								>
-									Feedy
-								</span>
-							</div>
+							<div className="shrink-0">{backButton ?? null}</div>
 							<div className="flex shrink-0 items-center gap-2">
 								{actions}
 								<IconButton
@@ -152,8 +132,12 @@ export function MobileShell({
 				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(16px,env(safe-area-inset-bottom))]">
 					<div className="mx-auto flex max-w-md justify-center px-6">
 						<div
-							className="flex items-center gap-1 rounded-[28px] border border-[var(--border)] px-2 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.18)]"
-							style={{ backgroundColor: "var(--surface)" }}
+							className="flex items-center gap-1 rounded-[28px] border border-white/10 px-2 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl"
+							style={{
+								backgroundColor:
+									"color-mix(in srgb, var(--surface) 72%, transparent)",
+								WebkitBackdropFilter: "blur(20px)",
+							}}
 						>
 							{navItems.map((item) => {
 								const Icon = item.icon;
@@ -187,22 +171,16 @@ export function MobileShell({
 										onClick={handleTabClick}
 										className="relative flex min-w-0 flex-col items-center gap-1 rounded-[20px] px-3.5 py-2 text-[10px] font-medium transition-all duration-200"
 										style={{
-											color: active
-												? "var(--accent-contrast)"
-												: "var(--text-secondary)",
+											color: active ? "var(--accent)" : "var(--text-secondary)",
 											fontWeight: active ? 600 : 500,
-											backgroundColor: active
-												? "var(--accent)"
-												: "transparent",
 										}}
 									>
 										<Icon
 											className="size-[22px]"
 											strokeWidth={active ? 2.5 : 2}
-											fill={active ? "currentColor" : "none"}
 											style={{
 												color: active
-													? "var(--accent-contrast)"
+													? "var(--accent)"
 													: "var(--text-secondary)",
 											}}
 										/>

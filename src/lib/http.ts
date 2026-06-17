@@ -37,7 +37,10 @@ function isRedditHost(hostname: string) {
 	return normalized === "reddit.com" || normalized.endsWith(".reddit.com");
 }
 
-export function buildRedditRssProxyUrl(proxyBaseUrl: string, targetUrl: string) {
+export function buildRedditRssProxyUrl(
+	proxyBaseUrl: string,
+	targetUrl: string,
+) {
 	const proxyUrl = new URL(proxyBaseUrl);
 	proxyUrl.searchParams.set("url", targetUrl);
 	return proxyUrl;
@@ -276,7 +279,8 @@ async function fetchWithPolicy(
 			headers.set(key, value);
 		}
 
-		const useProxy = isRedditHost(url.hostname) && redditProxyAgent && !proxiedUrl;
+		const useProxy =
+			isRedditHost(url.hostname) && redditProxyAgent && !proxiedUrl;
 		const fetchUrl = proxiedUrl ?? input;
 		const response = useProxy
 			? await (async () => {
