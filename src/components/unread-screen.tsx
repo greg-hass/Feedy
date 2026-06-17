@@ -10,7 +10,7 @@ import { ItemCard } from "@/components/item-card";
 import { usePullToRefresh } from "@/components/use-pull-to-refresh";
 import { useScrollRestoration } from "@/components/use-scroll-restoration";
 import { useTimelineFilters } from "@/components/use-timeline-filters";
-import { RefreshButton, useRefreshController } from "@/components/refresh-button";
+import { useRefreshController } from "@/components/refresh-button";
 import { TimelineRefreshToast } from "@/components/timeline-refresh-toast";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
@@ -348,7 +348,6 @@ export function UnreadScreen() {
           >
             <SlidersHorizontal className="size-4" />
           </IconButton>
-          <RefreshButton controller={refresh} onStart={startRefresh} />
         </>
       }
     >
@@ -367,13 +366,18 @@ export function UnreadScreen() {
         onDismiss={() => setRefreshToast(null)}
       />
 
-      {pullDistance > 0 && !refresh.active ? (
-        <div className="mb-2 flex items-center justify-center">
-          <div className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.03)]">
-            {pullDistance >= 56 ? "Release to refresh feeds" : "Pull to refresh"}
-          </div>
+      <div
+        className="flex items-center justify-center overflow-hidden transition-all duration-200 ease-out"
+        style={{
+          height: pullDistance > 0 && !refresh.active ? `${Math.max(0, pullDistance - 8)}px` : '0px',
+          marginBottom: pullDistance > 0 && !refresh.active ? '8px' : '0px',
+          opacity: pullDistance > 0 && !refresh.active ? 1 : 0,
+        }}
+      >
+        <div className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.03)]">
+          {pullDistance >= 56 ? "Release to refresh feeds" : "Pull to refresh"}
         </div>
-      ) : null}
+      </div>
 
       {timelinePanelOpen ? (
         <section
