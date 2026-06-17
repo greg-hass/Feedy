@@ -2,7 +2,12 @@
 
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, ExternalLink, Eye, EyeOff, Share2 } from "lucide-react";
+import {
+	ArrowLeft,
+	Bookmark,
+	ExternalLink,
+	Share2,
+} from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useState } from "react";
 
@@ -251,13 +256,6 @@ export default function ReaderPage() {
 							<ArrowLeft className="size-4" />
 						</IconButton>
 						<div className="flex items-center gap-2">
-							<IconButton
-								variant={data.read ? "default" : "accent"}
-								onClick={() => state.mutate({ read: !data.read })}
-								aria-label={data.read ? "Mark unread" : "Mark read"}
-							>
-								{data.read ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-							</IconButton>
 							<IconButton
 								variant={isBookmarked ? "accent" : "default"}
 								onClick={() => {

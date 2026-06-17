@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Bookmark, Check, ExternalLink, Play } from "lucide-react";
+import { Bookmark, Eye, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { memo, useEffect, useState } from "react";
 
@@ -412,7 +412,7 @@ export const ItemCard = memo(function ItemCard({
 								data-card-action
 								className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.3)]"
 							>
-								<Check className="size-4" strokeWidth={3} />
+								<Eye className="size-4" />
 							</span>
 						)}
 
