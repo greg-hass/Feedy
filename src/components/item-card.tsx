@@ -3,12 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Bookmark, Eye, ExternalLink, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
-import { IconButton } from "@/components/ui/icon-button";
 import { SearchHighlight } from "@/components/search-highlight";
+import { CardActionSheet, type CardAction } from "@/components/card-action-sheet";
 import { api } from "@/lib/client";
 import {
 	getYouTubeThumbnailUrls,
@@ -33,6 +33,9 @@ function formatResumeTime(seconds: number) {
 	return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
+const LONG_PRESS_MS = 450;
+const MOVE_THRESHOLD_PX = 10;
+
 export const ItemCard = memo(function ItemCard({
 	item,
 	searchQuery = "",
@@ -55,6 +58,12 @@ export const ItemCard = memo(function ItemCard({
 			? getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId)
 			: 0,
 	);
+	const [actionSheetOpen, setActionSheetOpen] = useState(false);
+
+	const longPressTimer = useRef<number | null>(null);
+	const pointerStart = useRef<{ x: number; y: number } | null>(null);
+	const longPressFired = useRef(false);
+
 	const isYouTube = item.feed.sourceType.includes("YOUTUBE");
 	const youtubeThumbnailUrls = item.youtubeVideoId
 		? getYouTubeThumbnailUrls(item.youtubeVideoId, {
@@ -78,10 +87,6 @@ export const ItemCard = memo(function ItemCard({
 		window.sessionStorage.setItem(
 			"feedy-timeline-anchor-item",
 			JSON.stringify({
-				// Save the clicked item's id so restoration can scroll directly to
-				// the element rather than relying on a pixel offset. Pixel offsets are
-				// fragile when virtualized content gives the browser an estimated page
-				// height on fresh mount, causing scrollTo to land at the wrong place.
 				itemId: item.id,
 				scrollY: Math.max(0, Math.round(window.scrollY)),
 			}),
@@ -128,7 +133,7 @@ export const ItemCard = memo(function ItemCard({
 	};
 
 	const navigateFromCard = (event: React.MouseEvent<HTMLElement>) => {
-		if (isYouTube || event.defaultPrevented) {
+		if (isYouTube || event.defaultPrevented || longPressFired.current) {
 			return;
 		}
 
@@ -142,6 +147,45 @@ export const ItemCard = memo(function ItemCard({
 		}
 
 		navigateToReader(event);
+	};
+
+	// Long-press detection
+	const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+		if (event.button !== 0) return;
+		pointerStart.current = { x: event.clientX, y: event.clientY };
+		longPressFired.current = false;
+
+		longPressTimer.current = window.setTimeout(() => {
+			longPressFired.current = true;
+			vibrateIfSupported(window.navigator, 20);
+			setActionSheetOpen(true);
+		}, LONG_PRESS_MS);
+	};
+
+	const handlePointerUp = () => {
+		if (longPressTimer.current !== null) {
+			window.clearTimeout(longPressTimer.current);
+			longPressTimer.current = null;
+		}
+		// Small delay before resetting so click handler can read the flag
+		window.setTimeout(() => {
+			longPressFired.current = false;
+		}, 50);
+	};
+
+	const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
+		if (!pointerStart.current || longPressTimer.current === null) return;
+		const dx = event.clientX - pointerStart.current.x;
+		const dy = event.clientY - pointerStart.current.y;
+		if (Math.sqrt(dx * dx + dy * dy) > MOVE_THRESHOLD_PX) {
+			window.clearTimeout(longPressTimer.current);
+			longPressTimer.current = null;
+		}
+	};
+
+	const handleContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+		event.preventDefault();
+		setActionSheetOpen(true);
 	};
 
 	useEffect(() => {
@@ -180,6 +224,32 @@ export const ItemCard = memo(function ItemCard({
 		},
 	});
 
+	const handleAction = (action: CardAction) => {
+		switch (action.type) {
+			case "bookmark":
+				updateState.mutate({ bookmarked: action.bookmarked });
+				break;
+			case "read":
+				updateState.mutate({ read: action.read });
+				break;
+			case "share": {
+				const url = item.canonicalUrl ?? "";
+				const title = decodeHtmlEntities(item.title);
+				if (navigator.share) {
+					void navigator.share({ title, url });
+				} else if (url) {
+					void navigator.clipboard.writeText(url);
+				}
+				break;
+			}
+			case "external":
+				if (item.canonicalUrl) {
+					window.open(item.canonicalUrl, "_blank", "noopener,noreferrer");
+				}
+				break;
+		}
+	};
+
 	const thumbnailUrl =
 		isYouTube && item.youtubeVideoId
 			? (youtubeThumbnailUrls?.[thumbnailIndex] ?? null)
@@ -202,234 +272,224 @@ export const ItemCard = memo(function ItemCard({
 	};
 
 	return (
-		<article
-			data-timeline-item-id={item.id}
-			onClick={navigateFromCard}
-			onPointerEnter={prefetchReader}
-			onFocus={prefetchReader}
-			className={`group overflow-hidden rounded-[24px] border border-subtle bg-surface transition-all duration-300 ${!isYouTube ? "cursor-pointer" : ""} ${hoverCardClass}`}
-		>
-			{thumbnailUrl &&
-				(isYouTube && item.youtubeVideoId ? (
-					<div className="relative overflow-hidden">
-						{playInline ? (
-							<>
-								<YouTubeInlinePlayer
-									itemId={item.id}
-									videoId={item.youtubeVideoId}
-									title={itemTitle}
-									startSeconds={resumeSeconds}
-									onReady={() => setInlinePlayerLoading(false)}
-									onProgressChange={(seconds) => {
-										setResumeSeconds(seconds);
-									}}
-									onMeaningfulPlayback={() => {
-										if (!item.read) {
-											updateState.mutate({ read: true });
-										}
-									}}
-								/>
-								{inlinePlayerLoading ? (
-									<div className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--surface)_10%,var(--app-bg)_90%)]">
-										<div className="flex flex-col items-center gap-3 rounded-[20px] border border-[var(--border)] bg-[var(--surface)]/90 px-4 py-3 text-center text-[var(--text-primary)] backdrop-blur-sm">
-											<div className="h-10 w-10 animate-pulse rounded-full bg-[var(--surface-muted)]" />
-											<p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-												Loading player...
-											</p>
-										</div>
-									</div>
-								) : null}
-							</>
-						) : (
-							<button
-								type="button"
-								onClick={() => {
-									setInlinePlayerLoading(true);
-									setInternalPlayInline(true);
-								}}
-								className="relative block w-full overflow-hidden text-left"
-								aria-label={`Play ${itemTitle} inline`}
-							>
-								<div
-									className={`relative w-full bg-surface-muted ${youtubeThumbnailAspectClass}`}
-								>
-									<Image
-										src={thumbnailUrl}
-										alt={itemTitle}
-										fill
-										sizes="(max-width: 448px) 100vw, 448px"
-										unoptimized
-										className={`h-full w-full object-cover transition-all duration-500 ${hoverScaleClass} ${
-											imageLoaded ? "opacity-100" : "opacity-0"
-										}`}
-										loading="lazy"
-										onLoad={(event) => {
-											if (
-												isLikelyLowResolutionYouTubePlaceholder(
-													thumbnailUrl,
-													event.currentTarget,
-												)
-											) {
-												applyNextYouTubeThumbnailFallback();
-												return;
-											}
-											setImageLoaded(true);
+		<>
+			<article
+				data-timeline-item-id={item.id}
+				onClick={navigateFromCard}
+				onPointerEnter={prefetchReader}
+				onFocus={prefetchReader}
+				onPointerDown={handlePointerDown}
+				onPointerUp={handlePointerUp}
+				onPointerLeave={handlePointerUp}
+				onPointerMove={handlePointerMove}
+				onContextMenu={handleContextMenu}
+				className={`group overflow-hidden rounded-[24px] border border-subtle bg-surface transition-all duration-300 ${!isYouTube ? "cursor-pointer" : ""} ${hoverCardClass} select-none`}
+			>
+				{thumbnailUrl &&
+					(isYouTube && item.youtubeVideoId ? (
+						<div className="relative overflow-hidden">
+							{playInline ? (
+								<>
+									<YouTubeInlinePlayer
+										itemId={item.id}
+										videoId={item.youtubeVideoId}
+										title={itemTitle}
+										startSeconds={resumeSeconds}
+										onReady={() => setInlinePlayerLoading(false)}
+										onProgressChange={(seconds) => {
+											setResumeSeconds(seconds);
 										}}
-										onError={() => {
-											if (applyNextYouTubeThumbnailFallback()) {
-												return;
+										onMeaningfulPlayback={() => {
+											if (!item.read) {
+												updateState.mutate({ read: true });
 											}
-											setImageLoaded(true);
 										}}
 									/>
-									{!imageLoaded && <div className="absolute inset-0 shimmer" />}
-								</div>
-								<div
-									className={`absolute inset-0 flex items-center justify-center opacity-90 transition-opacity duration-300 ${hoverOpacityClass}`}
+									{inlinePlayerLoading ? (
+										<div className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--surface)_10%,var(--app-bg)_90%)]">
+											<div className="flex flex-col items-center gap-3 rounded-[20px] border border-[var(--border)] bg-[var(--surface)]/90 px-4 py-3 text-center text-[var(--text-primary)] backdrop-blur-sm">
+												<div className="h-10 w-10 animate-pulse rounded-full bg-[var(--surface-muted)]" />
+												<p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+													Loading player...
+												</p>
+											</div>
+										</div>
+									) : null}
+								</>
+							) : (
+								<button
+									type="button"
+									onClick={() => {
+										setInlinePlayerLoading(true);
+										setInternalPlayInline(true);
+									}}
+									className="relative block w-full overflow-hidden text-left"
+									aria-label={`Play ${itemTitle} inline`}
 								>
 									<div
-										className={`flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface)]/95 shadow-2xl transition-transform duration-300 ${hoverButtonScaleClass}`}
+										className={`relative w-full bg-surface-muted ${youtubeThumbnailAspectClass}`}
 									>
-										<Play
-											className="ml-1 h-6 w-6 text-[var(--text-primary)]"
-											fill="currentColor"
+										<Image
+											src={thumbnailUrl}
+											alt={itemTitle}
+											fill
+											sizes="(max-width: 448px) 100vw, 448px"
+											unoptimized
+											className={`h-full w-full object-cover transition-all duration-500 ${hoverScaleClass} ${
+												imageLoaded ? "opacity-100" : "opacity-0"
+											}`}
+											loading="lazy"
+											onLoad={(event) => {
+												if (
+													isLikelyLowResolutionYouTubePlaceholder(
+														thumbnailUrl,
+														event.currentTarget,
+													)
+												) {
+													applyNextYouTubeThumbnailFallback();
+													return;
+												}
+												setImageLoaded(true);
+											}}
+											onError={() => {
+												if (applyNextYouTubeThumbnailFallback()) {
+													return;
+												}
+												setImageLoaded(true);
+											}}
 										/>
+										{!imageLoaded && <div className="absolute inset-0 shimmer" />}
 									</div>
-								</div>
-								{resumeSeconds > 1 ? (
-									<div className="absolute left-3 top-3 rounded-full bg-[var(--accent)]/92 px-3 py-1.5 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.24)]">
-										Resume {formatResumeTime(resumeSeconds)}
+									<div
+										className={`absolute inset-0 flex items-center justify-center opacity-90 transition-opacity duration-300 ${hoverOpacityClass}`}
+									>
+										<div
+											className={`flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface)]/95 shadow-2xl transition-transform duration-300 ${hoverButtonScaleClass}`}
+										>
+											<Play
+												className="ml-1 h-6 w-6 text-[var(--text-primary)]"
+												fill="currentColor"
+											/>
+										</div>
 									</div>
-								) : null}
-							</button>
-						)}
+									{resumeSeconds > 1 ? (
+										<div className="absolute left-3 top-3 rounded-full bg-[var(--accent)]/92 px-3 py-1.5 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.24)]">
+											Resume {formatResumeTime(resumeSeconds)}
+										</div>
+									) : null}
+								</button>
+							)}
+						</div>
+					) : (
+						<Link
+							href={`/reader/${item.id}`}
+							onPointerDown={rememberTimelineAnchor}
+							onClick={navigateToReader}
+							className="relative block overflow-hidden"
+						>
+							<div className="relative aspect-video w-full bg-surface-muted">
+								<Image
+									src={thumbnailUrl}
+									alt={itemTitle}
+									fill
+									sizes="(max-width: 448px) 100vw, 448px"
+									unoptimized
+									className={`h-full w-full object-cover transition-all duration-500 ${hoverScaleClass} ${
+										imageLoaded ? "opacity-100" : "opacity-0"
+									}`}
+									loading="lazy"
+									onLoad={(event) => {
+										if (
+											isLikelyLowResolutionYouTubePlaceholder(
+												thumbnailUrl,
+												event.currentTarget,
+											)
+										) {
+											applyNextYouTubeThumbnailFallback();
+											return;
+										}
+										setImageLoaded(true);
+									}}
+									onError={() => {
+										if (applyNextYouTubeThumbnailFallback()) {
+											return;
+										}
+										setImageLoaded(true);
+									}}
+								/>
+								{!imageLoaded && <div className="absolute inset-0 shimmer" />}
+							</div>
+						</Link>
+					))}
+
+				<div className="p-4">
+					{/* Feed icon + name */}
+					<div className="flex items-center gap-2">
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src={`/api/icons/${item.feed.id}`}
+							alt=""
+							className="size-4 rounded-[4px] object-cover"
+							loading="lazy"
+							onError={(e) => {
+								(e.target as HTMLImageElement).style.display = "none";
+							}}
+						/>
+						<p className="truncate text-[11px] font-medium text-secondary">
+							{feedTitle}
+						</p>
 					</div>
-				) : (
+
+					{/* Title */}
 					<Link
 						href={`/reader/${item.id}`}
 						onPointerDown={rememberTimelineAnchor}
 						onClick={navigateToReader}
-						className="relative block overflow-hidden"
 					>
-						<div className="relative aspect-video w-full bg-surface-muted">
-							<Image
-								src={thumbnailUrl}
-								alt={itemTitle}
-								fill
-								sizes="(max-width: 448px) 100vw, 448px"
-								unoptimized
-								className={`h-full w-full object-cover transition-all duration-500 ${hoverScaleClass} ${
-									imageLoaded ? "opacity-100" : "opacity-0"
-								}`}
-								loading="lazy"
-								onLoad={(event) => {
-									if (
-										isLikelyLowResolutionYouTubePlaceholder(
-											thumbnailUrl,
-											event.currentTarget,
-										)
-									) {
-										applyNextYouTubeThumbnailFallback();
-										return;
-									}
-									setImageLoaded(true);
-								}}
-								onError={() => {
-									if (applyNextYouTubeThumbnailFallback()) {
-										return;
-									}
-									setImageLoaded(true);
-								}}
-							/>
-							{!imageLoaded && <div className="absolute inset-0 shimmer" />}
-						</div>
+						<h3
+							className={`mt-1.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] line-clamp-2 transition-colors duration-200 ${hoverTextClass}`}
+						>
+							<SearchHighlight text={itemTitle} query={searchQuery} />
+						</h3>
 					</Link>
-				))}
 
-			<div className="p-4">
-				<div className="flex items-center gap-2">
-					<div className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-					<p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-secondary">
-						{feedTitle}
-					</p>
-				</div>
+					{/* Summary */}
+					{item.summary && !thumbnailUrl && (
+						<p className="mt-1.5 text-[13px] leading-relaxed text-secondary line-clamp-2">
+							<SearchHighlight
+								text={decodeHtmlEntities(item.summary)}
+								query={searchQuery}
+							/>
+						</p>
+					)}
 
-				<Link
-					href={`/reader/${item.id}`}
-					onPointerDown={rememberTimelineAnchor}
-					onClick={navigateToReader}
-				>
-					<h3
-						className={`mt-2 text-[17px] font-semibold leading-[1.35] tracking-[-0.01em] line-clamp-2 transition-colors duration-200 ${hoverTextClass}`}
-					>
-						<SearchHighlight text={itemTitle} query={searchQuery} />
-					</h3>
-				</Link>
-
-				{item.summary && !thumbnailUrl && (
-					<p className="mt-2 text-[14px] leading-relaxed text-secondary line-clamp-2">
-						<SearchHighlight
-							text={decodeHtmlEntities(item.summary)}
-							query={searchQuery}
-						/>
-					</p>
-				)}
-
-				<div className="mt-4 flex items-center justify-between">
-					<div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em]">
-						<span className="text-[var(--accent)]">
+					{/* Timestamp + source */}
+					<div className="mt-3 flex items-center gap-1.5 text-[11px]">
+						<span className="font-medium text-[var(--text-secondary)]">
 							{relativeTime(item.publishedAt)}
 						</span>
 						{!isYouTube && (
 							<>
-								<span>·</span>
-								<span>
+								<span className="text-[var(--border)]">·</span>
+								<span className="text-[var(--text-secondary)]">
 									{item.feed.sourceType.replace("_RSS", "").replace("_", " ")}
 								</span>
 							</>
 						)}
 					</div>
-
-					<div className="flex items-center gap-2">
-						<IconButton
-							variant={isBookmarked ? "accent" : "default"}
-							size="sm"
-							onClick={() => {
-								vibrateIfSupported(window.navigator, 10);
-								updateState.mutate({ bookmarked: !isBookmarked });
-							}}
-							aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
-							data-card-action
-						>
-							<Bookmark
-								className={`size-4 ${bookmarkAnimating ? "bookmark-flip" : ""}`}
-								fill={isBookmarked ? "currentColor" : "none"}
-							/>
-						</IconButton>
-
-						{item.read && (
-							<span
-								data-card-action
-								className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.3)]"
-							>
-								<Eye className="size-4" />
-							</span>
-						)}
-
-						{item.canonicalUrl && (
-							<a
-								href={item.canonicalUrl}
-								target="_blank"
-								rel="noreferrer"
-								className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
-								data-card-action
-							>
-								<ExternalLink className="size-4" />
-							</a>
-						)}
-					</div>
 				</div>
-			</div>
-		</article>
+			</article>
+
+			<CardActionSheet
+				isOpen={actionSheetOpen}
+				onClose={() => setActionSheetOpen(false)}
+				onAction={handleAction}
+				feedTitle={feedTitle}
+				itemTitle={itemTitle}
+				bookmarked={isBookmarked}
+				read={item.read}
+				hasExternalLink={Boolean(item.canonicalUrl)}
+			/>
+		</>
 	);
 });

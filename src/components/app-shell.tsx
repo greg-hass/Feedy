@@ -55,7 +55,6 @@ export function MobileShell({
   });
 
   const unreadTotal = me.data?.navigation.stats.unreadTotal ?? 0;
-  const totalFeeds = me.data?.navigation.feeds.length ?? 0;
   const accent = me.data?.user.settings.accentColor ?? "EMERALD";
 
   useEffect(() => {
@@ -104,15 +103,21 @@ export function MobileShell({
                 </p>
               </div>
               <div
-                className="mt-1 shrink-0 rounded-full px-3 py-1.5"
+                className="mt-1.5 shrink-0 rounded-full px-3.5 py-2"
                 style={{ border: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}
               >
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[15px] font-semibold leading-none" style={{ color: 'var(--accent)' }}>
+                <div className="flex items-center gap-1.5">
+                  {unreadTotal > 0 && (
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: 'var(--accent)' }}
+                    />
+                  )}
+                  <span className="text-[13px] font-semibold leading-none" style={{ color: 'var(--text-primary)' }}>
                     {unreadTotal}
                   </span>
                   <span className="text-[11px] leading-none" style={{ color: 'var(--text-secondary)' }}>
-                    / {totalFeeds} feeds
+                    unread
                   </span>
                 </div>
               </div>
@@ -121,53 +126,62 @@ export function MobileShell({
         </header>
 
         <div className="px-5">
-          <main className="flex-1 pb-28 pt-[146px]">
+          <main className="flex-1 pb-24 pt-[146px]">
             {children}
           </main>
         </div>
 
-        <nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(12px,env(safe-area-inset-bottom))]" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
-          <div className="mx-auto flex max-w-md items-center justify-around">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = pathname === item.href;
-              const handleTabClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
-                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
-                  return;
-                }
+        <nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(16px,env(safe-area-inset-bottom))] pointer-events-none">
+          <div className="mx-auto flex max-w-md justify-center px-6">
+            <div
+              className="pointer-events-auto flex items-center gap-1 rounded-[28px] px-2 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl"
+              style={{
+                backgroundColor: 'color-mix(in srgb, var(--surface) 80%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--border) 60%, transparent)',
+              }}
+            >
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const active = pathname === item.href;
+                const handleTabClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+                    return;
+                  }
 
-                if (!isActiveTabTap(pathname, item.href)) {
-                  return;
-                }
+                  if (!isActiveTabTap(pathname, item.href)) {
+                    return;
+                  }
 
-                event.preventDefault();
-                window.scrollTo({ top: 0, behavior: "auto" });
-                vibrateIfSupported(window.navigator, 10);
-              };
+                  event.preventDefault();
+                  window.scrollTo({ top: 0, behavior: "auto" });
+                  vibrateIfSupported(window.navigator, 10);
+                };
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={handleTabClick}
-                  className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors duration-200"
-                  style={{ 
-                    color: active ? 'var(--accent)' : 'var(--text-secondary)',
-                    fontWeight: active ? 600 : 500
-                  }}
-                >
-                  <Icon 
-                    className="size-6" 
-                    strokeWidth={active ? 2.5 : 2}
-                    fill="none"
-                    style={{ color: active ? 'var(--accent)' : 'var(--text-secondary)' }}
-                  />
-                  <span style={{ letterSpacing: '0.05em' }}>
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={handleTabClick}
+                    className="relative flex min-w-0 flex-col items-center gap-1 rounded-[20px] px-3.5 py-2 text-[10px] font-medium transition-all duration-200"
+                    style={{
+                      color: active ? 'var(--accent-contrast)' : 'var(--text-secondary)',
+                      fontWeight: active ? 600 : 500,
+                      backgroundColor: active ? 'var(--accent)' : 'transparent',
+                    }}
+                  >
+                    <Icon
+                      className="size-[22px]"
+                      strokeWidth={active ? 2.5 : 2}
+                      fill={active ? "currentColor" : "none"}
+                      style={{ color: active ? 'var(--accent-contrast)' : 'var(--text-secondary)' }}
+                    />
+                    <span style={{ letterSpacing: '0.04em' }}>
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </nav>
       </div>
