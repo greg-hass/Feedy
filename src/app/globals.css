@@ -20,6 +20,19 @@
   --success: #ef4444;
   --success-contrast: #ffffff;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  /* iOS-style glass material (used by bottom nav) */
+  --glass-bg: color-mix(in srgb, var(--surface) 62%, transparent);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.65);
+  --glass-shadow:
+    0 1px 0 var(--glass-highlight) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.04) inset,
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    0 2px 6px rgba(0, 0, 0, 0.04);
+  /* Elevated card surface (timeline items, folders, etc.) */
+  --card-gradient: linear-gradient(180deg, var(--surface-strong) 0%, var(--surface) 100%);
+  --card-border: rgba(0, 0, 0, 0.06);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .dark {
@@ -42,6 +55,19 @@
   --success: #f87171;
   --success-contrast: #450a0a;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  /* iOS-style glass material (dark) */
+  --glass-bg: color-mix(in srgb, var(--surface) 42%, transparent);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-shadow:
+    0 1px 0 var(--glass-highlight) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.4) inset,
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+  /* Elevated card surface (dark) */
+  --card-gradient: linear-gradient(180deg, var(--surface-strong) 0%, var(--surface) 100%);
+  --card-border: rgba(255, 255, 255, 0.07);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 :root[data-accent="EMERALD"] {
@@ -249,6 +275,15 @@ select {
 .dark .card {
   background: var(--surface-strong);
   box-shadow: var(--shadow);
+}
+
+/* Elevated card surface — used for timeline items, folders, settings rows.
+   Subtle top-to-bottom brightness gradient + 1px inner top highlight +
+   diffuse drop shadow so cards lift off the page without feeling heavy. */
+.card-elevated {
+  background: var(--card-gradient);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
 }
 
 .text-secondary {

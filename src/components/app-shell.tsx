@@ -132,11 +132,13 @@ export function MobileShell({
 				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(16px,env(safe-area-inset-bottom))]">
 					<div className="mx-auto flex max-w-md justify-center px-6">
 						<div
-							className="flex items-center gap-1 rounded-[28px] border border-white/10 px-2 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-xl"
+							className="flex items-center gap-1 rounded-[28px] border px-1.5 py-1.5 backdrop-blur-2xl"
 							style={{
-								backgroundColor:
-									"color-mix(in srgb, var(--surface) 72%, transparent)",
-								WebkitBackdropFilter: "blur(20px)",
+								backgroundColor: "var(--glass-bg)",
+								borderColor: "var(--glass-border)",
+								boxShadow: "var(--glass-shadow)",
+								WebkitBackdropFilter: "blur(40px) saturate(180%)",
+								backdropFilter: "blur(40px) saturate(180%)",
 							}}
 						>
 							{navItems.map((item) => {
@@ -169,11 +171,25 @@ export function MobileShell({
 										key={item.href}
 										href={item.href}
 										onClick={handleTabClick}
-										className="relative flex min-w-0 flex-col items-center gap-1 rounded-[20px] px-3.5 py-2 text-[10px] font-medium transition-all duration-200"
-										style={{
-											color: active ? "var(--accent)" : "var(--text-secondary)",
-											fontWeight: active ? 600 : 500,
-										}}
+										className={`relative flex min-w-0 flex-col items-center gap-1 rounded-[18px] px-3.5 py-2 text-[10px] transition-all duration-200 ${
+											active
+												? "border"
+												: "border border-transparent"
+										}`}
+										style={
+											active
+												? {
+														backgroundColor: "var(--accent-dim)",
+														borderColor:
+															"color-mix(in srgb, var(--accent) 30%, transparent)",
+														color: "var(--accent)",
+														fontWeight: 600,
+													}
+												: {
+														color: "var(--text-secondary)",
+														fontWeight: 500,
+													}
+										}
 									>
 										<Icon
 											className="size-[22px]"

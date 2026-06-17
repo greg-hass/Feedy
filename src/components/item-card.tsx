@@ -67,7 +67,7 @@ export const ItemCard = memo(function ItemCard({
 		: "aspect-video";
 	const playInline = internalPlayInline;
 	const hoverCardClass =
-		"[@media(hover:hover)]:hover:border-[var(--accent)]/20 [@media(hover:hover)]:hover:shadow-lg";
+		"[@media(hover:hover)]:hover:border-[var(--accent)]/30 [@media(hover:hover)]:hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]";
 	const hoverScaleClass = "[@media(hover:hover)]:group-hover:scale-105";
 	const hoverTextClass =
 		"[@media(hover:hover)]:group-hover:text-[var(--accent)]";
@@ -203,7 +203,7 @@ export const ItemCard = memo(function ItemCard({
 			onClick={navigateFromCard}
 			onPointerEnter={prefetchReader}
 			onFocus={prefetchReader}
-			className={`group overflow-hidden rounded-[24px] border border-subtle bg-surface transition-all duration-300 ${!isYouTube ? "cursor-pointer" : ""} ${hoverCardClass}`}
+			className={`group card-elevated overflow-hidden rounded-[24px] transition-all duration-300 ${!isYouTube ? "cursor-pointer" : ""} ${hoverCardClass}`}
 		>
 			{thumbnailUrl &&
 				(isYouTube && item.youtubeVideoId ? (
@@ -394,10 +394,10 @@ export const ItemCard = memo(function ItemCard({
 						)}
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-1.5">
 						<IconButton
 							variant={isBookmarked ? "accent" : "default"}
-							size="sm"
+							size="md"
 							onClick={() => {
 								vibrateIfSupported(window.navigator, 10);
 								updateState.mutate({ bookmarked: !isBookmarked });
@@ -406,7 +406,7 @@ export const ItemCard = memo(function ItemCard({
 							data-card-action
 						>
 							<Bookmark
-								className={`size-4 ${bookmarkAnimating ? "bookmark-flip" : ""}`}
+								className={`size-[18px] ${bookmarkAnimating ? "bookmark-flip" : ""}`}
 								fill={isBookmarked ? "currentColor" : "none"}
 							/>
 						</IconButton>
@@ -414,9 +414,9 @@ export const ItemCard = memo(function ItemCard({
 						{item.read && (
 							<span
 								data-card-action
-								className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.3)]"
+								className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.3)]"
 							>
-								<Eye className="size-4" />
+								<Eye className="size-[18px]" />
 							</span>
 						)}
 
@@ -425,10 +425,10 @@ export const ItemCard = memo(function ItemCard({
 								href={item.canonicalUrl}
 								target="_blank"
 								rel="noreferrer"
-								className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
+								className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
 								data-card-action
 							>
-								<ExternalLink className="size-4" />
+								<ExternalLink className="size-[18px]" />
 							</a>
 						)}
 					</div>

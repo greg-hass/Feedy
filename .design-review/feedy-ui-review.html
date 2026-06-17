@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedy — UI Design Review</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --paper: #ffffff;
+    --ink: #14171e;
+    --muted: #6b6f78;
+    --line: #e9e3d6;
+    --line-soft: #f0ebde;
+    --accent: #10b981;
+    --warn: #c97b3f;
+    --warn-soft: rgba(201, 123, 63, 0.1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    top: -120px; left: -120px;
+    width: 480px; height: 480px;
+    background: radial-gradient(circle, rgba(16,185,129,0.06), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    bottom: -160px; right: -120px;
+    width: 520px; height: 520px;
+    background: radial-gradient(circle, rgba(201,123,63,0.05), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 64px 32px 96px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ============ HERO ============ */
+  .hero { margin-bottom: 80px; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--paper);
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    margin-bottom: 28px;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: 56px;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 720px;
+    margin: 0 0 40px;
+  }
+  .meta-row {
+    display: flex;
+    gap: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+  .meta-row .meta-item .k {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .meta-row .meta-item .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  /* ============ SECTION ============ */
+  section {
+    margin-bottom: 96px;
+    scroll-margin-top: 24px;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-head .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    background: rgba(16,185,129,0.08);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: 38px;
+    line-height: 1.15;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .section-sub {
+    font-size: 15px;
+    color: var(--muted);
+    margin: 12px 0 32px;
+    max-width: 680px;
+  }
+
+  /* ============ PRIORITY TAGS ============ */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  .tag.high { background: rgba(244,63,94,0.1); color: #b0314a; }
+  .tag.med { background: rgba(201,123,63,0.12); color: var(--warn); }
+  .tag.low { background: rgba(16,185,129,0.1); color: #0a7c5b; }
+
+  /* ============ BEFORE / AFTER ============ */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .compare-col {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 28px;
+    overflow: hidden;
+  }
+  .compare-col .col-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .compare-col.before .col-label .pill {
+    background: rgba(244,63,94,0.1); color: #b0314a;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .compare-col.after .col-label .pill {
+    background: rgba(16,185,129,0.12); color: #0a7c5b;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .phone-stage {
+    background:
+      radial-gradient(circle at 30% 20%, rgba(255,255,255,0.05), transparent 60%),
+      linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 70%, #1a1a1a 100%);
+    border-radius: 36px;
+    padding: 24px 14px;
+    position: relative;
+    min-height: 540px;
+    overflow: hidden;
+    border: 1px solid #222;
+  }
+  .phone-stage::after {
+    /* Soft grain to simulate glass on dark surface */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 70% 80%, rgba(16,185,129,0.06), transparent 50%);
+    pointer-events: none;
+  }
+  .notch {
+    width: 110px; height: 22px;
+    background: #000;
+    border-radius: 0 0 16px 16px;
+    margin: 0 auto 18px;
+  }
+  .stage-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 0 6px;
+    margin-bottom: 8px;
+  }
+  .stage-title {
+    color: #fff;
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    line-height: 1;
+    margin: 0 6px 14px;
+  }
+  .stage-card {
+    background: #161616;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px;
+    padding: 14px;
+    margin-bottom: 10px;
+    color: #e6e6e6;
+  }
+  .stage-card .meta { display:flex; align-items:center; gap:8px; font-size:11px; color:#9a9a9a; margin-bottom:8px;}
+  .stage-card .meta .dot-r { width:14px;height:14px;border-radius:50%; background:#ff4500; flex-shrink:0; }
+  .stage-card h4 { margin:0 0 6px; font-size:14px; font-weight:600; line-height:1.3; color:#fff;}
+  .stage-card p { margin:0; font-size:11px; color:#888;}
+  .stage-card .row-foot { display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:10px; color:#777; }
+  .stage-card .actions { display:flex; gap:6px;}
+  .stage-card .actions span { width:24px;height:24px; border-radius:8px; background:#1f1f1f; display:flex;align-items:center;justify-content:center;}
+
+  /* Nav bar variants */
+  .nav {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 18px;
+    display: flex;
+    justify-content: center;
+  }
+  .nav-pill {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 8px;
+    border-radius: 28px;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    border-radius: 18px;
+    font-size: 10px;
+    font-weight: 500;
+    min-width: 60px;
+  }
+  .nav-item svg { width: 18px; height: 18px; }
+  .nav-item.active .ico { color: #10b981; }
+  .nav-item.active .lbl { color: #10b981; }
+  .nav-item .lbl { color: rgba(255,255,255,0.55); }
+  .nav-item .ico { color: rgba(255,255,255,0.7); }
+
+  /* BEFORE nav */
+  .nav-before {
+    background: rgba(22, 22, 22, 0.78);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  .nav-before .nav-item.active {
+    position: relative;
+  }
+  .nav-before .nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: 50%; top: 100%;
+    transform: translate(-50%, -4px);
+    width: 40px; height: 18px;
+    background: radial-gradient(ellipse, rgba(16,185,129,0.45), transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+    filter: blur(2px);
+  }
+
+  /* AFTER nav */
+  .nav-after {
+    background: rgba(22, 22, 22, 0.42);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 -1px 0 rgba(0,0,0,0.4) inset,
+      0 12px 40px rgba(0,0,0,0.4),
+      0 2px 8px rgba(0,0,0,0.2);
+    padding: 6px;
+  }
+  .nav-after .nav-item {
+    padding: 10px 16px;
+    border-radius: 18px;
+    min-width: 64px;
+    transition: background 200ms;
+  }
+  .nav-after .nav-item.active {
+    background: rgba(16,185,129,0.18);
+    border: 1px solid rgba(16,185,129,0.3);
+  }
+  .nav-after .nav-item.active .lbl { color: #10b981; font-weight: 600; }
+  .nav-after .nav-item.active .ico { color: #10b981; }
+
+  /* ============ NOTES ============ */
+  .notes {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 24px 28px;
+    margin-top: 24px;
+  }
+  .notes h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  .notes ul { margin: 0; padding: 0; list-style: none; }
+  .notes li {
+    position: relative;
+    padding-left: 22px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .notes li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 9px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .notes li code, .notes code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--line-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+
+  /* ============ CODE BLOCK ============ */
+  .code-block {
+    background: #1a1a2e;
+    color: #e8eaf0;
+    border-radius: 16px;
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-top: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .code-block .tk-key { color: #c084fc; }
+  .code-block .tk-val { color: #86efac; }
+  .code-block .tk-com { color: #6b7280; font-style: italic; }
+  .code-block .tk-fn { color: #fbbf24; }
+
+  /* ============ SECTION 2: CARD ============ */
+  .card-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+  .card-compare .demo-card {
+    border-radius: 20px;
+    padding: 14px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-compare .demo-card.before {
+    background: #161616;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .card-compare .demo-card.after {
+    background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.05) inset,
+      0 8px 24px rgba(0,0,0,0.4);
+  }
+  .demo-card .thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    background:
+      linear-gradient(135deg, #2d6cdf 0%, #4a3d92 50%, #c43d8a 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .demo-card .thumb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0 1px, transparent 1px 60px);
+  }
+  .demo-card .src {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 8px;
+  }
+  .demo-card .src .ico-r { width:16px;height:16px;border-radius:50%; background:#ff4500;}
+  .demo-card h5 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .demo-card p { margin:0; font-size:11.5px; color:#888; line-height:1.5; }
+  .demo-card .foot { display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:10px; color:#777;}
+  .demo-card .acts { display:flex; gap:6px;}
+  .demo-card .acts span { width:26px; height:26px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; }
+  .demo-card.after .acts span { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.04); }
+
+  /* ============ SECTION 3: HEADER ============ */
+  .header-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .header-card {
+    border-radius: 16px;
+    background: #0e0e0e;
+    border: 1px solid #1d1d1d;
+    padding: 18px 18px 14px;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .header-card .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 6px;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+  }
+  .header-card .row:last-child { border-bottom: none; }
+  .header-card .screen-name { color: #10b981; font-weight: 600; }
+  .header-card .issue {
+    color: #f87171;
+    font-size: 10px;
+    margin-left: 8px;
+  }
+
+  /* ============ SECTION 4: STATS ============ */
+  .stats-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .stat-row-demo {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .stat-cell {
+    background: #161616;
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 16px;
+    padding: 12px 8px;
+    text-align: center;
+    color: #fff;
+  }
+  .stat-cell .num {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-cell .lbl {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+  }
+  .stats-before .stat-cell:nth-child(1) .num { color: #fff; }
+  .stats-before .stat-cell:nth-child(2) .num { color: #10b981; }
+  .stats-before .stat-cell:nth-child(3) .num { color: #fbbf24; }
+  .stats-before .stat-cell:nth-child(4) .num { color: #fbbf24; }
+
+  .stats-after .stat-cell {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .stats-after .stat-cell .num { color: #fff; font-weight: 600; }
+  .stats-after .stat-cell .lbl { color: rgba(255,255,255,0.4); }
+  .stats-after .stat-cell.warn {
+    background: rgba(251, 191, 36, 0.06);
+    border-color: rgba(251, 191, 36, 0.25);
+  }
+  .stats-after .stat-cell.warn .num { color: #fbbf24; }
+  .stats-after .stat-cell.warn::before {
+    content: "";
+    display: block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fbbf24;
+    margin: 0 auto 6px;
+  }
+
+  /* ============ TOC ============ */
+  .toc {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 24px 28px;
+    margin-bottom: 64px;
+  }
+  .toc h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  .toc ol {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 24px;
+  }
+  .toc ol li {
+    font-size: 14px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .toc ol li a {
+    color: var(--ink);
+    text-decoration: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .toc ol li a:hover { color: var(--accent); }
+  .toc .num-inline { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .toc .tag-inline { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+
+  /* Footer */
+  .footer {
+    margin-top: 96px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 860px) {
+    h1 { font-size: 40px; }
+    h2 { font-size: 28px; }
+    .compare, .card-compare, .stats-compare, .header-grid { grid-template-columns: 1fr; }
+    .toc ol { grid-template-columns: 1fr; }
+    .wrap { padding: 40px 20px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span> Design Review · Feedy v1</div>
+    <h1>A focused, calmer <em>Feedy</em>.</h1>
+    <p class="lede">
+      Five screens, one bottom nav, one set of cards. The current build is clean — but it's a
+      little flat, the nav bar wants more glass, and a few recurring patterns compete for
+      attention. Here are twelve concrete changes, in priority order, with before/after
+      mockups and the exact CSS to ship them.
+    </p>
+    <div class="meta-row">
+      <div class="meta-item">
+        <div class="k">Screens Reviewed</div>
+        <div class="v">5 (Timeline, Feeds, Discover, Saved, Settings)</div>
+      </div>
+      <div class="meta-item">
+        <div class="k">Primary Concern</div>
+        <div class="v">Bottom navigation glass + transparency</div>
+      </div>
+      <div class="meta-item">
+        <div class="k">Recommendations</div>
+        <div class="v">12 changes across 6 areas</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ TOC ============ -->
+  <div class="toc">
+    <h3>What's in this review</h3>
+    <ol>
+      <li><a href="#nav"><span>1. Navigation bar — true iOS glass</span><span class="tag-inline tag high">high</span></a></li>
+      <li><a href="#cards"><span>2. Item cards — depth without weight</span><span class="tag-inline tag high">high</span></a></li>
+      <li><a href="#header"><span>3. Top header unification</span><span class="tag-inline tag med">med</span></a></li>
+      <li><a href="#stats"><span>4. Stats — kill the color noise</span><span class="tag-inline tag med">med</span></a></li>
+      <li><a href="#empty"><span>5. Empty states & empty pills</span><span class="tag-inline tag low">low</span></a></li>
+      <li><a href="#touch"><span>6. Touch targets & consistency</span><span class="tag-inline tag low">low</span></a></li>
+    </ol>
+  </div>
+
+  <!-- ============ SECTION 1: NAV BAR ============ -->
+  <section id="nav">
+    <div class="section-head">
+      <span class="num">01</span>
+      <h2>The navigation bar wants real glass. <span class="tag high">priority</span></h2>
+    </div>
+    <p class="section-sub">
+      Right now the bar uses <code>blur(20px)</code> at 72% surface opacity — that's a soft
+      frosted look, but it reads as a solid dark slab because the background color is too
+      saturated and there's no edge light. iOS-style "material glass" is brighter, more
+      transparent, and has a 1px highlight at the top to imply light refracting through it.
+    </p>
+
+    <div class="compare">
+      <!-- BEFORE -->
+      <div class="compare-col before">
+        <div class="col-label"><span class="pill">Before</span> Current implementation</div>
+        <div class="phone-stage">
+          <div class="notch"></div>
+          <div class="stage-status"><span>23:43</span><span>••• 80%</span></div>
+          <h3 class="stage-title">Timeline</h3>
+          <div class="stage-card">
+            <div class="meta"><span class="dot-r"></span><span>r/iphone</span></div>
+            <h4>Would be cool to have a trash button to delete a video mid take</h4>
+            <div class="row-foot"><span>11m ago · REDDIT</span><div class="actions"><span>★</span><span>↗</span></div></div>
+          </div>
+          <div class="stage-card">
+            <div class="meta"><span class="dot-r"></span><span>r/tailscale</span></div>
+            <h4>ELI5 Connect to jellyfin LAN and Tailscale IP logging bitrate limiting</h4>
+            <div class="row-foot"><span>12m ago · REDDIT</span><div class="actions"><span>★</span><span>↗</span></div></div>
+          </div>
+          <nav class="nav">
+            <div class="nav-pill nav-before">
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Timeline</span></div>
+              <div class="nav-item active"><span class="ico">⌒</span><span class="lbl">Feeds</span></div>
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Discover</span></div>
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Saved</span></div>
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Settings</span></div>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="compare-col after">
+        <div class="col-label"><span class="pill">After</span> True iOS glass material</div>
+        <div class="phone-stage">
+          <div class="notch"></div>
+          <div class="stage-status"><span>23:43</span><span>••• 80%</span></div>
+          <h3 class="stage-title">Timeline</h3>
+          <div class="stage-card">
+            <div class="meta"><span class="dot-r"></span><span>r/iphone</span></div>
+            <h4>Would be cool to have a trash button to delete a video mid take</h4>
+            <div class="row-foot"><span>11m ago · REDDIT</span><div class="actions"><span>★</span><span>↗</span></div></div>
+          </div>
+          <div class="stage-card">
+            <div class="meta"><span class="dot-r"></span><span>r/tailscale</span></div>
+            <h4>ELI5 Connect to jellyfin LAN and Tailscale IP logging bitrate limiting</h4>
+            <div class="row-foot"><span>12m ago · REDDIT</span><div class="actions"><span>★</span><span>↗</span></div></div>
+          </div>
+          <nav class="nav">
+            <div class="nav-pill nav-after">
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Timeline</span></div>
+              <div class="nav-item active"><span class="ico">⌒</span><span class="lbl">Feeds</span></div>
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Discover</span></div>
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Saved</span></div>
+              <div class="nav-item"><span class="ico">⌒</span><span class="lbl">Settings</span></div>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Why this looks better</h3>
+      <ul>
+        <li><strong>Blur jumped from 20px → 40px</strong> and gained a <code>saturate(180%)</code> boost — content underneath still reads through it, but you get a true "looking through glass" feel rather than a smoky tint.</li>
+        <li><strong>Opacity dropped from 78% → ~42%.</strong> The bar disappears into the page instead of competing with it. Background color blends into whatever's behind — light or dark mode.</li>
+        <li><strong>Active state moved from icon-color + glow halo → icon inside a tinted pill.</strong> The green pill (18% opacity green + 30% green border) gives a clear focal point without leaking light into the canvas behind.</li>
+        <li><strong>1px inner highlight at the top</strong> + dark inner shadow at the bottom simulate light refracting through real glass — the same trick Apple uses on Control Center.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+<span class="tk-com">// app-shell.tsx — bottom nav</span>
+<span class="tk-fn">className</span>=<span class="tk-val">"flex items-center gap-1 rounded-[28px] px-1.5 py-1.5"</span>
+<span class="tk-fn">style</span>={{
+  <span class="tk-key">backgroundColor</span>: <span class="tk-val">"color-mix(in srgb, var(--surface) 42%, transparent)"</span>,
+  <span class="tk-key">WebkitBackdropFilter</span>: <span class="tk-val">"blur(40px) saturate(180%)"</span>,
+  <span class="tk-key">backdropFilter</span>:         <span class="tk-val">"blur(40px) saturate(180%)"</span>,
+  <span class="tk-key">border</span>: <span class="tk-val">"1px solid rgba(255,255,255,0.12)"</span>,
+  <span class="tk-key">boxShadow</span>:
+    <span class="tk-val">"0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.4) inset, 0 12px 40px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2)"</span>,
+}}
+
+<span class="tk-com">// active item — tinted pill, no halo</span>
+<span class="tk-fn">className</span>=<span class="tk-val">`flex flex-col items-center gap-1 px-4 py-2.5 rounded-[18px] transition
+  ${active
+    ? "bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)]"
+    : ""}`}</span>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 2: CARDS ============ -->
+  <section id="cards">
+    <div class="section-head">
+      <span class="num">02</span>
+      <h2>Cards: lift them off the page. <span class="tag high">priority</span></h2>
+    </div>
+    <p class="section-sub">
+      Item cards currently sit at <code>#161616</code> with a near-invisible 4% white border
+      — almost the same value as the page background, so they read as flat regions instead
+      of discrete items. Adding a subtle vertical gradient + a brighter inner highlight + a
+      diffuse drop shadow creates depth without making them heavy.
+    </p>
+
+    <div class="card-compare">
+      <div class="demo-card before">
+        <div class="thumb"></div>
+        <div class="src"><span class="ico-r"></span><span>r/iphone · REDDIT</span></div>
+        <h5>Would be cool to have a trash button to delete a video mid take</h5>
+        <p>Short description or excerpt from the post body would go here in two lines…</p>
+        <div class="foot"><span>11 minutes ago</span><div class="acts"><span>☆</span><span>↗</span></div></div>
+      </div>
+      <div class="demo-card after">
+        <div class="thumb"></div>
+        <div class="src"><span class="ico-r"></span><span>r/iphone · REDDIT</span></div>
+        <h5>Would be cool to have a trash button to delete a video mid take</h5>
+        <p>Short description or excerpt from the post body would go here in two lines…</p>
+        <div class="foot"><span>11 minutes ago</span><div class="acts"><span>☆</span><span>↗</span></div></div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>The card recipe</h3>
+      <ul>
+        <li><strong>Background:</strong> <code>linear-gradient(180deg, #1c1c1c 0%, #141414 100%)</code> — a 5% brightness shift from top to bottom gives the eye a "lit from above" cue.</li>
+        <li><strong>Border:</strong> <code>1px solid rgba(255,255,255,0.08)</code> — was 0.04, now reads as a discrete edge.</li>
+        <li><strong>Shadow:</strong> <code>0 1px 0 rgba(255,255,255,0.05) inset, 0 8px 24px rgba(0,0,0,0.4)</code> — inner top highlight + diffuse drop. No hard shadow, no glow.</li>
+        <li><strong>Action chips:</strong> go from solid <code>#1f1f1f</code> to <code>rgba(255,255,255,0.06)</code> with a faint border — they read as buttons now, not as decoration.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 3: HEADER ============ -->
+  <section id="header">
+    <div class="section-head">
+      <span class="num">03</span>
+      <h2>Unify the top bar across screens. <span class="tag med">medium</span></h2>
+    </div>
+    <p class="section-sub">
+      Every screen currently has the large serif title + the green unread pill in the same
+      position, but the right-side actions vary wildly: Timeline has 3 icons, Feeds has 4
+      including a giant green "+", Discover has 1, Saved has 2, Settings has 1. The
+      inconsistent right rail makes the app feel like 5 prototypes stitched together.
+    </p>
+
+    <div class="header-grid">
+      <div class="header-card">
+        <div class="row"><span class="screen-name">Timeline</span><span>[🔍] [⚙] [⎘]</span></div>
+        <div class="row"><span class="screen-name">Feeds</span><span>[Select] [📁] [+] [⎘] <span class="issue">← + is too loud</span></span></div>
+        <div class="row"><span class="screen-name">Discover</span><span>[⎘] <span class="issue">← empty rail</span></span></div>
+        <div class="row"><span class="screen-name">Saved</span><span>[🔍] [⎘]</span></div>
+        <div class="row"><span class="screen-name">Settings</span><span>[⎘] <span class="issue">← no actions, but rail reserved</span></span></div>
+      </div>
+      <div class="header-card">
+        <div class="row"><span class="screen-name">Timeline</span><span>[🔍] [⚙] [⎘]</span></div>
+        <div class="row"><span class="screen-name">Feeds</span><span>[Select] [+] [⎘]</span></div>
+        <div class="row"><span class="screen-name">Discover</span><span>[scope ▾] [⎘]</span></div>
+        <div class="row"><span class="screen-name">Saved</span><span>[🔍] [filter ▾] [⎘]</span></div>
+        <div class="row"><span class="screen-name">Settings</span><span>[⎘]</span></div>
+      </div>
+    </div>
+
+    <div class="notes" style="margin-top:24px;">
+      <h3>Header rules</h3>
+      <ul>
+        <li><strong>Fixed right anchor:</strong> the logout/exit icon is always far-right, every screen.</li>
+        <li><strong>Max 3 contextual actions.</strong> If you need more, push secondary actions into a "⋯" menu — never let the "+" button get as loud as it is on Feeds.</li>
+        <li><strong>The unread pill doesn't need to live in the header on every screen.</strong> It's most useful on Timeline. On Feeds, fold it into the stats row. On Settings, drop it entirely.</li>
+        <li><strong>Title weight:</strong> drop the serif display title from 56-pt equivalent to ~32-pt equivalent on dense screens (Settings, Saved) — the giant title fights the content below.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 4: STATS ============ -->
+  <section id="stats">
+    <div class="section-head">
+      <span class="num">04</span>
+      <h2>Kill the color noise in stats. <span class="tag med">medium</span></h2>
+    </div>
+    <p class="section-sub">
+      The ALL / HEALTHY / ISSUES / SLOW stat row uses four different colors (white, green,
+      amber, amber) for four numbers that the eye scans together. The color competes with the
+      page-level accent and trains the user to ignore it. Reserve color for things that need
+      action — keep numbers neutral.
+    </p>
+
+    <div class="stats-compare">
+      <div>
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Before — every number is a color</div>
+        <div class="stat-row-demo stats-before">
+          <div class="stat-cell"><div class="num">378</div><div class="lbl">All</div></div>
+          <div class="stat-cell"><div class="num">378</div><div class="lbl">Healthy</div></div>
+          <div class="stat-cell"><div class="num">0</div><div class="lbl">Issues</div></div>
+          <div class="stat-cell"><div class="num">378</div><div class="lbl">Slow</div></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">After — color only when it matters</div>
+        <div class="stat-row-demo stats-after">
+          <div class="stat-cell"><div class="num">378</div><div class="lbl">All</div></div>
+          <div class="stat-cell"><div class="num">378</div><div class="lbl">Healthy</div></div>
+          <div class="stat-cell"><div class="num">0</div><div class="lbl">Issues</div></div>
+          <div class="stat-cell warn"><div class="num">378</div><div class="lbl">Slow</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>What changed</h3>
+      <ul>
+        <li>Three of the four cells are now identical neutral cards. Eye scans by number, not by hue.</li>
+        <li>The single warning state ("Slow") gets a small status dot, an amber-tinted background, and an amber number — but only that one.</li>
+        <li>Result: when something genuinely needs attention, the amber actually <em>means</em> something. Right now it means nothing because everything is colored.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 5: EMPTY ============ -->
+  <section id="empty">
+    <div class="section-head">
+      <span class="num">05</span>
+      <h2>Empty states, quiet accents, breathing room. <span class="tag low">low</span></h2>
+    </div>
+    <p class="section-sub">
+      Small polish, but it adds up. A few quick wins.
+    </p>
+
+    <div class="notes">
+      <h3>Quick wins</h3>
+      <ul>
+        <li><strong>Discover empty state:</strong> the search icon in a card-within-a-card feels over-engineered. Drop the outer card — just a centered icon + a one-line prompt. Trust the whitespace.</li>
+        <li><strong>Folder tile icons:</strong> the bright green 48×48 gradient squares are the heaviest element on the Feeds screen. Try a thin outlined folder icon in <code>var(--accent) @ 60%</code> inside a 36×36 subtle bg, or even just a 1px outlined icon — the gradient feels app-store-marketing, not utility.</li>
+        <li><strong>Refresh cadence pills:</strong> "15m" / "30m" / "60m" / "180m" works, but the active "15m" pill is way brighter than the others. Use the same 18%-opacity accent treatment as the new nav active state for consistency.</li>
+        <li><strong>Accent color picker:</strong> the check-mark-on-filled-circle selected state is okay, but the green halo bleed is heavy. Use a 2px outline ring + a 1.05 scale on the selected swatch — lighter, more "tactile".</li>
+        <li><strong>"15464 unread" badge on every screen:</strong> the same green dot + number follows you everywhere. On Timeline it's useful. On Settings it just adds noise. Move it to a single screen (Timeline header) and add an unread counter to the Feeds stat row instead.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 6: TOUCH ============ -->
+  <section id="touch">
+    <div class="section-head">
+      <span class="num">06</span>
+      <h2>Touch targets & button consistency. <span class="tag low">low</span></h2>
+    </div>
+    <p class="section-sub">
+      The card action chips (bookmark, share, "unread" eye on Saved) are 24×24 in a card
+      meant for thumb use. Apple's HIG says 44pt minimum. The bookmark + share pair in
+      particular needs to be 44×44 with the icon centered — currently it's hard to tap
+      the share button without hitting the bookmark.
+    </p>
+
+    <div class="notes">
+      <h3>Touch & consistency checklist</h3>
+      <ul>
+        <li><strong>Min hit target: 44×44.</strong> Card action chips expand their hit area invisibly — keep the visible chip 28×28 but add <code>p-2.5</code> to the wrapper.</li>
+        <li><strong>Icon semantics are inconsistent:</strong> Timeline uses ☆/↗, Saved uses ★/👁/↗. Pick one set. Suggested: bookmark (filled when saved, outlined when not) + external-link. Drop the eye on Saved — it means "mark unread" which is what long-press on the card should do.</li>
+        <li><strong>Active states across the app should feel the same.</strong> Right now the nav uses a green halo glow, the segmented controls (15m/30m) use a filled pill, and the source-scope tabs use a filled pill. Standardize on the filled-pill pattern — that's what the new nav should adopt too.</li>
+        <li><strong>Pull-to-refresh:</strong> if it's not already there, add a custom one that matches the accent. Native browser pull-to-refresh on PWA can clash with the dark UI and feels janky.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div>Feedy · UI Design Review · 12 recommendations across 6 areas</div>
+    <div>Want any of these shipped? Pick one and I'll write the diff.</div>
+  </footer>
+
+</div>
+</body>
+</html>
