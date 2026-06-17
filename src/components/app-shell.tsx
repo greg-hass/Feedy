@@ -126,7 +126,14 @@ export function MobileShell({
 				</header>
 
 				<div className="px-5">
-					<main className="flex-1 pb-24 pt-[116px]">{children}</main>
+					<main
+						className="flex-1 pb-24"
+						style={{
+							paddingTop: "calc(env(safe-area-inset-top) + 140px)",
+						}}
+					>
+						{children}
+					</main>
 				</div>
 
 				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(16px,env(safe-area-inset-bottom))]">
