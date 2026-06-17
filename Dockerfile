@@ -32,16 +32,19 @@ COPY --from=builder /app/.next/standalone /app/.next/standalone
 # Prisma schema and migrations for prisma migrate deploy
 COPY prisma/ prisma/
 
-# Worker-runtime dependencies: production deps + tsx + prisma CLI
+# Worker-runtime dependencies: production deps + tsx (Prisma CLI is copied from builder below)
 COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci --omit=dev --ignore-scripts && \
-    npm install --no-save --ignore-scripts tsx prisma && \
+    npm install --no-save --ignore-scripts tsx && \
     rm -rf /root/.npm
 
-# Generated Prisma client + engine binaries (needed by migrate, seed, worker).
+# Prisma: copy CLI, client, engines, and generated code all from the builder.
+# Must be version-aligned — installing prisma from the registry grabs latest,
+# which may be incompatible with the engines pinned in package-lock.
 # Copy after npm ci because npm replaces node_modules.
 COPY --from=builder /app/node_modules/.prisma node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma/engines node_modules/@prisma/engines
+COPY --from=builder /app/node_modules/@prisma node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma node_modules/prisma
 
 # Worker source files (web uses bundled standalone; worker runs via tsx)
 COPY src/worker.ts src/worker.ts
