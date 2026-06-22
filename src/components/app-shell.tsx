@@ -129,7 +129,7 @@ export function MobileShell({
 					<main
 						className="flex-1 pb-24"
 						style={{
-							paddingTop: "calc(env(safe-area-inset-top) + 116px)",
+							paddingTop: "calc(env(safe-area-inset-top) + 108px)",
 						}}
 					>
 						{children}
