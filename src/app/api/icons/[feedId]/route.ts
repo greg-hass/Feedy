@@ -39,6 +39,8 @@ function isWeakIconSource(sourceUrl?: string | null) {
 
 	return (
 		lower.includes("youtube.com/favicon") ||
+		lower.includes("reddit.com/favicon") ||
+		lower.includes("redditstatic.com") ||
 		lower.includes("fit=32") ||
 		lower.includes("w=32") ||
 		lower.includes("h=32") ||

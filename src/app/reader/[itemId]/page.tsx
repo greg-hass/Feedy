@@ -290,10 +290,11 @@ export default function ReaderPage() {
 			</div>
 
 			<div className="px-5">
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-3">
 					<FeedAvatar
 						feedId={data.feed.id}
 						title={data.feed.label || data.feed.title}
+						size={64}
 					/>
 					<p className="text-xs uppercase tracking-[0.18em] text-secondary">
 						{data.feed.label || data.feed.title}

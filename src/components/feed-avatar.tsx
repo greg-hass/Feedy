@@ -2,22 +2,25 @@ import Image from "next/image";
 import { memo } from "react";
 
 export const FeedAvatar = memo(function FeedAvatar({
-  feedId,
-  title,
+	feedId,
+	title,
+	size = 48,
 }: {
-  feedId: string;
-  title: string;
+	feedId: string;
+	title: string;
+	size?: number;
 }) {
-  return (
-    <Image
-      src={`/api/icons/${feedId}?v=2`}
-      alt={title}
-      width={48}
-      height={48}
-      className="size-12 rounded-2xl border border-subtle object-cover"
-      loading="lazy"
-      decoding="async"
-      unoptimized
-    />
-  );
+	return (
+		<Image
+			src={`/api/icons/${feedId}?v=2`}
+			alt={title}
+			width={size}
+			height={size}
+			className="rounded-2xl border border-subtle object-cover"
+			style={{ width: size, height: size }}
+			loading="lazy"
+			decoding="async"
+			unoptimized
+		/>
+	);
 });
