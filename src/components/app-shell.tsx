@@ -173,45 +173,29 @@ export function MobileShell({
 									vibrateIfSupported(window.navigator, 10);
 								};
 
-								return (
-									<Link
-										key={item.href}
-										href={item.href}
-										onClick={handleTabClick}
-										className={`relative flex min-w-0 flex-col items-center gap-1 rounded-[18px] px-3.5 py-2 text-[10px] transition-all duration-200 ${
-											active
-												? "border"
-												: "border border-transparent"
-										}`}
-										style={
-											active
-												? {
-														backgroundColor: "var(--accent-dim)",
-														borderColor:
-															"color-mix(in srgb, var(--accent) 30%, transparent)",
-														color: "var(--accent)",
-														fontWeight: 600,
-													}
-												: {
-														color: "var(--text-secondary)",
-														fontWeight: 500,
-													}
-										}
-									>
-										<Icon
-											className="size-[22px]"
-											strokeWidth={active ? 2.5 : 2}
-											style={{
-												color: active
-													? "var(--accent)"
-													: "var(--text-secondary)",
-											}}
-										/>
-										<span style={{ letterSpacing: "0.04em" }}>
-											{item.label}
-										</span>
-									</Link>
-								);
+							return (
+								<Link
+									key={item.href}
+									href={item.href}
+									onClick={handleTabClick}
+									className={`relative flex min-w-0 flex-col items-center gap-1 px-3.5 py-2 text-[10px] transition-colors duration-200 ${
+										active ? "font-semibold" : "font-medium"
+									}`}
+									style={{
+										color: active
+											? "var(--accent)"
+											: "var(--text-secondary)",
+									}}
+								>
+									<Icon
+										className="size-[22px]"
+										strokeWidth={active ? 2.5 : 2}
+									/>
+									<span style={{ letterSpacing: "0.04em" }}>
+										{item.label}
+									</span>
+								</Link>
+							);
 							})}
 						</div>
 					</div>
