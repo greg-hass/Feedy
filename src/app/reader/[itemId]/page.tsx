@@ -33,7 +33,7 @@ export default function ReaderPage() {
 		string | null
 	>(null);
 	const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
-	const readerTopInset = "calc(max(12px, env(safe-area-inset-top)) + 3.5rem)";
+	const readerTopInset = "calc(max(12px, env(safe-area-inset-top)) + 12px)";
 
 	const goBack = () => {
 		if (typeof document !== "undefined") {
@@ -195,14 +195,17 @@ export default function ReaderPage() {
 	if (item.isLoading) {
 		return (
 			<div
-				className="mx-auto min-h-screen w-full max-w-md px-4 pb-10"
+				className="min-h-screen w-full pb-10"
 				style={{ paddingTop: readerTopInset }}
 			>
-				<div className="animate-pulse rounded-[24px] border border-subtle bg-[var(--surface)] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
-					<div className="h-3 w-20 rounded-full bg-[var(--surface-muted)]" />
-					<div className="mt-3 h-8 w-3/4 rounded-full bg-[var(--surface-muted)]" />
-					<div className="mt-4 h-5 w-1/2 rounded-full bg-[var(--surface-muted)]" />
-					<div className="mt-6 space-y-2">
+				<div className="animate-pulse px-5">
+					<div className="flex items-center gap-2">
+						<div className="size-7 rounded-full bg-[var(--surface-muted)]" />
+						<div className="h-3 w-24 rounded-full bg-[var(--surface-muted)]" />
+					</div>
+					<div className="mt-4 h-7 w-3/4 rounded-full bg-[var(--surface-muted)]" />
+					<div className="mt-3 h-4 w-1/2 rounded-full bg-[var(--surface-muted)]" />
+					<div className="mt-8 space-y-2">
 						{[60, 80, 95, 70, 85, 50, 90, 75].map((width, i) => (
 							<div
 								key={i}
@@ -219,10 +222,10 @@ export default function ReaderPage() {
 	if (!item.data) {
 		return (
 			<div
-				className="mx-auto min-h-screen w-full max-w-md px-4 pb-10"
+				className="min-h-screen w-full px-5 pb-10"
 				style={{ paddingTop: readerTopInset }}
 			>
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="py-12 text-center">
 					<p className="text-sm text-secondary">Failed to load article.</p>
 					<Button onClick={goBack} className="mt-4">
 						Go back
@@ -238,126 +241,119 @@ export default function ReaderPage() {
 
 	return (
 		<div
-			className="mx-auto min-h-screen w-full max-w-md px-4 pb-10"
-			style={{ paddingTop: readerTopInset }}
+			className="min-h-screen w-full pb-10"
+			style={{ paddingTop: readerTopInset, overflowAnchor: "none" }}
 		>
-			<div
-				className="overflow-hidden rounded-[24px] border border-subtle bg-[var(--surface)] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
-				style={{ overflowAnchor: "none" }}
-			>
-				<div className="px-5 pt-5">
-					<div className="flex items-center justify-between">
-						<IconButton onClick={goBack} aria-label="Go back">
-							<ArrowLeft className="size-4" />
-						</IconButton>
-						<div className="flex items-center gap-2">
-							<IconButton
-								variant={isBookmarked ? "accent" : "default"}
-								onClick={() => {
-									vibrateIfSupported(window.navigator, 10);
-									state.mutate({ bookmarked: !isBookmarked });
-								}}
-								aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
-							>
-								<Bookmark
-									className={`size-4 ${bookmarkAnimating ? "bookmark-flip" : ""}`}
-									fill={isBookmarked ? "currentColor" : "none"}
-								/>
-							</IconButton>
-							{data.canonicalUrl && (
-								<>
-									<IconButton
-										onClick={() => {
-											if (!data.canonicalUrl) {
-												return;
-											}
-											void shareArticle(data.title, data.canonicalUrl);
-										}}
-										aria-label="Share article"
-									>
-										<Share2 className="size-4" />
-									</IconButton>
-									<a
-										href={data.canonicalUrl}
-										target="_blank"
-										rel="noreferrer"
-										className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
-										aria-label="Open original article"
-									>
-										<ExternalLink className="size-4" />
-									</a>
-								</>
-							)}
-						</div>
-					</div>
-
-					<div className="mt-4 flex items-center gap-2">
-						<FeedAvatar
-							feedId={data.feed.id}
-							title={data.feed.label || data.feed.title}
+			<div className="flex items-center justify-between px-4 pb-3">
+				<IconButton onClick={goBack} aria-label="Go back">
+					<ArrowLeft className="size-4" />
+				</IconButton>
+				<div className="flex items-center gap-2">
+					<IconButton
+						variant={isBookmarked ? "accent" : "default"}
+						onClick={() => {
+							vibrateIfSupported(window.navigator, 10);
+							state.mutate({ bookmarked: !isBookmarked });
+						}}
+						aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
+					>
+						<Bookmark
+							className={`size-4 ${bookmarkAnimating ? "bookmark-flip" : ""}`}
+							fill={isBookmarked ? "currentColor" : "none"}
 						/>
-						<p className="text-xs uppercase tracking-[0.18em] text-secondary">
-							{data.feed.label || data.feed.title}
-						</p>
-					</div>
-
-					<h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight">
-						{data.title}
-					</h1>
-
-					<div className="mt-2 flex items-center justify-between text-xs text-secondary">
-						<span>
-							{new Date(data.publishedAt || 0).toLocaleDateString("en-GB", {
-								day: "numeric",
-								month: "short",
-								year: "numeric",
-							})}
-						</span>
-						<span className="rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
-							{data.feed.sourceType.replaceAll("_", " ")}
-						</span>
-					</div>
-
-					{data.youtubeVideoId && (
-						<div className="mt-4 overflow-hidden rounded-[20px] border border-subtle">
-							<iframe
-								src={`https://www.youtube.com/embed/${data.youtubeVideoId}?playsinline=1&rel=0`}
-								title={data.title}
-								className="aspect-video w-full"
-								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-								allowFullScreen
-							/>
-						</div>
-					)}
-
-					{showLeadMedia && (
-						<div className="mt-4 overflow-hidden rounded-[20px] border border-subtle">
-							<Image
-								src={data.mediaUrl || ""}
-								alt=""
-								width={1200}
-								height={675}
-								unoptimized
-								className="h-auto w-full"
-								loading="lazy"
-							/>
-						</div>
+					</IconButton>
+					{data.canonicalUrl && (
+						<>
+							<IconButton
+								onClick={() => {
+									if (!data.canonicalUrl) {
+										return;
+									}
+									void shareArticle(data.title, data.canonicalUrl);
+								}}
+								aria-label="Share article"
+							>
+								<Share2 className="size-4" />
+							</IconButton>
+							<a
+								href={data.canonicalUrl}
+								target="_blank"
+								rel="noreferrer"
+								className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
+								aria-label="Open original article"
+							>
+								<ExternalLink className="size-4" />
+							</a>
+						</>
 					)}
 				</div>
+			</div>
+
+			<div className="px-5">
+				<div className="flex items-center gap-2">
+					<FeedAvatar
+						feedId={data.feed.id}
+						title={data.feed.label || data.feed.title}
+					/>
+					<p className="text-xs uppercase tracking-[0.18em] text-secondary">
+						{data.feed.label || data.feed.title}
+					</p>
+				</div>
+
+				<h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em]">
+					{data.title}
+				</h1>
+
+				<div className="mt-3 flex items-center justify-between text-xs text-secondary">
+					<span>
+						{new Date(data.publishedAt || 0).toLocaleDateString("en-GB", {
+							day: "numeric",
+							month: "short",
+							year: "numeric",
+						})}
+					</span>
+					<span className="rounded-full border border-[var(--accent)] bg-[var(--accent)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
+						{data.feed.sourceType.replaceAll("_", " ")}
+					</span>
+				</div>
+
+				{data.youtubeVideoId && (
+					<div className="mt-5 overflow-hidden rounded-[20px] border border-subtle">
+						<iframe
+							src={`https://www.youtube.com/embed/${data.youtubeVideoId}?playsinline=1&rel=0`}
+							title={data.title}
+							className="aspect-video w-full"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+							allowFullScreen
+						/>
+					</div>
+				)}
+
+				{showLeadMedia && (
+					<div className="mt-5 overflow-hidden rounded-[20px] border border-subtle">
+						<Image
+							src={data.mediaUrl || ""}
+							alt=""
+							width={1200}
+							height={675}
+							unoptimized
+							className="h-auto w-full"
+							loading="lazy"
+						/>
+					</div>
+				)}
 
 				{readerHtml ? (
 					<article
-						className="reader-content mt-4 px-5 pb-5"
+						className="reader-content mt-6"
 						dangerouslySetInnerHTML={{
 							__html: readerHtml,
 						}}
 					/>
 				) : data.summary ? (
-					<div className="mt-4 px-5 pb-5">
-						<p className="text-sm leading-relaxed text-secondary">
-							{data.summary}
-						</p>
-					</div>
+					<p className="mt-6 text-[15px] leading-relaxed text-secondary">
+						{data.summary}
+					</p>
 				) : null}
 			</div>
 		</div>
