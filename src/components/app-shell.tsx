@@ -34,11 +34,13 @@ export function MobileShell({
 	title,
 	actions,
 	backButton,
+	center,
 	children,
 }: {
 	title: string;
 	actions?: React.ReactNode;
 	backButton?: React.ReactNode;
+	center?: React.ReactNode;
 	children: React.ReactNode;
 }) {
 	const pathname = usePathname();
@@ -66,7 +68,7 @@ export function MobileShell({
 			<div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
 				<header
 					data-mobile-shell-header="true"
-					className="fixed inset-x-0 top-0 z-40 transition-transform duration-200 ease-out will-change-transform"
+					className="fixed inset-x-0 top-0 z-40 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform"
 					style={{
 						backgroundColor: "var(--app-bg)",
 						transform: headerHidden ? "translateY(-100%)" : "translateY(0)",
@@ -74,15 +76,20 @@ export function MobileShell({
 				>
 					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
 						<div className="flex items-center justify-between gap-3">
-							<div className="flex min-w-0 items-center gap-2">
+							<div className="flex min-w-0 flex-1 items-center gap-2">
 								<div className="shrink-0">{backButton ?? null}</div>
 								<h1
-									className="truncate text-[2rem] font-bold leading-[0.98] tracking-[-0.045em]"
+									className="truncate text-[2rem] font-bold leading-[1.1] tracking-[-0.045em]"
 									style={{ color: "var(--text-primary)" }}
 								>
 									{title}
 								</h1>
 							</div>
+							{center ? (
+								<div className="flex shrink-0 items-center justify-center">
+									{center}
+								</div>
+							) : null}
 							<div className="flex shrink-0 items-center gap-2">
 								{actions}
 								<IconButton
@@ -115,9 +122,9 @@ export function MobileShell({
 				</div>
 
 				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(16px,env(safe-area-inset-bottom))]">
-					<div className="mx-auto flex max-w-md justify-center px-6">
+					<div className="mx-auto max-w-md px-5">
 						<div
-							className="flex items-center gap-1 rounded-[28px] border px-1.5 py-1.5 backdrop-blur-2xl"
+							className="flex w-full items-center justify-around rounded-[24px] border px-2 py-2 backdrop-blur-2xl"
 							style={{
 								backgroundColor: "var(--glass-bg)",
 								borderColor: "var(--glass-border)",
@@ -156,7 +163,7 @@ export function MobileShell({
 										key={item.href}
 										href={item.href}
 										onClick={handleTabClick}
-										className={`relative flex min-w-0 flex-col items-center gap-1 px-3.5 py-2 text-[10px] transition-colors duration-200 ${
+										className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] transition-colors duration-200 ${
 											active ? "font-semibold" : "font-medium"
 										}`}
 										style={{

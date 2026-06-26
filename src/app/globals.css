@@ -21,7 +21,7 @@
   --success-contrast: #ffffff;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
   /* iOS-style glass material (used by bottom nav) */
-  --glass-bg: color-mix(in srgb, var(--surface) 62%, transparent);
+  --glass-bg: color-mix(in srgb, var(--surface) 38%, transparent);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.65);
   --glass-shadow:
@@ -56,7 +56,7 @@
   --success-contrast: #450a0a;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   /* iOS-style glass material (dark) */
-  --glass-bg: color-mix(in srgb, var(--surface) 42%, transparent);
+  --glass-bg: color-mix(in srgb, var(--surface) 25%, transparent);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-highlight: rgba(255, 255, 255, 0.08);
   --glass-shadow:

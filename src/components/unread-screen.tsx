@@ -392,6 +392,9 @@ export function UnreadScreen() {
 	return (
 		<MobileShell
 			title="Timeline"
+			center={
+				<UnreadCountBadge count={me.data?.navigation.stats.unreadTotal ?? 0} />
+			}
 			actions={
 				<>
 					<IconButton
@@ -610,5 +613,25 @@ export function UnreadScreen() {
 				</div>
 			)}
 		</MobileShell>
+	);
+}
+
+/**
+ * Pill badge that surfaces the current unread count in the centre of the
+ * header toolbar on the Timeline tab. Uses `tabular-nums` so the digits
+ * don't jiggle when the number of items changes.
+ */
+function UnreadCountBadge({ count }: { count: number }) {
+	return (
+		<span
+			className="rounded-full px-2.5 py-0.5 text-sm font-semibold tabular-nums"
+			style={{
+				backgroundColor: "var(--accent-dim)",
+				color: "var(--accent)",
+			}}
+			aria-label={`${count.toLocaleString()} unread items`}
+		>
+			{count.toLocaleString()}
+		</span>
 	);
 }
