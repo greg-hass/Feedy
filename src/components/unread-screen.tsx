@@ -470,7 +470,6 @@ export function UnreadScreen() {
 						"--timeline-fixed-top": `${timelineFixedTop}px`,
 						"--timeline-panel-height": `${timelinePanelHeight}px`,
 						backgroundColor: "var(--app-bg)",
-						transition: "transform 850ms cubic-bezier(0.16, 1, 0.3, 1)",
 					} as CSSProperties}
 				>
 					<div

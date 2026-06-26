@@ -47,7 +47,7 @@ export function MobileShell({
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const me = useMe();
-	const { hidden: headerHidden } = useAutoHideHeader();
+	const { offsetPx: headerOffsetPx } = useAutoHideHeader();
 
 	const logout = useMutation({
 		mutationFn: () => api("/api/auth/logout", { method: "POST" }),
@@ -71,8 +71,7 @@ export function MobileShell({
 					className="fixed inset-x-0 top-0 z-40 will-change-transform"
 					style={{
 						backgroundColor: "var(--app-bg)",
-						transform: headerHidden ? "translateY(-100%)" : "translateY(0)",
-						transition: "transform 850ms cubic-bezier(0.16, 1, 0.3, 1)",
+						transform: `translateY(-${headerOffsetPx}px)`,
 					}}
 				>
 					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
@@ -124,11 +123,11 @@ export function MobileShell({
 
 				<nav
 					className="fixed inset-x-0 z-50"
-					style={{ bottom: "max(2px, env(safe-area-inset-bottom))" }}
+					style={{ bottom: "max(2px, calc(env(safe-area-inset-bottom) - 56px))" }}
 				>
 					<div className="mx-auto max-w-md px-5">
 						<div
-							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-2 backdrop-blur-2xl"
+							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-1.5 backdrop-blur-2xl"
 							style={{
 								background:
 									"linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)), var(--glass-bg)",
@@ -169,7 +168,7 @@ export function MobileShell({
 										key={item.href}
 										href={item.href}
 										onClick={handleTabClick}
-										className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] transition-colors duration-200 ${
+										className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-1.5 text-[10px] transition-colors duration-200 ${
 											active ? "font-semibold" : "font-medium"
 										}`}
 										style={{
@@ -177,7 +176,7 @@ export function MobileShell({
 										}}
 									>
 										<Icon
-											className="size-[24px]"
+											className="size-[26px]"
 											strokeWidth={active ? 2.5 : 2}
 										/>
 										<span style={{ letterSpacing: "0.04em" }}>
