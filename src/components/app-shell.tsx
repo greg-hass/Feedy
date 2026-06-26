@@ -31,7 +31,7 @@ export function useMe() {
 
 export function MobileShell({
 	title,
-	subtitle: _subtitle,
+	subtitle,
 	actions,
 	backButton,
 	children,
@@ -92,6 +92,11 @@ export function MobileShell({
 								>
 									{title}
 								</h1>
+								{subtitle ? (
+									<p className="mt-1 truncate text-sm text-secondary">
+										{subtitle}
+									</p>
+								) : null}
 							</div>
 							<div
 								className="shrink-0 rounded-full px-3.5 py-2"
@@ -173,29 +178,27 @@ export function MobileShell({
 									vibrateIfSupported(window.navigator, 10);
 								};
 
-							return (
-								<Link
-									key={item.href}
-									href={item.href}
-									onClick={handleTabClick}
-									className={`relative flex min-w-0 flex-col items-center gap-1 px-3.5 py-2 text-[10px] transition-colors duration-200 ${
-										active ? "font-semibold" : "font-medium"
-									}`}
-									style={{
-										color: active
-											? "var(--accent)"
-											: "var(--text-secondary)",
-									}}
-								>
-									<Icon
-										className="size-[22px]"
-										strokeWidth={active ? 2.5 : 2}
-									/>
-									<span style={{ letterSpacing: "0.04em" }}>
-										{item.label}
-									</span>
-								</Link>
-							);
+								return (
+									<Link
+										key={item.href}
+										href={item.href}
+										onClick={handleTabClick}
+										className={`relative flex min-w-0 flex-col items-center gap-1 px-3.5 py-2 text-[10px] transition-colors duration-200 ${
+											active ? "font-semibold" : "font-medium"
+										}`}
+										style={{
+											color: active ? "var(--accent)" : "var(--text-secondary)",
+										}}
+									>
+										<Icon
+											className="size-[22px]"
+											strokeWidth={active ? 2.5 : 2}
+										/>
+										<span style={{ letterSpacing: "0.04em" }}>
+											{item.label}
+										</span>
+									</Link>
+								);
 							})}
 						</div>
 					</div>

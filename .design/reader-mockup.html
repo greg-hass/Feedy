@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Feedy reader view — proposed redesign</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --app-bg: #0a0a0a;
+    --surface: #141414;
+    --surface-strong: #1a1a1a;
+    --surface-muted: #1f1f1f;
+    --border: #262626;
+    --text-primary: #fafafa;
+    --text-secondary: #a3a3a3;
+    --accent: #10b981;
+    --accent-strong: #059669;
+    --accent-dim: color-mix(in srgb, var(--accent) 18%, transparent);
+    --accent-rgb: 16, 185, 129;
+    --accent-contrast: #03110b;
+    --canvas: #1c1f24;
+    --canvas-text: #cbd5e1;
+    --canvas-muted: #64748b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--canvas);
+    color: var(--canvas-text);
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body { padding: 56px 24px 96px; }
+  .container { max-width: 1120px; margin: 0 auto; }
+
+  /* ─── header ──────────────────────────────────────────────── */
+  .header { margin-bottom: 56px; }
+  .eyebrow {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    margin: 0 0 16px;
+    font-size: 38px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #f8fafc;
+    line-height: 1.1;
+  }
+  .lede { font-size: 16px; line-height: 1.55; color: var(--canvas-muted); max-width: 640px; }
+
+  /* ─── mockup grid ─────────────────────────────────────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .panel-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--canvas-muted);
+  }
+  .panel-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--canvas-muted);
+  }
+  .panel-label.proposed .dot { background: var(--accent); }
+  .panel-label.proposed { color: var(--accent); }
+
+  /* ─── phone frame ─────────────────────────────────────────── */
+  .phone {
+    width: 100%;
+    aspect-ratio: 886 / 1920;
+    background: var(--app-bg);
+    border-radius: 56px;
+    border: 8px solid #2a2a2a;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      0 30px 80px -20px rgba(0,0,0,0.6),
+      0 12px 32px -8px rgba(0,0,0,0.4);
+  }
+  .phone .notch {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 28px;
+    background: #000;
+    border-radius: 18px;
+    z-index: 10;
+  }
+  .phone .statusbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    padding: 18px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fafafa;
+    z-index: 5;
+  }
+  .phone .statusbar .right { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+
+  /* ─── CURRENT reader view (left) ──────────────────────────── */
+  .reader-current {
+    position: absolute;
+    top: 56px; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+  }
+  .reader-current .cardwrap {
+    padding: 32px 16px 32px;
+  }
+  .reader-current .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .reader-current .row-actions {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+  .icon-btn.accent { color: var(--accent); }
+  .reader-current .actions-right { display: flex; gap: 6px; }
+  .feed-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 16px;
+  }
+  .feed-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: #ff4500;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .feed-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .title {
+    margin: 14px 0 14px;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  .meta-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .date { font-size: 13px; color: var(--text-secondary); }
+  .source-pill {
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .summary {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-primary);
+    margin: 0 0 14px;
+  }
+  .submitted {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .submitted a { color: var(--accent); text-decoration: none; }
+  .reader-current .void {
+    height: 420px;
+    background: var(--app-bg);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--canvas-muted);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.4;
+  }
+
+  /* ─── PROPOSED reader view (right) ────────────────────────── */
+  .reader-proposed {
+    position: absolute;
+    top: 56px; left: 0; right: 0; bottom: 0;
+    background: var(--app-bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .reader-proposed .topbar {
+    flex-shrink: 0;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .reader-proposed .topbar .left,
+  .reader-proposed .topbar .right {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .reader-proposed .body {
+    flex: 1;
+    overflow: hidden;
+    padding: 24px 20px 32px;
+  }
+  .reader-proposed .feed-row {
+    margin-top: 0;
+  }
+  .reader-proposed .title {
+    margin: 12px 0 12px;
+  }
+  .reader-proposed .body hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+  .reader-proposed .body p {
+    margin: 0 0 14px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+  .reader-proposed .body p.lead {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+
+  /* ─── notes ───────────────────────────────────────────────── */
+  .notes {
+    margin-top: 64px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 820px) {
+    .notes { grid-template-columns: 1fr; }
+  }
+  .note {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 20px 22px;
+  }
+  .note h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .note .num {
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .note p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--canvas-muted);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="eyebrow">Design proposal · Reader view</div>
+    <h1>Reader as a standalone page,<br/>not a card on the timeline.</h1>
+    <p class="lede">Two mockups side by side: the current reader (left) shows the article trapped inside a max-w-md card with a vast empty void below it. The proposed version (right) makes the article the page — same dark canvas, same typography as the timeline card, but full viewport and no card chrome.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- ════════════════════ CURRENT ════════════════════ -->
+    <div>
+      <div class="panel-label"><span class="dot"></span>Current</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar">
+          <span>17:35</span>
+          <span class="right">●●● 87%</span>
+        </div>
+        <div class="reader-current">
+          <div class="cardwrap">
+            <div class="card">
+              <div class="row-actions">
+                <div class="icon-btn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                </div>
+                <div class="actions-right">
+                  <div class="icon-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                  </div>
+                  <div class="icon-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  </div>
+                  <div class="icon-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="feed-row">
+                <div class="feed-icon">r/</div>
+                <div class="feed-name">R/CODEX</div>
+              </div>
+              <h2 class="title">Two Heads are Better Than One. Run Many Coding Agents. Merge One Auditable Result.</h2>
+              <div class="meta-row">
+                <div class="date">22 Jun 2026</div>
+                <div class="source-pill">REDDIT RSS</div>
+              </div>
+              <p class="summary">I wrote up a short piece on running multiple coding agents in parallel, letting them review each other, and merging them to the best one with fully auditable logs.</p>
+              <p class="submitted">submitted by <a>/u/OkBreath9382</a><br/><a>[link]</a>. <a>[comments]</a></p>
+            </div>
+          </div>
+          <div class="void">~420px of dead space</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════ PROPOSED ════════════════════ -->
+    <div>
+      <div class="panel-label proposed"><span class="dot"></span>Proposed</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar">
+          <span>17:35</span>
+          <span class="right">●●● 87%</span>
+        </div>
+        <div class="reader-proposed">
+          <div class="topbar">
+            <div class="left">
+              <div class="icon-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+              </div>
+            </div>
+            <div class="right">
+              <div class="icon-btn accent">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              </div>
+              <div class="icon-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </div>
+              <div class="icon-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="feed-row">
+              <div class="feed-icon">r/</div>
+              <div class="feed-name">R/CODEX</div>
+            </div>
+            <h2 class="title">Two Heads are Better Than One. Run Many Coding Agents. Merge One Auditable Result.</h2>
+            <div class="meta-row">
+              <div class="date">22 Jun 2026</div>
+              <div class="source-pill">REDDIT RSS</div>
+            </div>
+            <p class="lead">I wrote up a short piece on running multiple coding agents in parallel, letting them review each other, and merging them to the best one with fully auditable logs.</p>
+            <hr/>
+            <p>The setup is straightforward: spin up three or four coding agents, each given the same prompt, then have them review each other's output. The merge step takes the strongest implementation and stitches in the best parts of the others, with a full audit trail of which agent wrote what.</p>
+            <p>The interesting part isn't the parallelization — it's the review loop. Each agent gets to see the other's diffs before merge, and they call out bugs they spot. Catches a class of issues that single-agent runs miss.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════════════════ NOTES ════════════════════ -->
+  <div class="notes">
+    <div class="note">
+      <h3><span class="num">01</span> No card, no chrome</h3>
+      <p>Drop the <code>max-w-md</code> wrapper and the rounded surface card. Content sits directly on the app background and fills the full viewport width — same dark canvas as the timeline cards, but without the floaty "card inside a screen" feel.</p>
+    </div>
+    <div class="note">
+      <h3><span class="num">02</span> Slim top bar</h3>
+      <p>A single horizontal bar with a back arrow (left) and bookmark / share / open-original (right). Same IconButton component as the current reader — just no card padding around it. Subtle 1px hairline underneath, not a heavy shadow.</p>
+    </div>
+    <div class="note">
+      <h3><span class="num">03</span> Same content density</h3>
+      <p>Feed chip, title, date + source pill, body — exactly the visual rhythm as today's ItemCard. The wider canvas lets the body text breathe on one comfortable column (16–18px line length) instead of feeling squeezed inside a card.</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -166,6 +166,16 @@ New dependencies must:
 
 ---
 
+## Validation
+
+Commands run by `/land` and CI. Runtime daemons (worker) are NOT validation commands.
+
+```bash
+npm run lint
+npm run test
+npm run build
+```
+
 ## Testing
 
 Before completing any task:

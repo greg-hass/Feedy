@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { getNavigationStats, readNavigationStats } from "@/lib/navigation-stats";
+import {
+	getNavigationStats,
+	readNavigationStats,
+} from "@/lib/navigation-stats";
 
 describe("getNavigationStats", () => {
 	it("reconciles stale stored counts with the live unread query", async () => {
@@ -10,14 +13,16 @@ describe("getNavigationStats", () => {
 		const client = {
 			$queryRaw: async () => {
 				calls.push("query");
-				return [{ unreadCount: 7n, savedCount: 2n }];
+				return [{ unreadCount: BigInt(7), savedCount: BigInt(2) }];
 			},
 			navigationStats: {
 				findUnique: async () => {
 					calls.push("findUnique");
 					return { unreadCount: 0, savedCount: 2 };
 				},
-				upsert: async (args: { update: { unreadCount: number; savedCount: number } }) => {
+				upsert: async (args: {
+					update: { unreadCount: number; savedCount: number };
+				}) => {
 					calls.push("upsert");
 					assert.deepEqual(args.update, { unreadCount: 7, savedCount: 2 });
 					return args.update;
@@ -33,7 +38,9 @@ describe("getNavigationStats", () => {
 
 	it("returns live counts without a navigationStats table helper", async () => {
 		const client = {
-			$queryRaw: async () => [{ unreadCount: 3n, savedCount: 1n }],
+			$queryRaw: async () => [
+				{ unreadCount: BigInt(3), savedCount: BigInt(1) },
+			],
 		};
 
 		const result = await getNavigationStats(client as never, "user-1", false);
@@ -49,7 +56,7 @@ describe("readNavigationStats", () => {
 		const client = {
 			$queryRaw: async () => {
 				calls.push("query");
-				return [{ unreadCount: 42n, savedCount: 5n }];
+				return [{ unreadCount: BigInt(42), savedCount: BigInt(5) }];
 			},
 			navigationStats: {
 				findUnique: async () => {
@@ -75,14 +82,16 @@ describe("readNavigationStats", () => {
 		const client = {
 			$queryRaw: async () => {
 				calls.push("query");
-				return [{ unreadCount: 10n, savedCount: 3n }];
+				return [{ unreadCount: BigInt(10), savedCount: BigInt(3) }];
 			},
 			navigationStats: {
 				findUnique: async () => {
 					calls.push("findUnique");
 					return null;
 				},
-				upsert: async (args: { update: { unreadCount: number; savedCount: number } }) => {
+				upsert: async (args: {
+					update: { unreadCount: number; savedCount: number };
+				}) => {
 					calls.push("upsert");
 					return args.update;
 				},
@@ -92,12 +101,18 @@ describe("readNavigationStats", () => {
 		const result = await readNavigationStats(client as never, "user-1");
 
 		assert.deepEqual(result, { unreadCount: 10, savedCount: 3 });
-		assert.deepEqual(calls, ["findUnique", "query", "findUnique", "upsert"], "should fallback to COUNT + upsert on first access");
+		assert.deepEqual(
+			calls,
+			["findUnique", "query", "findUnique", "upsert"],
+			"should fallback to COUNT + upsert on first access",
+		);
 	});
 
 	it("returns zeros without a navigationStats table helper", async () => {
 		const client = {
-			$queryRaw: async () => [{ unreadCount: 99n, savedCount: 99n }],
+			$queryRaw: async () => [
+				{ unreadCount: BigInt(99), savedCount: BigInt(99) },
+			],
 		};
 
 		const result = await readNavigationStats(client as never, "user-1");

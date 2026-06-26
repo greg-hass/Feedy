@@ -37,7 +37,6 @@ export default function FolderDetailPage() {
 	const params = useParams<{ folderId: string }>();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const [refreshQueued, setRefreshQueued] = useState(false);
 	const [selectionMode, setSelectionMode] = useState(false);
 	const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
 	const [showBulkMove, setShowBulkMove] = useState(false);
@@ -90,43 +89,6 @@ export default function FolderDetailPage() {
 		staleTime: 15_000,
 		refetchOnWindowFocus: "always",
 		refetchOnReconnect: true,
-	});
-
-	const refresh = useMutation({
-		mutationFn: () =>
-			api(`/api/folders/${params.folderId}/refresh`, { method: "POST" }),
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: ["me"] });
-			await queryClient.invalidateQueries({
-				queryKey: ["items", "folder", params.folderId],
-			});
-			setRefreshQueued(true);
-			const delays = [1500, 4000, 8000];
-			delays.forEach((delay, index) => {
-				setTimeout(() => {
-					void queryClient.invalidateQueries({ queryKey: ["me"] });
-					void queryClient.invalidateQueries({
-						queryKey: ["items", "folder", params.folderId],
-					});
-					if (index === delays.length - 1) {
-						setRefreshQueued(false);
-					}
-				}, delay);
-			});
-		},
-		onError: () => setRefreshQueued(false),
-	});
-
-	const markRead = useMutation({
-		mutationFn: () =>
-			api(`/api/folders/${params.folderId}/mark-read`, { method: "POST" }),
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: ["me"] });
-			await queryClient.invalidateQueries({ queryKey: ["items"] });
-			await queryClient.invalidateQueries({
-				queryKey: ["items", "folder", params.folderId],
-			});
-		},
 	});
 
 	const moveFeeds = useMutation({

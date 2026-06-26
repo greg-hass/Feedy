@@ -24,7 +24,6 @@ export default function FeedDetailPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [showEdit, setShowEdit] = useState(false);
-	const [refreshQueued, setRefreshQueued] = useState(false);
 
 	const items = useQuery({
 		queryKey: ["items", "feed", params.feedId],
@@ -36,10 +35,7 @@ export default function FeedDetailPage() {
 
 	const me = useQuery({
 		queryKey: ["me"],
-		queryFn: () =>
-			import("@/lib/client").then(({ api }) =>
-				api<{ navigation: { feeds: NavFeed[] } }>("/api/me"),
-			),
+		queryFn: () => api<{ navigation: { feeds: NavFeed[] } }>("/api/me"),
 		staleTime: 30_000,
 		refetchOnWindowFocus: "always",
 		refetchOnReconnect: true,
@@ -65,43 +61,6 @@ export default function FeedDetailPage() {
 
 		router.back();
 	};
-
-	const refresh = useMutation({
-		mutationFn: () =>
-			api(`/api/feeds/${params.feedId}/refresh`, { method: "POST" }),
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: ["me"] });
-			await queryClient.invalidateQueries({
-				queryKey: ["items", "feed", params.feedId],
-			});
-			setRefreshQueued(true);
-			const delays = [1500, 4000, 8000];
-			delays.forEach((delay, index) => {
-				setTimeout(() => {
-					void queryClient.invalidateQueries({ queryKey: ["me"] });
-					void queryClient.invalidateQueries({
-						queryKey: ["items", "feed", params.feedId],
-					});
-					if (index === delays.length - 1) {
-						setRefreshQueued(false);
-					}
-				}, delay);
-			});
-		},
-		onError: () => setRefreshQueued(false),
-	});
-
-	const markRead = useMutation({
-		mutationFn: () =>
-			api(`/api/feeds/${params.feedId}/mark-read`, { method: "POST" }),
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: ["me"] });
-			await queryClient.invalidateQueries({ queryKey: ["items"] });
-			await queryClient.invalidateQueries({
-				queryKey: ["items", "feed", params.feedId],
-			});
-		},
-	});
 
 	const deleteFeed = useMutation({
 		mutationFn: () => api(`/api/feeds/${params.feedId}`, { method: "DELETE" }),
@@ -149,11 +108,6 @@ export default function FeedDetailPage() {
 								{feed.counts.unreadCount} unread ·{" "}
 								{relativeTime(feed.lastRefreshedAt)}
 							</p>
-							{refreshQueued ? (
-								<p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-									Refreshing
-								</p>
-							) : null}
 						</div>
 					</div>
 				</div>

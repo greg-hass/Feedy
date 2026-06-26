@@ -344,11 +344,14 @@ export const ItemCard = memo(function ItemCard({
 
 			<div className="p-4">
 				<div className="flex items-center gap-2">
-					<img
+					<Image
 						src={`/api/icons/${item.feed.id}`}
 						alt=""
+						width={16}
+						height={16}
 						className="size-4 rounded-[4px] object-cover"
 						loading="lazy"
+						unoptimized
 						onError={(e) => {
 							(e.target as HTMLImageElement).style.display = "none";
 						}}
