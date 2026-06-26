@@ -123,14 +123,14 @@ export function MobileShell({
 
 				<nav
 					className="fixed inset-x-0 z-50"
-					style={{ bottom: "max(2px, calc(env(safe-area-inset-bottom) - 56px))" }}
+					style={{ bottom: "calc(env(safe-area-inset-bottom) + 8px)" }}
 				>
 					<div className="mx-auto max-w-md px-5">
 						<div
 							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-1.5 backdrop-blur-2xl"
 							style={{
 								background:
-									"linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)), var(--glass-bg)",
+									"linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04)), linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.06)), var(--glass-bg)",
 								borderColor: "var(--glass-border)",
 								boxShadow:
 									"0 1px 0 rgba(255,255,255,0.16) inset, 0 -1px 0 rgba(255,255,255,0.08) inset, var(--glass-shadow)",
