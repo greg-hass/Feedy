@@ -27,6 +27,7 @@ services:
       retries: 10
 
   migrate:
+    profiles: ["migrate"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -67,6 +68,7 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+        required: false
     ports:
       - "4000:3000"
     volumes:
@@ -97,6 +99,7 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+        required: false
     command: ["./docker/entrypoint.sh", "worker"]
     volumes:
       - app_data:/app/data
