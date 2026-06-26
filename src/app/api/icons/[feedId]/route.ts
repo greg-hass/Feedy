@@ -77,7 +77,10 @@ export async function GET(_request: Request, context: { params: Params }) {
 			{
 				headers: {
 					"content-type": "image/svg+xml",
-					"cache-control": "no-store, max-age=0",
+					// Allow the browser to cache the placeholder so it doesn't
+					// flicker when the same feed is rendered many times on the
+					// timeline (e.g. when scrolling a long list).
+					"cache-control": "private, max-age=60",
 				},
 			},
 		);
@@ -87,7 +90,13 @@ export async function GET(_request: Request, context: { params: Params }) {
 	return new NextResponse(bytes, {
 		headers: {
 			"content-type": icon.mimeType || "image/x-icon",
-			"cache-control": "no-store, max-age=0",
+			// 24h browser cache. The icon rarely changes per feed, so caching
+			// kills the appear/disappear loop on timeline scroll (each card
+			// used to refetch the binary from disk on every scroll because
+			// `no-store` forced a round trip per Image element). Bump the
+			// `?v=N` cache buster in clients when icons need to be force-
+			// refreshed (currently `?v=2`).
+			"cache-control": "private, max-age=86400",
 		},
 	});
 }

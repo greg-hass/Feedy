@@ -343,20 +343,19 @@ export const ItemCard = memo(function ItemCard({
 				))}
 
 			<div className="p-4">
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2.5">
 					<Image
-						src={`/api/icons/${item.feed.id}`}
+						src={`/api/icons/${item.feed.id}?v=2`}
 						alt=""
-						width={16}
-						height={16}
-						className="size-4 rounded-[4px] object-cover"
-						loading="lazy"
+						width={20}
+						height={20}
+						className="size-5 shrink-0 rounded-[6px] object-cover"
 						unoptimized
 						onError={(e) => {
 							(e.target as HTMLImageElement).style.display = "none";
 						}}
 					/>
-					<p className="truncate text-[11px] font-medium text-secondary">
+					<p className="truncate text-[12px] font-medium text-secondary">
 						{feedTitle}
 					</p>
 				</div>

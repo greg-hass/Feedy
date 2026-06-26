@@ -198,24 +198,13 @@ export function Providers({
 			return;
 		}
 
-		const resetScroll = () => {
-			window.scrollTo(0, 0);
-			document.documentElement.scrollTop = 0;
-			document.body.scrollTop = 0;
-		};
-
-		resetScroll();
-		const frameOne = window.requestAnimationFrame(resetScroll);
-		const frameTwo = window.requestAnimationFrame(() =>
-			window.requestAnimationFrame(resetScroll),
-		);
-		const timeoutOne = window.setTimeout(resetScroll, 60);
-
-		return () => {
-			window.cancelAnimationFrame(frameOne);
-			window.cancelAnimationFrame(frameTwo);
-			window.clearTimeout(timeoutOne);
-		};
+		// Reset scroll once when entering the reader route. The reader page
+		// also resets on mount, so this provider-level reset is just a safety
+		// net for the brief window before the page's own effect runs — kept
+		// to a single call to avoid hammering the main thread on navigation.
+		window.scrollTo(0, 0);
+		document.documentElement.scrollTop = 0;
+		document.body.scrollTop = 0;
 	}, [pathname]);
 
 	return (

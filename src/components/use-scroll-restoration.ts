@@ -128,27 +128,24 @@ export function useScrollRestoration(
 
     window.addEventListener("scroll", onUnwantedScroll, { passive: true });
 
+    // One immediate restore + one rAF retry is enough for fonts and lazy
+    // images to settle. The previous version ran 5 retries (immediate + 2x
+    // rAF + 3x setTimeout) on every timeline mount, which contributed to the
+    // "jank on tab change" feel because all of it runs synchronously on the
+    // main thread before paint.
     restoreScroll();
-    const frameOne = window.requestAnimationFrame(restoreScroll);
-    const frameTwo = window.requestAnimationFrame(() => window.requestAnimationFrame(restoreScroll));
-    const timeoutOne = window.setTimeout(restoreScroll, 60);
-    const timeoutTwo = window.setTimeout(restoreScroll, 200);
-    const timeoutThree = window.setTimeout(restoreScroll, 400);
-    const timeoutFour = window.setTimeout(() => {
+    const frame = window.requestAnimationFrame(restoreScroll);
+    const timeout = window.setTimeout(() => {
       guardActive = false;
       window.removeEventListener("scroll", onUnwantedScroll);
       window.sessionStorage.removeItem(anchorStorageKey);
-    }, 650);
+    }, 350);
 
     return () => {
       guardActive = false;
       window.removeEventListener("scroll", onUnwantedScroll);
-      window.cancelAnimationFrame(frameOne);
-      window.cancelAnimationFrame(frameTwo);
-      window.clearTimeout(timeoutOne);
-      window.clearTimeout(timeoutTwo);
-      window.clearTimeout(timeoutThree);
-      window.clearTimeout(timeoutFour);
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
     };
   }, [isItemsLoading, scrollStorageKey, anchorStorageKey, timelineFixedTop, timelineItems]);
 

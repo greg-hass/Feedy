@@ -125,37 +125,15 @@ export default function ReaderPage() {
 	});
 
 	useLayoutEffect(() => {
-		let cancelled = false;
-
-		const resetScroll = () => {
-			if (cancelled) {
-				return;
-			}
-
-			forceScrollTop();
-		};
-
-		// Next.js and the browser can both try to preserve scroll state during
-		// the transition. Re-assert top-of-page across a few frames so the reader
-		// always opens with the header fully visible.
-		resetScroll();
-		const frameOne = window.requestAnimationFrame(resetScroll);
-		const frameTwo = window.requestAnimationFrame(() =>
-			window.requestAnimationFrame(resetScroll),
-		);
-		const timeoutOne = window.setTimeout(resetScroll, 60);
-		const timeoutTwo = window.setTimeout(resetScroll, 180);
-		const timeoutThree = window.setTimeout(resetScroll, 420);
-
-		return () => {
-			cancelled = true;
-			window.cancelAnimationFrame(frameOne);
-			window.cancelAnimationFrame(frameTwo);
-			window.clearTimeout(timeoutOne);
-			window.clearTimeout(timeoutTwo);
-			window.clearTimeout(timeoutThree);
-		};
-	}, [params.itemId, item.data?.id]);
+		// Reset scroll on item navigation. One synchronous + one rAF is enough
+		// to win against Next.js + the browser's own scroll-restoration logic.
+		// Previously this fired 5 resets AND re-fired when `item.data?.id`
+		// arrived, which meant up to 10 synchronous scroll writes per reader
+		// open — visible jank on tap on mid-tier mobile.
+		forceScrollTop();
+		const frame = window.requestAnimationFrame(forceScrollTop);
+		return () => window.cancelAnimationFrame(frame);
+	}, [params.itemId]);
 
 	useEffect(() => {
 		if (item.data && !item.data.read && !state.isPending) {
@@ -290,11 +268,11 @@ export default function ReaderPage() {
 			</div>
 
 			<div className="px-5">
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2.5">
 					<FeedAvatar
 						feedId={data.feed.id}
 						title={data.feed.label || data.feed.title}
-						size={64}
+						size={44}
 					/>
 					<p className="text-xs uppercase tracking-[0.18em] text-secondary">
 						{data.feed.label || data.feed.title}
