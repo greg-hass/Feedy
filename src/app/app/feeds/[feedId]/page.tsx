@@ -86,7 +86,6 @@ export default function FeedDetailPage() {
 	return (
 		<MobileShell
 			title={feedTitle}
-			subtitle={`${feed.counts.unreadCount} unread · ${relativeTime(feed.lastRefreshedAt)}`}
 			backButton={
 				<IconButton onClick={goBack} aria-label="Go back">
 					<ArrowLeft className="size-4" />

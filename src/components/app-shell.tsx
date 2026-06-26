@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { IconButton } from "@/components/ui/icon-button";
+import { useAutoHideHeader } from "@/components/use-auto-hide-header";
 import { api } from "@/lib/client";
 import { isActiveTabTap, vibrateIfSupported } from "@/lib/tab-interactions";
 import type { MeResponse } from "@/types/app";
@@ -31,13 +32,11 @@ export function useMe() {
 
 export function MobileShell({
 	title,
-	subtitle,
 	actions,
 	backButton,
 	children,
 }: {
 	title: string;
-	subtitle?: string;
 	actions?: React.ReactNode;
 	backButton?: React.ReactNode;
 	children: React.ReactNode;
@@ -46,6 +45,7 @@ export function MobileShell({
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const me = useMe();
+	const { hidden: headerHidden } = useAutoHideHeader();
 
 	const logout = useMutation({
 		mutationFn: () => api("/api/auth/logout", { method: "POST" }),
@@ -55,7 +55,6 @@ export function MobileShell({
 		},
 	});
 
-	const unreadTotal = me.data?.navigation.stats.unreadTotal ?? 0;
 	const accent = me.data?.user.settings.accentColor ?? "EMERALD";
 
 	useEffect(() => {
@@ -67,12 +66,23 @@ export function MobileShell({
 			<div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
 				<header
 					data-mobile-shell-header="true"
-					className="fixed inset-x-0 top-0 z-40"
-					style={{ backgroundColor: "var(--app-bg)" }}
+					className="fixed inset-x-0 top-0 z-40 transition-transform duration-200 ease-out will-change-transform"
+					style={{
+						backgroundColor: "var(--app-bg)",
+						transform: headerHidden ? "translateY(-100%)" : "translateY(0)",
+					}}
 				>
-					<div className="mx-auto max-w-md px-5 pb-0 pt-[max(12px,env(safe-area-inset-top))]">
+					<div className="mx-auto max-w-md px-5 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
 						<div className="flex items-center justify-between gap-3">
-							<div className="shrink-0">{backButton ?? null}</div>
+							<div className="flex min-w-0 items-center gap-2">
+								<div className="shrink-0">{backButton ?? null}</div>
+								<h1
+									className="truncate text-[2rem] font-bold leading-[0.98] tracking-[-0.045em]"
+									style={{ color: "var(--text-primary)" }}
+								>
+									{title}
+								</h1>
+							</div>
 							<div className="flex shrink-0 items-center gap-2">
 								{actions}
 								<IconButton
@@ -83,50 +93,6 @@ export function MobileShell({
 								</IconButton>
 							</div>
 						</div>
-
-						<div className="mt-2 flex items-end justify-between gap-3 border-b border-subtle pb-2">
-							<div className="min-w-0 flex-1 pb-0.5">
-								<h1
-									className="text-[2rem] font-bold leading-[0.98] tracking-[-0.045em]"
-									style={{ color: "var(--text-primary)" }}
-								>
-									{title}
-								</h1>
-								{subtitle ? (
-									<p className="mt-1 truncate text-sm text-secondary">
-										{subtitle}
-									</p>
-								) : null}
-							</div>
-							<div
-								className="shrink-0 rounded-full px-3.5 py-2"
-								style={{
-									border: "1px solid var(--border)",
-									backgroundColor: "var(--surface)",
-								}}
-							>
-								<div className="flex items-center gap-1.5">
-									{unreadTotal > 0 && (
-										<span
-											className="h-2 w-2 rounded-full"
-											style={{ backgroundColor: "var(--accent)" }}
-										/>
-									)}
-									<span
-										className="text-[13px] font-semibold leading-none"
-										style={{ color: "var(--text-primary)" }}
-									>
-										{unreadTotal}
-									</span>
-									<span
-										className="text-[11px] leading-none"
-										style={{ color: "var(--text-secondary)" }}
-									>
-										unread
-									</span>
-								</div>
-							</div>
-						</div>
 					</div>
 				</header>
 
@@ -134,7 +100,11 @@ export function MobileShell({
 					<main
 						className="flex-1 pb-24"
 						style={{
-							paddingTop: "calc(env(safe-area-inset-top) + 100px)",
+							// Header is a single row (safe-area + 40px action row +
+							// 12px bottom padding) and content gets a `space-y-3`
+							// (12px) gap below it so the first card mirrors the
+							// gap between cards.
+							paddingTop: "calc(env(safe-area-inset-top) + 103px)",
 						}}
 					>
 						{children}

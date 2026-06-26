@@ -392,7 +392,6 @@ export function UnreadScreen() {
 	return (
 		<MobileShell
 			title="Timeline"
-			subtitle="Your latest reading"
 			actions={
 				<>
 					<IconButton

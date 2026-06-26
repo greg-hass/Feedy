@@ -70,7 +70,7 @@ services:
         condition: service_completed_successfully
         required: false
     ports:
-      - "4000:3000"
+      - "4001:3000"
     volumes:
       - app_data:/app/data
     healthcheck:

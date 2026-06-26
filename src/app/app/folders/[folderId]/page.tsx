@@ -129,7 +129,6 @@ export default function FolderDetailPage() {
 	return (
 		<MobileShell
 			title={folderTitle}
-			subtitle={`${folder.counts.unreadCount} unread · ${folderFeeds.length} feeds`}
 			backButton={<HighlightBackButton onClick={goBack} />}
 		>
 			<div className="space-y-3">
