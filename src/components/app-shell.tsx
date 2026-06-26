@@ -68,7 +68,7 @@ export function MobileShell({
 			<div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
 				<header
 					data-mobile-shell-header="true"
-					className="fixed inset-x-0 top-0 z-40 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform"
+					className="fixed inset-x-0 top-0 z-40 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
 					style={{
 						backgroundColor: "var(--app-bg)",
 						transform: headerHidden ? "translateY(-100%)" : "translateY(0)",
@@ -121,16 +121,18 @@ export function MobileShell({
 					</main>
 				</div>
 
-				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[max(16px,env(safe-area-inset-bottom))]">
+				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[calc(env(safe-area-inset-bottom)+6px)]">
 					<div className="mx-auto max-w-md px-5">
 						<div
-							className="flex w-full items-center justify-around rounded-[24px] border px-2 py-2 backdrop-blur-2xl"
+							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-2 backdrop-blur-2xl"
 							style={{
-								backgroundColor: "var(--glass-bg)",
+								background:
+									"linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)), var(--glass-bg)",
 								borderColor: "var(--glass-border)",
-								boxShadow: "var(--glass-shadow)",
-								WebkitBackdropFilter: "blur(40px) saturate(180%)",
-								backdropFilter: "blur(40px) saturate(180%)",
+								boxShadow:
+									"0 1px 0 rgba(255,255,255,0.16) inset, 0 -1px 0 rgba(255,255,255,0.08) inset, var(--glass-shadow)",
+								WebkitBackdropFilter: "blur(44px) saturate(190%)",
+								backdropFilter: "blur(44px) saturate(190%)",
 							}}
 						>
 							{navItems.map((item) => {

@@ -252,6 +252,10 @@ select {
   padding-bottom: calc(88px + env(safe-area-inset-bottom));
 }
 
+html[data-mobile-header-hidden="true"] [data-timeline-controls-panel="true"] {
+  transform: translateY(calc(-1 * (var(--timeline-fixed-top) + var(--timeline-panel-height))));
+}
+
 .surface {
   background: var(--surface);
   box-shadow: var(--shadow);

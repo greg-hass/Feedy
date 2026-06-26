@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+	type CSSProperties,
 	useCallback,
 	useDeferredValue,
 	useEffect,
@@ -462,11 +463,14 @@ export function UnreadScreen() {
 			{timelinePanelOpen ? (
 				<section
 					ref={timelinePanelRef}
-					className="fixed inset-x-0 z-30"
+					data-timeline-controls-panel="true"
+					className="fixed inset-x-0 z-30 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
 					style={{
 						top: `${timelineFixedTop}px`,
+						"--timeline-fixed-top": `${timelineFixedTop}px`,
+						"--timeline-panel-height": `${timelinePanelHeight}px`,
 						backgroundColor: "var(--app-bg)",
-					}}
+					} as CSSProperties}
 				>
 					<div
 						className="mx-auto w-full max-w-md px-5"
