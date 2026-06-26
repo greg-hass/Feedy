@@ -464,12 +464,13 @@ export function UnreadScreen() {
 				<section
 					ref={timelinePanelRef}
 					data-timeline-controls-panel="true"
-					className="fixed inset-x-0 z-30 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+					className="fixed inset-x-0 z-30 will-change-transform"
 					style={{
 						top: `${timelineFixedTop}px`,
 						"--timeline-fixed-top": `${timelineFixedTop}px`,
 						"--timeline-panel-height": `${timelinePanelHeight}px`,
 						backgroundColor: "var(--app-bg)",
+						transition: "transform 850ms cubic-bezier(0.16, 1, 0.3, 1)",
 					} as CSSProperties}
 				>
 					<div

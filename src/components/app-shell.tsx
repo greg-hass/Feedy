@@ -68,10 +68,11 @@ export function MobileShell({
 			<div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
 				<header
 					data-mobile-shell-header="true"
-					className="fixed inset-x-0 top-0 z-40 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+					className="fixed inset-x-0 top-0 z-40 will-change-transform"
 					style={{
 						backgroundColor: "var(--app-bg)",
 						transform: headerHidden ? "translateY(-100%)" : "translateY(0)",
+						transition: "transform 850ms cubic-bezier(0.16, 1, 0.3, 1)",
 					}}
 				>
 					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
@@ -121,10 +122,13 @@ export function MobileShell({
 					</main>
 				</div>
 
-				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
+				<nav
+					className="fixed inset-x-0 z-50"
+					style={{ bottom: "max(2px, env(safe-area-inset-bottom))" }}
+				>
 					<div className="mx-auto max-w-md px-5">
 						<div
-							className="flex w-full translate-y-[-2px] items-center justify-around rounded-[34px] border px-2 py-2 backdrop-blur-2xl"
+							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-2 backdrop-blur-2xl"
 							style={{
 								background:
 									"linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)), var(--glass-bg)",
