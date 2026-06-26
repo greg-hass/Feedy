@@ -72,7 +72,7 @@ export function MobileShell({
 						transform: headerHidden ? "translateY(-100%)" : "translateY(0)",
 					}}
 				>
-					<div className="mx-auto max-w-md px-5 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
+					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
 						<div className="flex items-center justify-between gap-3">
 							<div className="flex min-w-0 items-center gap-2">
 								<div className="shrink-0">{backButton ?? null}</div>
@@ -100,11 +100,14 @@ export function MobileShell({
 					<main
 						className="flex-1 pb-24"
 						style={{
-							// Header is a single row (safe-area + 40px action row +
-							// 12px bottom padding) and content gets a `space-y-3`
-							// (12px) gap below it so the first card mirrors the
-							// gap between cards.
-							paddingTop: "calc(env(safe-area-inset-top) + 103px)",
+							// Header is a single row (max(12px, safe-area) top +
+							// 40px action row + 8px bottom padding). The base
+							// uses the same `max(12px, env(...))` clamp as the
+							// header so the constant below (60px = row + pb +
+							// 12px gap) always yields a 12px gap between the
+							// header bottom and the first content card on every
+							// device, matching the inter-card `space-y-3` gap.
+							paddingTop: "calc(max(12px, env(safe-area-inset-top)) + 60px)",
 						}}
 					>
 						{children}

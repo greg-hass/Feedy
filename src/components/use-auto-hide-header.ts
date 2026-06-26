@@ -15,12 +15,17 @@ const SHOW_AFTER_UP_PX = 4;
  * - Once the user commits ~4px of net scroll in one direction, the header
  *   snaps to hidden (down) or visible (up).
  *
+ * The current visibility is mirrored into a ref because the scroll listener
+ * runs inside a `useEffect([])` closure; reading the React state from the
+ * closure would always see the value captured at mount.
+ *
  * Returns a `hidden` flag the caller applies to the header element via
  * `transform: translateY(...)`. The header stays `position: fixed`; only
  * its visual offset is animated.
  */
 export function useAutoHideHeader(): { hidden: boolean } {
 	const [hidden, setHidden] = useState(false);
+	const hiddenRef = useRef(false);
 	const lastYRef = useRef(0);
 	const frameRef = useRef<number | null>(null);
 	const accumulatedDeltaRef = useRef(0);
@@ -35,7 +40,10 @@ export function useAutoHideHeader(): { hidden: boolean } {
 			lastYRef.current = currentY;
 
 			if (currentY < SHOW_AT_TOP_PX) {
-				if (hidden) setHidden(false);
+				if (hiddenRef.current) {
+					hiddenRef.current = false;
+					setHidden(false);
+				}
 				accumulatedDeltaRef.current = 0;
 				return;
 			}
@@ -45,8 +53,9 @@ export function useAutoHideHeader(): { hidden: boolean } {
 			if (
 				delta > 0 &&
 				accumulatedDeltaRef.current >= HIDE_AFTER_DOWN_PX &&
-				!hidden
+				!hiddenRef.current
 			) {
+				hiddenRef.current = true;
 				setHidden(true);
 				accumulatedDeltaRef.current = 0;
 				return;
@@ -55,8 +64,9 @@ export function useAutoHideHeader(): { hidden: boolean } {
 			if (
 				delta < 0 &&
 				accumulatedDeltaRef.current <= -SHOW_AFTER_UP_PX &&
-				hidden
+				hiddenRef.current
 			) {
+				hiddenRef.current = false;
 				setHidden(false);
 				accumulatedDeltaRef.current = 0;
 				return;
@@ -66,7 +76,10 @@ export function useAutoHideHeader(): { hidden: boolean } {
 			// state (e.g. scrolling up while already visible, or scrolling
 			// down while already hidden), reset the accumulator so the next
 			// genuine move gets a clean threshold.
-			if ((delta > 0 && hidden) || (delta < 0 && !hidden)) {
+			if (
+				(delta > 0 && hiddenRef.current) ||
+				(delta < 0 && !hiddenRef.current)
+			) {
 				accumulatedDeltaRef.current = 0;
 			}
 		};
@@ -84,10 +97,6 @@ export function useAutoHideHeader(): { hidden: boolean } {
 			}
 			window.removeEventListener("scroll", onScroll);
 		};
-		// `hidden` is intentionally not in the dep list — the listener uses
-		// it via closure for decision-making only; the effect should run once
-		// on mount and clean up on unmount.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	return { hidden };

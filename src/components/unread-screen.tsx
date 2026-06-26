@@ -73,7 +73,7 @@ function getTimelineRefreshFingerprint(
 export function UnreadScreen() {
 	const timelineAnchorStorageKey = "feedy-timeline-anchor-item";
 	const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
-	const [timelineFixedTop, setTimelineFixedTop] = useState(146);
+	const [timelineFixedTop, setTimelineFixedTop] = useState(95);
 	const [timelinePanelHeight, setTimelinePanelHeight] = useState(0);
 	const [refreshToast, setRefreshToast] = useState<{
 		count: number;
@@ -242,7 +242,7 @@ export function UnreadScreen() {
 			const header = document.querySelector<HTMLElement>(
 				"[data-mobile-shell-header='true']",
 			);
-			const nextTop = header?.offsetHeight ?? 146;
+			const nextTop = header?.offsetHeight ?? 95;
 			setTimelineFixedTop(nextTop);
 		};
 
