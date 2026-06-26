@@ -121,10 +121,10 @@ export function MobileShell({
 					</main>
 				</div>
 
-				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[calc(env(safe-area-inset-bottom)+6px)]">
+				<nav className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
 					<div className="mx-auto max-w-md px-5">
 						<div
-							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-2 backdrop-blur-2xl"
+							className="flex w-full translate-y-[-2px] items-center justify-around rounded-[34px] border px-2 py-2 backdrop-blur-2xl"
 							style={{
 								background:
 									"linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08)), var(--glass-bg)",
@@ -173,7 +173,7 @@ export function MobileShell({
 										}}
 									>
 										<Icon
-											className="size-[22px]"
+											className="size-[24px]"
 											strokeWidth={active ? 2.5 : 2}
 										/>
 										<span style={{ letterSpacing: "0.04em" }}>
