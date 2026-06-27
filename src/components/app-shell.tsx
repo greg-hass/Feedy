@@ -123,7 +123,9 @@ export function MobileShell({
 
 				<nav
 					className="fixed inset-x-0 z-50"
-					style={{ bottom: "calc(env(safe-area-inset-bottom) + 8px)" }}
+					style={{
+						bottom: "max(4px, calc(env(safe-area-inset-bottom) - 12px))",
+					}}
 				>
 					<div className="mx-auto max-w-md px-5">
 						<div
