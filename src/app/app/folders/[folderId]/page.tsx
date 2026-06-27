@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import {
 	ArrowLeft,
 	Check,
+	CheckSquare,
 	EyeOff,
+	FolderInput,
 	MoreHorizontal,
 	Trash2,
 	X,
@@ -151,8 +153,9 @@ export default function FolderDetailPage() {
 										<button
 											onClick={() => setShowBulkMove(true)}
 											disabled={!selectedCount}
-											className="rounded-xl bg-[var(--accent)] px-3 py-2 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] disabled:opacity-50"
+											className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] transition duration-200 disabled:opacity-50 disabled:pointer-events-none"
 										>
+											<FolderInput className="size-3.5" />
 											Move
 										</button>
 										<button
@@ -160,8 +163,9 @@ export default function FolderDetailPage() {
 												setSelectionMode(false);
 												setSelectedFeedIds([]);
 											}}
-											className="rounded-xl bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary"
+											className="inline-flex items-center gap-1.5 rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
 										>
+											<X className="size-3.5" />
 											Cancel
 										</button>
 									</>
@@ -172,8 +176,9 @@ export default function FolderDetailPage() {
 										</p>
 										<button
 											onClick={() => setSelectionMode(true)}
-											className="rounded-xl bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary"
+											className="inline-flex items-center gap-1.5 rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
 										>
+											<CheckSquare className="size-3.5" />
 											Select
 										</button>
 									</>

@@ -3,7 +3,15 @@
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FolderPlus, Plus, Rss, Search } from "lucide-react";
+import {
+	CheckSquare,
+	FolderInput,
+	FolderPlus,
+	Plus,
+	Rss,
+	Search,
+	X,
+} from "lucide-react";
 
 import {
 	EmptyState,
@@ -232,15 +240,17 @@ export function FeedsScreen() {
 									setSelectedFeedIds([]);
 									setShowBulkMove(false);
 								}}
-								className="inline-flex h-10 items-center rounded-2xl bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
+								className="inline-flex h-10 items-center gap-2 rounded-xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
 							>
+								<X className="size-4" />
 								Cancel
 							</button>
 							<button
 								onClick={() => setShowBulkMove(true)}
 								disabled={!selectedCount}
-								className="inline-flex h-10 items-center rounded-2xl bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_100%,white_8%)_0%,var(--accent)_100%)] px-3 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_14px_34px_rgba(var(--accent-rgb),0.24)] disabled:opacity-50"
+								className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.22)] transition duration-200 disabled:opacity-50 disabled:pointer-events-none"
 							>
+								<FolderInput className="size-4" />
 								Move {selectedCount ? `(${selectedCount})` : ""}
 							</button>
 						</>
@@ -248,8 +258,9 @@ export function FeedsScreen() {
 						<>
 							<button
 								onClick={() => setSelectionMode(true)}
-								className="inline-flex h-10 items-center rounded-2xl bg-[var(--surface)] px-3 text-xs font-semibold text-secondary"
+								className="inline-flex h-10 items-center gap-2 rounded-xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
 							>
+								<CheckSquare className="size-4" />
 								Select
 							</button>
 							<IconButton

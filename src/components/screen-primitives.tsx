@@ -45,10 +45,10 @@ export function SegmentedControl<T extends string>({
 					<button
 						key={option.key}
 						onClick={() => onChange(option.key)}
-						className={`rounded-2xl px-3 py-2 text-xs font-semibold transition-colors ${
+						className={`rounded-2xl px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
 							active
-								? "bg-[var(--surface)] text-[var(--text-primary)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
-								: "text-secondary"
+								? "bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_4px_12px_rgba(var(--accent-rgb),0.28)]"
+								: "text-secondary hover:bg-[var(--surface-muted)]"
 						}`}
 					>
 						{option.label}

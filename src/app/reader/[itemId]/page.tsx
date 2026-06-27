@@ -16,6 +16,7 @@ import {
 } from "@/lib/item-state-cache";
 import {
 	selectReaderHtml,
+	shouldRefetchReaderContent,
 	shouldRenderReaderLeadMedia,
 } from "@/lib/reader-content";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
@@ -147,7 +148,7 @@ export default function ReaderPage() {
 		if (
 			!data ||
 			scheduledReaderRefreshFor === data.id ||
-			selectReaderHtml(data) ||
+			!shouldRefetchReaderContent(data) ||
 			!data.canonicalUrl
 		) {
 			return;

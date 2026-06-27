@@ -23,7 +23,11 @@ export async function GET(_request: Request, context: { params: Params }) {
 		}
 		const loadedItem = item;
 
-		if (shouldFetchReadableContent(loadedItem)) {
+		if (
+			shouldFetchReadableContent(loadedItem, {
+				allowRedditExternalArticles: true,
+			})
+		) {
 			void measurePerf(
 				"api.reader.ensureContent.background",
 				() => ensureReaderContentForLoadedItem(loadedItem),
