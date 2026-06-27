@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { MobileShell, useMe } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,6 @@ function formatBytes(bytes: number) {
 }
 
 export function SettingsScreen() {
-	const { setTheme, theme } = useTheme();
 	const me = useMe();
 	const queryClient = useQueryClient();
 	const storage = useQuery({
@@ -66,35 +64,6 @@ export function SettingsScreen() {
 
 				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
 					<h3 className="text-sm font-semibold">Appearance</h3>
-					<div className="mt-3 grid grid-cols-3 gap-2">
-						{(["system", "light", "dark"] as const).map((themeOption) => (
-							<button
-								key={themeOption}
-								onClick={() => {
-									setTheme(themeOption);
-									settings.mutate({ theme: themeOption.toUpperCase() });
-								}}
-								disabled={settings.isPending}
-								className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
-									theme === themeOption
-										? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-										: "border-subtle bg-[var(--surface-muted)] text-secondary"
-								}`}
-							>
-								<span className="inline-flex items-center gap-1.5">
-									{theme === themeOption && settings.isPending ? (
-										<Loader2 className="size-3.5 animate-spin" />
-									) : null}
-									{themeOption === "system"
-										? "System"
-										: themeOption === "light"
-											? "Light"
-											: "Dark"}
-								</span>
-							</button>
-						))}
-					</div>
-
 					<div className="mt-4">
 						<p className="text-xs font-medium text-[var(--text-primary)]">
 							Accent colour

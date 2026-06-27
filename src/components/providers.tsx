@@ -208,12 +208,7 @@ export function Providers({
 	}, [pathname]);
 
 	return (
-		<ThemeProvider
-			attribute="class"
-			defaultTheme="system"
-			enableSystem
-			nonce={nonce}
-		>
+		<ThemeProvider attribute="class" forcedTheme="dark" nonce={nonce}>
 			<QueryClientProvider client={queryClient}>
 				{children}
 				<WakeLockManager />

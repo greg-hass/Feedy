@@ -220,50 +220,60 @@ export default function ReaderPage() {
 	return (
 		<div
 			className="min-h-screen w-full pb-10"
-			style={{ paddingTop: readerTopInset, overflowAnchor: "none" }}
+			style={{ overflowAnchor: "none" }}
 		>
-			<div className="flex items-center justify-between px-4 pb-3">
-				<IconButton onClick={goBack} aria-label="Go back">
-					<ArrowLeft className="size-4" />
-				</IconButton>
-				<div className="flex items-center gap-2">
-					<IconButton
-						variant={isBookmarked ? "accent" : "default"}
-						onClick={() => {
-							vibrateIfSupported(window.navigator, 10);
-							state.mutate({ bookmarked: !isBookmarked });
-						}}
-						aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
-					>
-						<Bookmark
-							className={`size-4 ${bookmarkAnimating ? "bookmark-flip" : ""}`}
-							fill={isBookmarked ? "currentColor" : "none"}
-						/>
+			{/* Sticky reader toolbar — stays pinned to the top while scrolling */}
+			<div
+				className="sticky top-0 z-30"
+				style={{
+					backgroundColor: "var(--app-bg)",
+					paddingTop: readerTopInset,
+					paddingBottom: "12px",
+				}}
+			>
+				<div className="flex items-center justify-between px-4">
+					<IconButton variant="active" onClick={goBack} aria-label="Go back">
+						<ArrowLeft className="size-4" />
 					</IconButton>
-					{data.canonicalUrl && (
-						<>
-							<IconButton
-								onClick={() => {
-									if (!data.canonicalUrl) {
-										return;
-									}
-									void shareArticle(data.title, data.canonicalUrl);
-								}}
-								aria-label="Share article"
-							>
-								<Share2 className="size-4" />
-							</IconButton>
-							<a
-								href={data.canonicalUrl}
-								target="_blank"
-								rel="noreferrer"
-								className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
-								aria-label="Open original article"
-							>
-								<ExternalLink className="size-4" />
-							</a>
-						</>
-					)}
+					<div className="flex items-center gap-2">
+						<IconButton
+							variant={isBookmarked ? "accent" : "default"}
+							onClick={() => {
+								vibrateIfSupported(window.navigator, 10);
+								state.mutate({ bookmarked: !isBookmarked });
+							}}
+							aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
+						>
+							<Bookmark
+								className={`size-4 ${bookmarkAnimating ? "bookmark-flip" : ""}`}
+								fill={isBookmarked ? "currentColor" : "none"}
+							/>
+						</IconButton>
+						{data.canonicalUrl && (
+							<>
+								<IconButton
+									onClick={() => {
+										if (!data.canonicalUrl) {
+											return;
+										}
+										void shareArticle(data.title, data.canonicalUrl);
+									}}
+									aria-label="Share article"
+								>
+									<Share2 className="size-4" />
+								</IconButton>
+								<a
+									href={data.canonicalUrl}
+									target="_blank"
+									rel="noreferrer"
+									className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
+									aria-label="Open original article"
+								>
+									<ExternalLink className="size-4" />
+								</a>
+							</>
+						)}
+					</div>
 				</div>
 			</div>
 
@@ -272,14 +282,14 @@ export default function ReaderPage() {
 					<FeedAvatar
 						feedId={data.feed.id}
 						title={data.feed.label || data.feed.title}
-						size={44}
+						size={32}
 					/>
 					<p className="text-xs uppercase tracking-[0.18em] text-secondary">
 						{data.feed.label || data.feed.title}
 					</p>
 				</div>
 
-				<h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em]">
+				<h1 className="mt-2 text-[1.4rem] font-semibold leading-[1.2] tracking-[-0.02em]">
 					{data.title}
 				</h1>
 

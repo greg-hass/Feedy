@@ -75,8 +75,8 @@ export function MobileShell({
 					}}
 				>
 					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
-						<div className="flex items-center justify-between gap-3">
-							<div className="flex min-w-0 flex-1 items-center gap-2">
+						<div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+							<div className="flex min-w-0 items-center gap-2 justify-self-start">
 								<div className="shrink-0">{backButton ?? null}</div>
 								<h1
 									className="truncate text-[2rem] font-bold leading-[1.1] tracking-[-0.045em]"
@@ -85,12 +85,10 @@ export function MobileShell({
 									{title}
 								</h1>
 							</div>
-							{center ? (
-								<div className="flex shrink-0 items-center justify-center">
-									{center}
-								</div>
-							) : null}
-							<div className="flex shrink-0 items-center gap-2">
+							<div className="flex items-center justify-center justify-self-center">
+								{center ?? <span />}
+							</div>
+							<div className="flex items-center gap-2 justify-self-end">
 								{actions}
 								<IconButton
 									onClick={() => logout.mutate()}
@@ -131,13 +129,11 @@ export function MobileShell({
 						<div
 							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-1.5 backdrop-blur-2xl"
 							style={{
-								background:
-									"linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04)), linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.06)), var(--glass-bg)",
+								background: "var(--glass-bg)",
 								borderColor: "var(--glass-border)",
-								boxShadow:
-									"0 1px 0 rgba(255,255,255,0.16) inset, 0 -1px 0 rgba(255,255,255,0.08) inset, var(--glass-shadow)",
-								WebkitBackdropFilter: "blur(44px) saturate(190%)",
-								backdropFilter: "blur(44px) saturate(190%)",
+								boxShadow: "var(--glass-shadow)",
+								WebkitBackdropFilter: "blur(20px) saturate(180%)",
+								backdropFilter: "blur(20px) saturate(180%)",
 							}}
 						>
 							{navItems.map((item) => {
@@ -174,7 +170,7 @@ export function MobileShell({
 											active ? "font-semibold" : "font-medium"
 										}`}
 										style={{
-											color: active ? "var(--accent)" : "var(--text-secondary)",
+											color: active ? "var(--accent)" : "#ffffff",
 										}}
 									>
 										<Icon
