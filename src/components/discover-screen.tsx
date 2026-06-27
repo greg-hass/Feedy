@@ -109,7 +109,7 @@ export function DiscoverScreen() {
 						columns="grid-cols-4"
 					/>
 				</div>
-				<div className="mt-3 flex items-center gap-3 rounded-[22px] bg-[var(--surface-strong)] px-3.5">
+				<div className="mt-3 flex items-center gap-3 rounded-[22px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
 					<Search className="size-4 shrink-0 text-secondary" />
 					<Input
 						value={query}
@@ -171,7 +171,8 @@ export function DiscoverScreen() {
 												</p>
 											</div>
 										</div>
-										<span className="inline-flex shrink-0 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.18)]">
+										<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--accent)]/30 bg-[var(--accent-dim)] px-2.5 py-1 text-[10px] font-medium text-[var(--accent)]">
+											<Check className="size-3" />
 											Added
 										</span>
 									</div>
@@ -239,7 +240,7 @@ export function DiscoverScreen() {
 												</div>
 											</div>
 											{justAdded ? (
-												<span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)] px-3 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)]">
+												<span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[var(--accent)]/30 bg-[var(--accent-dim)] px-3 text-xs font-semibold text-[var(--accent)]">
 													<Check className="size-3.5" />
 													Added
 												</span>

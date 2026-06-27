@@ -36,22 +36,12 @@ export default function ReaderPage() {
 	const readerTopInset = "calc(max(12px, env(safe-area-inset-top)) + 12px)";
 
 	const goBack = () => {
-		if (typeof document !== "undefined") {
-			try {
-				const referrerUrl = document.referrer
-					? new URL(document.referrer)
-					: null;
-				if (!referrerUrl || referrerUrl.host !== window.location.host) {
-					router.replace("/app/unread");
-					return;
-				}
-			} catch {
-				router.replace("/app/unread");
-				return;
-			}
+		if (typeof window !== "undefined" && window.history.length > 1) {
+			router.back();
+			return;
 		}
 
-		router.back();
+		router.replace("/app/unread");
 	};
 
 	const forceScrollTop = () => {
@@ -115,6 +105,7 @@ export default function ReaderPage() {
 			});
 			updateReaderStateCache(queryClient, params.itemId, variables);
 			await queryClient.invalidateQueries({ queryKey: ["me"] });
+			await queryClient.invalidateQueries({ queryKey: ["items"] });
 		},
 		onError: () => {
 			setOptimisticBookmarked(null);
@@ -232,12 +223,18 @@ export default function ReaderPage() {
 				}}
 			>
 				<div className="flex items-center justify-between px-4">
-					<IconButton variant="active" onClick={goBack} aria-label="Go back">
+					<IconButton
+						variant="default"
+						onClick={goBack}
+						aria-label="Go back"
+						className="text-[var(--accent)]"
+					>
 						<ArrowLeft className="size-4" />
 					</IconButton>
 					<div className="flex items-center gap-2">
 						<IconButton
-							variant={isBookmarked ? "accent" : "default"}
+							variant="default"
+							className={isBookmarked ? "text-[var(--accent)]" : ""}
 							onClick={() => {
 								vibrateIfSupported(window.navigator, 10);
 								state.mutate({ bookmarked: !isBookmarked });

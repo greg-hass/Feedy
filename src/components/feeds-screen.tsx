@@ -286,7 +286,7 @@ export function FeedsScreen() {
 			)}
 
 			<section className="mb-4 rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
-				<div className="flex items-center gap-3 rounded-[20px] bg-[var(--surface-strong)] px-3.5">
+				<div className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
 					<Search className="size-4 shrink-0 text-secondary" />
 					<Input
 						value={query}
@@ -354,32 +354,6 @@ export function FeedsScreen() {
 
 			{selectionMode ? (
 				<>
-					<section className="mb-4 rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
-						<div className="flex items-start justify-between gap-3">
-							<div>
-								<p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
-									Multi-select
-								</p>
-								<h2 className="mt-1 text-[1.05rem] font-semibold tracking-[-0.03em]">
-									Select folders or loose feeds
-								</h2>
-								<p className="mt-1 text-xs text-secondary">
-									{selectedCount} selected across {visibleFolders.length}{" "}
-									visible folders and {looseSelectableFeeds.length} loose feeds.
-								</p>
-							</div>
-							<div className="flex items-center gap-2">
-								<button
-									onClick={() => setShowBulkMove(true)}
-									disabled={!selectedCount}
-									className="rounded-2xl bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] disabled:opacity-50"
-								>
-									Move
-								</button>
-							</div>
-						</div>
-					</section>
-
 					<div className="space-y-4">
 						{visibleFolders.length > 0 ? (
 							<section>

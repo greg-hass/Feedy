@@ -124,7 +124,7 @@ export function SettingsScreen() {
 								disabled={settings.isPending}
 								className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 									me.data?.user.settings.refreshIntervalMinutes === minutes
-										? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
+										? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
 										: "border-subtle bg-[var(--surface-muted)] text-secondary"
 								}`}
 							>
@@ -269,7 +269,7 @@ export function SettingsScreen() {
 									onClick={() => settings.mutate({ itemRetentionDays: days })}
 									className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 										me.data?.user.settings.itemRetentionDays === days
-											? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
+											? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
 											: "border-subtle bg-[var(--surface-muted)] text-secondary"
 									}`}
 								>

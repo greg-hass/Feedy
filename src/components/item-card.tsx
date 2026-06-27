@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Bookmark, Eye, ExternalLink, Play } from "lucide-react";
+import { Bookmark, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { memo, useEffect, useState } from "react";
 
@@ -167,6 +167,7 @@ export const ItemCard = memo(function ItemCard({
 			updateItemStateCaches(queryClient, item.id, variables);
 			updateReaderStateCache(queryClient, item.id, variables);
 			await queryClient.invalidateQueries({ queryKey: ["me"] });
+			await queryClient.invalidateQueries({ queryKey: ["items"] });
 		},
 		onError: () => {
 			setOptimisticBookmarked(null);
@@ -366,14 +367,16 @@ export const ItemCard = memo(function ItemCard({
 					onClick={navigateToReader}
 				>
 					<h3
-						className={`mt-1.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] line-clamp-2 transition-colors duration-200 ${hoverTextClass}`}
+						className={`mt-1.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] line-clamp-2 transition-colors duration-200 ${hoverTextClass} ${item.read ? "opacity-50" : ""}`}
 					>
 						<SearchHighlight text={itemTitle} query={searchQuery} />
 					</h3>
 				</Link>
 
 				{item.summary && !thumbnailUrl && (
-					<p className="mt-1.5 text-[13px] leading-relaxed text-secondary line-clamp-2">
+					<p
+						className={`mt-1.5 text-[13px] leading-relaxed text-secondary line-clamp-2 ${item.read ? "opacity-50" : ""}`}
+					>
 						<SearchHighlight
 							text={decodeHtmlEntities(item.summary)}
 							query={searchQuery}
@@ -398,8 +401,9 @@ export const ItemCard = memo(function ItemCard({
 
 					<div className="flex items-center gap-1.5">
 						<IconButton
-							variant={isBookmarked ? "accent" : "default"}
+							variant="default"
 							size="md"
+							className={isBookmarked ? "text-[var(--accent)]" : ""}
 							onClick={() => {
 								vibrateIfSupported(window.navigator, 10);
 								updateState.mutate({ bookmarked: !isBookmarked });
@@ -412,15 +416,6 @@ export const ItemCard = memo(function ItemCard({
 								fill={isBookmarked ? "currentColor" : "none"}
 							/>
 						</IconButton>
-
-						{item.read && (
-							<span
-								data-card-action
-								className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_8px_18px_rgba(var(--accent-rgb),0.3)]"
-							>
-								<Eye className="size-[18px]" />
-							</span>
-						)}
 
 						{item.canonicalUrl && (
 							<a
