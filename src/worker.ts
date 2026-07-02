@@ -113,12 +113,16 @@ async function runRetentionCleanup() {
 	}
 }
 
+const YOUTUBE_SHORTS_BACKFILL_BATCHES_PER_CYCLE = 10;
+let backfillYouTubeCursor: { id: string } | undefined;
+
 async function backfillYouTubeShortFlags() {
 	const batchSize = 25;
 	const concurrency = 5;
 	let processedCount = 0;
+	let batchesThisCycle = 0;
 
-	while (true) {
+	while (batchesThisCycle < YOUTUBE_SHORTS_BACKFILL_BATCHES_PER_CYCLE) {
 		const pendingItems = await prisma.item.findMany({
 			where: {
 				youtubeVideoId: { not: null },
@@ -132,15 +136,15 @@ async function backfillYouTubeShortFlags() {
 				id: "asc",
 			},
 			take: batchSize,
+			...(backfillYouTubeCursor
+				? { cursor: backfillYouTubeCursor, skip: 1 }
+				: {}),
 		});
 
 		if (pendingItems.length === 0) {
+			backfillYouTubeCursor = undefined;
 			break;
 		}
-
-		console.log(
-			`[worker] Backfilling YouTube Shorts flags for ${pendingItems.length} items`,
-		);
 
 		for (let index = 0; index < pendingItems.length; index += concurrency) {
 			const batch = pendingItems.slice(index, index + concurrency);
@@ -167,7 +171,11 @@ async function backfillYouTubeShortFlags() {
 			);
 		}
 
+		backfillYouTubeCursor = {
+			id: pendingItems[pendingItems.length - 1]!.id,
+		};
 		processedCount += pendingItems.length;
+		batchesThisCycle++;
 	}
 
 	if (processedCount > 0) {
