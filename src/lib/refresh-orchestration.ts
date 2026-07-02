@@ -104,6 +104,22 @@ export function getRefreshBatchId(metadata: unknown) {
 	return typeof batchId === "string" && batchId.length > 0 ? batchId : null;
 }
 
+/**
+ * Atomically record one worker completion for a batch and transition its
+ * status via a single UPDATE with CASE expressions.
+ *
+ * This replaces the naive read-modify-write (SELECT counts, compute new
+ * state, UPDATE) with an atomic SQL update. Without this, two workers
+ * completing concurrently could each read the old counters and write a
+ * stale state — a lost-update race. The CASE expressions computed
+ * against the row's current values at UPDATE time guarantee the state
+ * transition is correct under concurrent writes.
+ *
+ * The WHERE clause `succeeded + failed < queued` acts as an idempotency
+ * guard — once the batch is fully accounted for, excess calls are no-ops.
+ *
+ * Called by: worker after each individual feed refresh completes.
+ */
 export async function recordRefreshBatchResult(
 	client: RefreshBatchProgressClient,
 	batchId: string | null,
