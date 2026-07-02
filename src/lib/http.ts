@@ -304,6 +304,11 @@ async function fetchWithPolicy(
 	// hostname is re-resolved to a different IP between validation and connect).
 	const resolvedAddresses = await resolveOutboundHostname(url);
 	const primaryAddress = resolvedAddresses[0];
+	if (!primaryAddress) {
+		throw new Error(
+			`Outbound request blocked: DNS resolution for ${url.hostname} returned no addresses`,
+		);
+	}
 
 	const release = await acquireDomainSlot(url.hostname);
 	await waitForRateLimitCooldown(url.hostname);
