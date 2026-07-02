@@ -197,11 +197,11 @@ async function resolveOutboundHostname(
 
 // Test-only override: inject a fetch implementation for non-proxy paths.
 // In production, the DNS-pinned undici path is always used (see fetchWithPolicy).
-let testFetchOverride: ((url: string | URL, init?: RequestInit) => Promise<Response>) | undefined;
+let testFetchOverride:
+	| ((url: string | URL, init?: RequestInit) => Promise<Response>)
+	| undefined;
 
-export function __setOutboundFetch(
-	fn: typeof testFetchOverride,
-): void {
+export function __setOutboundFetch(fn: typeof testFetchOverride): void {
 	testFetchOverride = fn;
 }
 
@@ -350,8 +350,8 @@ async function fetchWithPolicy(
 				})()
 			: // For testing, allow injecting a mock fetch implementation.
 				// In production, this is always undefined.
-				testFetchOverride ??
-				(await createDnsPinnedFetch(primaryAddress, url.hostname));
+				(testFetchOverride ??
+				(await createDnsPinnedFetch(primaryAddress, url.hostname)));
 
 		const response = await outboundFetch(fetchUrl as string | URL, {
 			...(init as Record<string, unknown>),

@@ -84,6 +84,8 @@ describe("queueRefreshBatch", () => {
 				_batchSize: number,
 				mapper: (item: T) => Promise<R>,
 			) => Promise.all(items.map(mapper)),
+			// No active jobs — sentinel check passes through
+			findActiveJob: async () => null,
 		};
 
 		const result = await queueRefreshBatch(
@@ -167,6 +169,8 @@ describe("queueRefreshBatch", () => {
 				_batchSize: number,
 				mapper: (item: T) => Promise<R>,
 			) => Promise.all(items.map(mapper)),
+			// No active jobs — sentinel check passes through
+			findActiveJob: async () => null,
 		};
 
 		const result = await queueRefreshBatch(
@@ -250,6 +254,8 @@ describe("queueRefreshBatch", () => {
 				_batchSize: number,
 				mapper: (item: T) => Promise<R>,
 			) => Promise.all(items.map(mapper)),
+			// No active jobs — sentinel check passes through
+			findActiveJob: async () => null,
 		};
 
 		await assert.rejects(

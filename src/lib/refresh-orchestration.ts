@@ -43,6 +43,7 @@ type RefreshOrchestrationDeps = {
 	deleteRefreshJob?: typeof prisma.refreshJob.delete;
 	enqueueRefresh?: typeof enqueueFeedRefresh;
 	batchMap?: typeof mapInBatches;
+	findActiveJob?: typeof prisma.refreshJob.findFirst;
 };
 
 type SingleRefreshDeps = Pick<
@@ -143,22 +144,62 @@ async function queueRefreshForFeed(
 	trigger: JobTrigger,
 	deps: Required<RefreshOrchestrationDeps>,
 ) {
+	// Skip if there's a recent QUEUED/RUNNING job for this feed (same
+	// sentinel as queueSingleFeedRefresh). BullMQ dedupe protects
+	// correctness, but this avoids unnecessary DB writes and keeps
+	// batch stats accurate.
+	const existing = await deps.findActiveJob?.({
+		where: {
+			feedId,
+			status: { in: [JobStatus.QUEUED, JobStatus.RUNNING] },
+			requestedAt: { gt: new Date(Date.now() - 5 * 60_000) },
+		},
+		select: { id: true },
+	});
+	if (existing) {
+		return false;
+	}
+
+	return createAndEnqueueRefreshJob(
+		deps,
+		{ userId, feedId, trigger },
+		{ requestedAt: batchStartedAt, metadata: { batchId } },
+	);
+}
+
+/**
+ * Shared helper: create a refresh job in the DB, enqueue it in BullMQ,
+ * and clean up the job record on failure or BullMQ dedupe.
+ * Used by both single-feed (queueSingleFeedRefresh) and batch
+ * (queueRefreshForFeed) paths.
+ */
+async function createAndEnqueueRefreshJob(
+	deps: Pick<
+		Required<RefreshOrchestrationDeps>,
+		"createRefreshJob" | "deleteRefreshJob" | "enqueueRefresh"
+	>,
+	params: {
+		userId: string;
+		feedId: string;
+		trigger: JobTrigger;
+	},
+	extraData?: Record<string, unknown>,
+): Promise<boolean> {
 	const refreshJob = await deps.createRefreshJob({
 		data: {
-			userId,
-			feedId,
-			trigger,
+			userId: params.userId,
+			feedId: params.feedId,
+			trigger: params.trigger,
 			status: JobStatus.QUEUED,
-			requestedAt: batchStartedAt,
-			metadata: { batchId },
-		},
+			...(extraData ?? {}),
+		} as never,
 	});
 
 	let queued: Awaited<ReturnType<typeof enqueueFeedRefresh>>;
 	try {
 		queued = await deps.enqueueRefresh({
-			feedId,
-			trigger: jobTriggerToQueueTrigger(trigger),
+			feedId: params.feedId,
+			trigger: jobTriggerToQueueTrigger(params.trigger),
 			refreshJobId: refreshJob.id,
 		});
 	} catch (error) {
@@ -207,36 +248,11 @@ export async function queueSingleFeedRefresh(
 		return false;
 	}
 
-	const refreshJob = await resolvedDeps.createRefreshJob({
-		data: {
-			userId,
-			feedId,
-			trigger,
-			status: JobStatus.QUEUED,
-		},
+	return createAndEnqueueRefreshJob(resolvedDeps, {
+		userId,
+		feedId,
+		trigger,
 	});
-
-	let queued: Awaited<ReturnType<typeof enqueueFeedRefresh>>;
-	try {
-		queued = await resolvedDeps.enqueueRefresh({
-			feedId,
-			trigger: jobTriggerToQueueTrigger(trigger),
-			refreshJobId: refreshJob.id,
-		});
-	} catch (error) {
-		await resolvedDeps
-			.deleteRefreshJob({ where: { id: refreshJob.id } })
-			.catch(() => null);
-		throw error;
-	}
-
-	if (!queued.enqueued) {
-		await resolvedDeps
-			.deleteRefreshJob({ where: { id: refreshJob.id } })
-			.catch(() => null);
-	}
-
-	return queued.enqueued;
 }
 
 export async function queueRefreshBatch(
@@ -262,6 +278,9 @@ export async function queueRefreshBatch(
 			deps.deleteRefreshJob ?? prisma.refreshJob.delete.bind(prisma.refreshJob),
 		enqueueRefresh: deps.enqueueRefresh ?? enqueueFeedRefresh,
 		batchMap: deps.batchMap ?? mapInBatches,
+		findActiveJob:
+			deps.findActiveJob ??
+			prisma.refreshJob.findFirst.bind(prisma.refreshJob),
 	};
 
 	await resolvedDeps.createRefreshBatch({
