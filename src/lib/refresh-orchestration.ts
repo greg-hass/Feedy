@@ -144,10 +144,12 @@ async function queueRefreshForFeed(
 	trigger: JobTrigger,
 	deps: Required<RefreshOrchestrationDeps>,
 ) {
+	// This findFirst is an optimisation, not a correctness guarantee — a concurrent
+	// caller can race through between this check and the create+enqueue below. Real
+	// deduplication happens in BullMQ via the stable jobId (see enqueueFeedRefresh).
 	// Skip if there's a recent QUEUED/RUNNING job for this feed (same
-	// sentinel as queueSingleFeedRefresh). BullMQ dedupe protects
-	// correctness, but this avoids unnecessary DB writes and keeps
-	// batch stats accurate.
+	// sentinel as queueSingleFeedRefresh). This avoids unnecessary DB
+	// writes and keeps batch stats accurate.
 	const existing = await deps.findActiveJob?.({
 		where: {
 			feedId,
@@ -234,6 +236,9 @@ export async function queueSingleFeedRefresh(
 			deps.findActiveJob ?? prisma.refreshJob.findFirst.bind(prisma.refreshJob),
 	};
 
+	// This findFirst is an optimisation, not a correctness guarantee — a concurrent
+	// caller can race through between this check and the create+enqueue below. Real
+	// deduplication happens in BullMQ via the stable jobId (see enqueueFeedRefresh).
 	// Skip only if there's a very recent active job (created within the refresh window).
 	// Older QUEUED/RUNNING jobs are likely stale and will be cleaned up by maintenance.
 	const existing = await resolvedDeps.findActiveJob!({
@@ -279,8 +284,7 @@ export async function queueRefreshBatch(
 		enqueueRefresh: deps.enqueueRefresh ?? enqueueFeedRefresh,
 		batchMap: deps.batchMap ?? mapInBatches,
 		findActiveJob:
-			deps.findActiveJob ??
-			prisma.refreshJob.findFirst.bind(prisma.refreshJob),
+			deps.findActiveJob ?? prisma.refreshJob.findFirst.bind(prisma.refreshJob),
 	};
 
 	await resolvedDeps.createRefreshBatch({
