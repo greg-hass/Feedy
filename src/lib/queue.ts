@@ -20,10 +20,6 @@ export type ReaderExtractionJobPayload = {
 	itemId: string;
 };
 
-type JobData<T> = {
-	data: T;
-};
-
 let refreshQueue: Queue<RefreshJobPayload> | undefined;
 let iconQueue: Queue<IconJobPayload> | undefined;
 let readerExtractionQueue: Queue<ReaderExtractionJobPayload> | undefined;
@@ -93,23 +89,17 @@ export async function enqueueFeedRefresh(payload: RefreshJobPayload) {
 		jobId: dedupeId,
 	});
 
-	if (!job || !isReturnedRefreshJobNew(job, payload)) {
+	if (!job) {
+		// BullMQ deduped against an existing active job (same jobId already
+		// exists in waiting/delayed/active state). Fetch the existing job
+		// so the caller can inspect it (e.g. to check trigger type).
 		const existing = await queue.getJob(dedupeId);
 		return { enqueued: false, job: existing! };
 	}
 
+	// New job created. BullMQ returns our payload as-is, so no payload
+	// comparison needed — a truthy job always carries matching data.
 	return { enqueued: true, job };
-}
-
-export function isReturnedRefreshJobNew(
-	job: JobData<RefreshJobPayload>,
-	payload: RefreshJobPayload,
-) {
-	return (
-		job.data.feedId === payload.feedId &&
-		job.data.trigger === payload.trigger &&
-		job.data.refreshJobId === payload.refreshJobId
-	);
 }
 
 export async function enqueueIconFetch(payload: IconJobPayload) {

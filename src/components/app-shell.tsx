@@ -30,6 +30,19 @@ export function useMe() {
 	});
 }
 
+function useLogout() {
+	const queryClient = useQueryClient();
+	const router = useRouter();
+
+	return useMutation({
+		mutationFn: () => api("/api/auth/logout", { method: "POST" }),
+		onSuccess: async () => {
+			await queryClient.clear();
+			router.replace("/login");
+		},
+	});
+}
+
 export function MobileShell({
 	title,
 	actions,
@@ -44,18 +57,9 @@ export function MobileShell({
 	children: React.ReactNode;
 }) {
 	const pathname = usePathname();
-	const router = useRouter();
-	const queryClient = useQueryClient();
 	const me = useMe();
 	const { offsetPx: headerOffsetPx } = useAutoHideHeader();
-
-	const logout = useMutation({
-		mutationFn: () => api("/api/auth/logout", { method: "POST" }),
-		onSuccess: async () => {
-			await queryClient.clear();
-			router.replace("/login");
-		},
-	});
+	const logout = useLogout();
 
 	const accent = me.data?.user.settings.accentColor ?? "EMERALD";
 

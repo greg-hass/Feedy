@@ -115,6 +115,14 @@ export function getRefreshBatchId(metadata: unknown) {
  * against the row's current values at UPDATE time guarantee the state
  * transition is correct under concurrent writes.
  *
+ * The status CASE resolves one of four transitions:
+ *
+ *   FAILED    — current result is FAILED, all jobs accounted for, AND
+ *               every job in the batch failed (succeeded = 0)
+ *   PARTIAL   — all jobs accounted for, AND at least one has failed
+ *   SUCCEEDED — all jobs accounted for, AND none have failed
+ *   RUNNING   — still awaiting worker results (succeeded + failed < queued)
+ *
  * The WHERE clause `succeeded + failed < queued` acts as an idempotency
  * guard — once the batch is fully accounted for, excess calls are no-ops.
  *
@@ -140,9 +148,13 @@ export async function recordRefreshBatchResult(
         ELSE "finishedAt"
       END,
       "status" = CASE
+        -- FAILED: all accounted for, this one failed, and zero succeeded so far
         WHEN ${result === "FAILED"} AND "succeeded" + "failed" + 1 >= "queued" AND "succeeded" = 0 THEN 'FAILED'::"RefreshBatchStatus"
+        -- PARTIAL: all accounted for, and at least one has failed
         WHEN "succeeded" + "failed" + 1 >= "queued" AND ("failed" + ${result === "FAILED" ? 1 : 0}) > 0 THEN 'PARTIAL'::"RefreshBatchStatus"
+        -- SUCCEEDED: all accounted for, none have failed
         WHEN "succeeded" + "failed" + 1 >= "queued" THEN 'SUCCEEDED'::"RefreshBatchStatus"
+        -- RUNNING: still waiting for more workers to report
         ELSE 'RUNNING'::"RefreshBatchStatus"
       END,
       "updatedAt" = NOW()
