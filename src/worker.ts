@@ -299,12 +299,16 @@ async function boot() {
 	void runBackgroundTask("initial feed scheduling", scheduleDueFeeds);
 	void runBackgroundTask("initial retention cleanup", runRetentionCleanup);
 
-	if (env.ENABLE_YOUTUBE_SHORTS_BACKFILL === "true") {
+	// YouTube Shorts detection: run at boot for existing unchecked items
+	// and every 5 minutes to catch items added by fresh feed refreshes.
+	void runBackgroundTask("YouTube Shorts backfill", backfillYouTubeShortFlags);
+	const YOUTUBE_SHORTS_BACKFILL_MS = 5 * 60_000;
+	const shortsBackfillTimer = setInterval(() => {
 		void runBackgroundTask(
 			"YouTube Shorts backfill",
 			backfillYouTubeShortFlags,
 		);
-	}
+	}, YOUTUBE_SHORTS_BACKFILL_MS);
 
 	if (env.ENABLE_READER_EXTRACTION_BACKFILL === "true") {
 		void runBackgroundTask(
@@ -350,6 +354,7 @@ async function boot() {
 		staleJobTimer.unref();
 		pruneTimer.unref();
 		retentionTimer.unref();
+		shortsBackfillTimer.unref();
 		const forcedExit = setTimeout(() => {
 			console.error("[worker] Shutdown timed out, forcing exit");
 			process.exit(1);
