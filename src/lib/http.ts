@@ -1,4 +1,4 @@
-import { ProxyAgent } from "undici";
+import { ProxyAgent, Agent, fetch as undiciFetch } from "undici";
 
 import { env } from "@/lib/env";
 import dns from "node:dns/promises";
@@ -156,7 +156,16 @@ function isLocalHostname(hostname: string) {
 	);
 }
 
-async function assertSafeOutboundDestination(url: URL) {
+/**
+ * Resolves a URL's hostname to IP addresses and validates them against
+ * private/reserved ranges. Returns the resolved addresses so callers can
+ * pin connections to the validated IPs, preventing DNS rebinding attacks
+ * where DNS is re-resolved between validation and connection.
+ */
+/** @returns resolved addresses, never empty on success */
+async function resolveOutboundHostname(
+	url: URL,
+): Promise<{ address: string; family: number }[]> {
 	if (url.protocol !== "http:" && url.protocol !== "https:") {
 		throw new Error(`Unsupported outbound protocol: ${url.protocol}`);
 	}
@@ -171,7 +180,7 @@ async function assertSafeOutboundDestination(url: URL) {
 				"Outbound requests to private IP addresses are not allowed",
 			);
 		}
-		return;
+		return [{ address: url.hostname, family: net.isIP(url.hostname) as 4 | 6 }];
 	}
 
 	const resolved = await dns.lookup(url.hostname, {
@@ -183,6 +192,44 @@ async function assertSafeOutboundDestination(url: URL) {
 			"Outbound requests to private IP addresses are not allowed",
 		);
 	}
+	return resolved;
+}
+
+// Test-only override: inject a fetch implementation for non-proxy paths.
+// In production, the DNS-pinned undici path is always used (see fetchWithPolicy).
+let testFetchOverride: ((url: string | URL, init?: RequestInit) => Promise<Response>) | undefined;
+
+export function __setOutboundFetch(
+	fn: typeof testFetchOverride,
+): void {
+	testFetchOverride = fn;
+}
+
+async function createDnsPinnedFetch(
+	address: { address: string; family: number },
+	servername: string,
+): Promise<(url: string | URL, init?: RequestInit) => Promise<Response>> {
+	const agent = new Agent({
+		// The `connect` option is passed through to net.connect/tls.connect.
+		// `servername` ensures correct TLS SNI when connecting to the IP directly.
+		// `lookup` returns the already-validated IP, preventing DNS re-resolution.
+		connect: {
+			servername,
+			lookup: (
+				_hostname: string,
+				_opts: Record<string, unknown>,
+				cb: (err: Error | null, addr: string, fam: number) => void,
+			) => {
+				cb(null, address.address, address.family);
+			},
+		} as Record<string, unknown>,
+	});
+
+	return (url: string | URL, init?: RequestInit) =>
+		undiciFetch(url, {
+			...(init as Record<string, unknown>),
+			dispatcher: agent,
+		}) as unknown as Promise<Response>;
 }
 
 async function readLimitedResponseBody(response: Response) {
@@ -252,7 +299,11 @@ async function fetchWithPolicy(
 				: input.url;
 	const url = new URL(urlString);
 
-	await assertSafeOutboundDestination(url);
+	// Resolve and validate the destination, capturing the resolved addresses
+	// for DNS-pinned connections (prevents DNS rebinding attacks where the
+	// hostname is re-resolved to a different IP between validation and connect).
+	const resolvedAddresses = await resolveOutboundHostname(url);
+	const primaryAddress = resolvedAddresses[0];
 
 	const release = await acquireDomainSlot(url.hostname);
 	await waitForRateLimitCooldown(url.hostname);
@@ -262,7 +313,9 @@ async function fetchWithPolicy(
 			? buildRedditRssProxyUrl(env.REDDIT_RSS_PROXY_URL, url.href)
 			: null;
 	if (proxiedUrl) {
-		await assertSafeOutboundDestination(proxiedUrl);
+		// Validate the proxy URL too — it points to user infrastructure so
+		// we don't need DNS pinning, but we still check for misconfigurations.
+		await resolveOutboundHostname(proxiedUrl);
 	}
 
 	const controller = new AbortController();
@@ -282,24 +335,30 @@ async function fetchWithPolicy(
 		const useProxy =
 			isRedditHost(url.hostname) && redditProxyAgent && !proxiedUrl;
 		const fetchUrl = proxiedUrl ?? input;
-		const response = useProxy
-			? await (async () => {
-					const undici = await import("undici");
-					return undici.fetch(url.href, {
-						...(init as Record<string, unknown>),
-						signal: controller.signal,
-						redirect: "manual",
-						headers,
-						dispatcher: redditProxyAgent,
-					}) as unknown as Promise<Response>;
+
+		// Build the fetch function: Reddit proxy uses undici with proxy agent,
+		// everything else uses DNS-pinned undici to prevent re-resolution.
+		const outboundFetch = useProxy
+			? (() => {
+					// Reddit proxy path: route through the configured proxy agent.
+					// The proxy handles DNS for the target URL.
+					return (fUrl: string | URL, fInit?: RequestInit) =>
+						undiciFetch(fUrl, {
+							...(fInit as Record<string, unknown>),
+							dispatcher: redditProxyAgent!,
+						}) as unknown as Promise<Response>;
 				})()
-			: await fetch(fetchUrl, {
-					...init,
-					signal: controller.signal,
-					redirect: "manual",
-					headers,
-					next: { revalidate: 0 },
-				});
+			: // For testing, allow injecting a mock fetch implementation.
+				// In production, this is always undefined.
+				testFetchOverride ??
+				(await createDnsPinnedFetch(primaryAddress, url.hostname));
+
+		const response = await outboundFetch(fetchUrl as string | URL, {
+			...(init as Record<string, unknown>),
+			signal: controller.signal,
+			redirect: "manual",
+			headers,
+		});
 
 		if (response.status === 429) {
 			const cooldownMs = getRateLimitCooldownMs(response);

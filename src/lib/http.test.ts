@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { buildRedditRssProxyUrl, fetchWithTimeout } from "@/lib/http";
+import {
+	__setOutboundFetch,
+	buildRedditRssProxyUrl,
+	fetchWithTimeout,
+} from "@/lib/http";
 
 describe("buildRedditRssProxyUrl", () => {
 	it("adds the target Reddit URL as a url query parameter", () => {
@@ -25,12 +29,11 @@ describe("buildRedditRssProxyUrl", () => {
 
 describe("fetchWithTimeout", () => {
 	it("rejects private destinations before calling fetch", async () => {
-		const originalFetch = globalThis.fetch;
 		let fetchCalled = false;
-		globalThis.fetch = (async () => {
+		__setOutboundFetch(async () => {
 			fetchCalled = true;
 			throw new Error("fetch should not be reached");
-		}) as typeof fetch;
+		});
 
 		try {
 			await assert.rejects(
@@ -39,30 +42,24 @@ describe("fetchWithTimeout", () => {
 			);
 			assert.equal(fetchCalled, false);
 		} finally {
-			globalThis.fetch = originalFetch;
+			__setOutboundFetch(undefined);
 		}
 	});
 
 	it("does not deadlock concurrent same-host redirects", async () => {
-		const originalFetch = globalThis.fetch;
 		const completedUrls: string[] = [];
-		globalThis.fetch = (async (input: RequestInfo | URL) => {
-			const url =
-				typeof input === "string"
-					? input
-					: input instanceof URL
-						? input.href
-						: input.url;
-			if (url.includes("/initial/")) {
+		__setOutboundFetch(async (url: string | URL) => {
+			const urlStr = url instanceof URL ? url.href : url;
+			if (urlStr.includes("/initial/")) {
 				return new Response(null, {
 					status: 302,
-					headers: { location: url.replace("/initial/", "/resolved/") },
+					headers: { location: urlStr.replace("/initial/", "/resolved/") },
 				});
 			}
 
-			completedUrls.push(url);
+			completedUrls.push(urlStr);
 			return new Response("ok", { status: 200 });
-		}) as typeof fetch;
+		});
 
 		try {
 			const redirectRequests = Array.from({ length: 20 }, (_, index) =>
@@ -81,14 +78,13 @@ describe("fetchWithTimeout", () => {
 			assert.equal(responses.length, 20);
 			assert.equal(completedUrls.length, 20);
 		} finally {
-			globalThis.fetch = originalFetch;
+			__setOutboundFetch(undefined);
 		}
 	});
 
 	it("backs off a host after a rate-limit response", async () => {
-		const originalFetch = globalThis.fetch;
 		let fetchCount = 0;
-		globalThis.fetch = (async () => {
+		__setOutboundFetch(async () => {
 			fetchCount++;
 			// First fetch returns 429 with a short retry; subsequent fetches succeed
 			if (fetchCount === 1) {
@@ -98,7 +94,7 @@ describe("fetchWithTimeout", () => {
 				});
 			}
 			return new Response("ok", { status: 200 });
-		}) as typeof fetch;
+		});
 
 		try {
 			const url = "https://8.8.4.4/rate-limited-feed";
@@ -110,7 +106,7 @@ describe("fetchWithTimeout", () => {
 			assert.equal(second.status, 200);
 			assert.equal(fetchCount, 2);
 		} finally {
-			globalThis.fetch = originalFetch;
+			__setOutboundFetch(undefined);
 		}
 	});
 });

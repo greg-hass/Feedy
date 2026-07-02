@@ -3,15 +3,14 @@ import { afterEach, describe, it } from "node:test";
 
 import { FeedSourceType } from "@prisma/client";
 import { fetchAndParseFeedConditionally, validateFeedUrl } from "@/lib/feed/parse";
-
-const originalFetch = globalThis.fetch;
+import { __setOutboundFetch } from "@/lib/http";
 
 afterEach(() => {
-  globalThis.fetch = originalFetch;
+  __setOutboundFetch(undefined);
 });
 
-function mockFetch(handler: (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response>) {
-  globalThis.fetch = handler as typeof fetch;
+function mockFetch(handler: (input: RequestInfo | URL | string, init?: RequestInit) => Response | Promise<Response>) {
+  __setOutboundFetch(handler as (url: string | URL, init?: RequestInit) => Promise<Response>);
 }
 
 describe("feed parsing", () => {
