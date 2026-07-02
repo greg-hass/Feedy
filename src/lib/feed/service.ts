@@ -569,8 +569,6 @@ export async function refreshFeed(
 						commentsUrl: item.commentsUrl,
 						mediaUrl: item.mediaUrl,
 						youtubeVideoId: item.youtubeVideoId,
-						youtubeIsShort: item.youtubeIsShort ?? false,
-						youtubeShortCheckedAt: item.youtubeVideoId ? null : undefined,
 						redditPermalink: item.redditPermalink,
 						mutedByRule: evaluation.muteFromTimeline,
 						publishedAt: item.publishedAt ?? undefined,

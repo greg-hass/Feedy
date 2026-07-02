@@ -107,18 +107,22 @@ describe("youtube feed helpers", () => {
 		__setOutboundFetch(async (input: string | URL) => {
 			const url = typeof input === "string" ? input : input.href;
 			if (url.includes("/shorts/fYqOq0eJalk")) {
+				// Short: YouTube serves 200 with /shorts/ URL intact.
+				return new Response("", { status: 200 });
+			}
+
+			if (url.includes("/shorts/")) {
+				// Non-short: YouTube redirects /shorts/{id} → /watch?v={id}.
 				return new Response("", {
-					status: 200,
+					status: 302,
+					headers: {
+						location: url.replace("/shorts/", "/watch?v="),
+					},
 				});
 			}
 
-			return new Response("", {
-				status: 404,
-				headers: {
-					location:
-						"https://www.google.com/sorry/index?continue=https://www.youtube.com/watch?v=FCb4LSzPVmo",
-				},
-			});
+			// The redirected /watch?v= request gets a 200.
+			return new Response("", { status: 200 });
 		});
 
 		try {

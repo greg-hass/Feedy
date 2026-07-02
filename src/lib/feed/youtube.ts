@@ -70,9 +70,9 @@ type ParsedYouTubeItem = {
 };
 
 const MAX_SHORTS_PROBE_CACHE_ENTRIES = 500;
-const shortsProbeCache = new Map<string, Promise<boolean>>();
+const shortsProbeCache = new Map<string, Promise<boolean | null>>();
 
-function rememberShortsProbe(videoId: string, probe: Promise<boolean>) {
+function rememberShortsProbe(videoId: string, probe: Promise<boolean | null>) {
   if (shortsProbeCache.has(videoId)) {
     shortsProbeCache.delete(videoId);
   }
@@ -87,7 +87,7 @@ function rememberShortsProbe(videoId: string, probe: Promise<boolean>) {
   }
 }
 
-export function probeYouTubeShort(videoId: string) {
+export function probeYouTubeShort(videoId: string): Promise<boolean | null> {
   const cached = shortsProbeCache.get(videoId);
   if (cached) {
     return cached;
@@ -100,10 +100,17 @@ export function probeYouTubeShort(videoId: string) {
           "user-agent": "Feedy/1.0",
         },
       });
+
+      if (!response.ok) {
+        // Non-2xx: rate limited, captcha, or blocked — inconclusive.
+        return null;
+      }
+
       const resolvedUrl = (response as Response & { finalUrl?: string }).finalUrl ?? response.url;
-      return response.ok && resolvedUrl.includes(`/shorts/${videoId}`);
+      return resolvedUrl.includes(`/shorts/${videoId}`);
     } catch {
-      return false;
+      // Network errors, DNS failures, timeouts — inconclusive.
+      return null;
     }
   })();
 

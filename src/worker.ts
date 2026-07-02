@@ -151,14 +151,18 @@ async function backfillYouTubeShortFlags() {
 						return;
 					}
 
-					const youtubeIsShort = await probeYouTubeShort(youtubeVideoId);
-					await prisma.item.update({
-						where: { id: item.id },
-						data: {
-							youtubeIsShort,
-							youtubeShortCheckedAt: new Date(),
-						},
-					});
+					const probeResult = await probeYouTubeShort(youtubeVideoId);
+
+					if (probeResult !== null) {
+						const youtubeIsShort: boolean = probeResult;
+						await prisma.item.update({
+							where: { id: item.id },
+							data: {
+								youtubeIsShort,
+								youtubeShortCheckedAt: new Date(),
+							},
+						});
+					}
 				}),
 			);
 		}
