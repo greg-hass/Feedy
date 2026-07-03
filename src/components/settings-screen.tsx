@@ -58,7 +58,11 @@ export function SettingsScreen() {
 					<p
 						role={settings.error ? "alert" : "status"}
 						aria-live="polite"
-						className={settings.error ? "text-sm text-[var(--danger)]" : "text-sm text-secondary"}
+						className={
+							settings.error
+								? "text-sm text-[var(--danger)]"
+								: "text-sm text-secondary"
+						}
 					>
 						{settings.error
 							? `Could not save ${pendingLabel}. ${settings.error.message}`
@@ -136,7 +140,9 @@ export function SettingsScreen() {
 									settings.mutate({ refreshIntervalMinutes: minutes });
 								}}
 								disabled={settings.isPending}
-								aria-pressed={me.data?.user.settings.refreshIntervalMinutes === minutes}
+								aria-pressed={
+									me.data?.user.settings.refreshIntervalMinutes === minutes
+								}
 								className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 									me.data?.user.settings.refreshIntervalMinutes === minutes
 										? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
@@ -278,14 +284,16 @@ export function SettingsScreen() {
 							automatically unless they are bookmarked.
 						</p>
 						<div className="mt-3 flex gap-2">
-						{[14, 30, 90, 180, 365].map((days) => (
-							<button
-								key={days}
-								onClick={() => {
-									setPendingLabel("retention");
-									settings.mutate({ itemRetentionDays: days });
-								}}
-								aria-pressed={me.data?.user.settings.itemRetentionDays === days}
+							{[14, 30, 90, 180, 365].map((days) => (
+								<button
+									key={days}
+									onClick={() => {
+										setPendingLabel("retention");
+										settings.mutate({ itemRetentionDays: days });
+									}}
+									aria-pressed={
+										me.data?.user.settings.itemRetentionDays === days
+									}
 									className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 										me.data?.user.settings.itemRetentionDays === days
 											? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
