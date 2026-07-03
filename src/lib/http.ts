@@ -356,22 +356,32 @@ async function fetchWithPolicy(
 			isRedditHost(url.hostname) && redditProxyAgent && !proxiedUrl;
 		const fetchUrl = proxiedUrl ?? input;
 
-		// Build the fetch function: Reddit proxy uses undici with proxy agent,
-		// everything else uses DNS-pinned undici to prevent re-resolution.
+		// Build the fetch function:
+		// 1. Reddit proxy path: route through the configured proxy agent.
+		//    The proxy handles DNS for the target URL.
+		// 2. Reddit without proxy: use plain undici fetch. Reddit is behind
+		//    Cloudflare — DNS pinning to a specific edge IP causes HTTP 421
+		//    "Misdirected Request" because Cloudflare's anycast routing
+		//    doesn't recognise the pinned connection. SSRF validation still
+		//    runs above (resolveOutboundHostname), we just don't pin.
+		// 3. Everything else: DNS-pinned undici to prevent re-resolution.
 		const outboundFetch = useProxy
 			? (() => {
-					// Reddit proxy path: route through the configured proxy agent.
-					// The proxy handles DNS for the target URL.
 					return (fUrl: string | URL, fInit?: RequestInit) =>
 						undiciFetch(fUrl, {
 							...(fInit as Record<string, unknown>),
 							dispatcher: redditProxyAgent!,
 						}) as unknown as Promise<Response>;
 				})()
+			: isRedditHost(url.hostname) && !testFetchOverride
+				? (fUrl: string | URL, fInit?: RequestInit) =>
+						undiciFetch(fUrl, {
+							...(fInit as Record<string, unknown>),
+						}) as unknown as Promise<Response>
 			: // For testing, allow injecting a mock fetch implementation.
-				// In production, this is always undefined.
-				(testFetchOverride ??
-				(await createDnsPinnedFetch(primaryAddress, url.hostname)));
+					// In production, this is always undefined.
+					(testFetchOverride ??
+					(await createDnsPinnedFetch(primaryAddress, url.hostname)));
 
 		const response = await outboundFetch(fetchUrl as string | URL, {
 			...(init as Record<string, unknown>),
@@ -383,6 +393,13 @@ async function fetchWithPolicy(
 		if (response.status === 429) {
 			const cooldownMs = getRateLimitCooldownMs(response);
 			rememberRateLimit(url.hostname, cooldownMs);
+		}
+
+		// HTTP 421 "Misdirected Request" — Reddit/Cloudflare returns this
+		// when a connection arrives at the wrong edge node. Apply a short
+		// cooldown so the next attempt lets Cloudflare re-route.
+		if (response.status === 421) {
+			rememberRateLimit(url.hostname, 5_000);
 		}
 
 		if (
