@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import { FeedSourceType } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -9,7 +10,29 @@ import { enqueueIconFetch } from "@/lib/queue";
 
 type Params = Promise<{ feedId: string }>;
 
-export async function GET(request: Request, context: { params: Params }) {
+/**
+ * Bundled Reddit brand icon candidates. Covers dev (public/) and Docker
+ * standalone (.next/standalone/public/). The turbopackIgnore comment
+ * prevents NFT from tracing the entire project via process.cwd().
+ */
+const REDDIT_ICON_CANDIDATES = () => [
+	join(
+		/* turbopackIgnore: true */ process.cwd(),
+		"public",
+		"icons",
+		"reddit.png",
+	),
+	join(
+		/* turbopackIgnore: true */ process.cwd(),
+		".next",
+		"standalone",
+		"public",
+		"icons",
+		"reddit.png",
+	),
+];
+
+export async function GET(_request: Request, context: { params: Params }) {
 	const { feedId } = await context.params;
 
 	let feed: {
@@ -37,11 +60,20 @@ export async function GET(request: Request, context: { params: Params }) {
 	}
 
 	if (feed.sourceType === FeedSourceType.REDDIT_RSS) {
-		const response = NextResponse.redirect(
-			new URL("/icons/reddit.png", request.url),
-		);
-		response.headers.set("cache-control", "private, max-age=86400");
-		return response;
+		for (const candidate of REDDIT_ICON_CANDIDATES()) {
+			try {
+				const redditBytes = await readFile(candidate);
+				return new NextResponse(redditBytes, {
+					headers: {
+						"content-type": "image/png",
+						"cache-control": "private, max-age=86400",
+					},
+				});
+			} catch {
+				continue;
+			}
+		}
+		// File not found — fall through to placeholder below.
 	}
 
 	const icon = feed.icon;
@@ -75,7 +107,7 @@ export async function GET(request: Request, context: { params: Params }) {
 			// used to refetch the binary from disk on every scroll because
 			// `no-store` forced a round trip per Image element). Bump the
 			// `?v=N` cache buster in clients when icons need to be force-
-			// refreshed (currently `?v=2`).
+			// refreshed (currently `?v=3`).
 			"cache-control": "private, max-age=86400",
 		},
 	});

@@ -346,7 +346,7 @@ export const ItemCard = memo(function ItemCard({
 			<div className="p-4">
 				<div className="flex items-center gap-2.5">
 					<Image
-						src={`/api/icons/${item.feed.id}?v=2`}
+						src={`/api/icons/${item.feed.id}?v=3`}
 						alt=""
 						width={20}
 						height={20}

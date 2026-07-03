@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { memo } from "react";
+import { memo, useState } from "react";
 
 export const FeedAvatar = memo(function FeedAvatar({
 	feedId,
@@ -10,9 +10,22 @@ export const FeedAvatar = memo(function FeedAvatar({
 	title: string;
 	size?: number;
 }) {
+	const [failed, setFailed] = useState(false);
+
+	if (failed) {
+		return (
+			<div
+				className="flex shrink-0 items-center justify-center rounded-2xl border border-subtle bg-[var(--surface-strong)] text-sm font-semibold text-secondary"
+				style={{ width: size, height: size }}
+			>
+				{title.trim().charAt(0).toUpperCase() || "F"}
+			</div>
+		);
+	}
+
 	return (
 		<Image
-			src={`/api/icons/${feedId}?v=2`}
+			src={`/api/icons/${feedId}?v=3`}
 			alt={title}
 			width={size}
 			height={size}
@@ -21,6 +34,7 @@ export const FeedAvatar = memo(function FeedAvatar({
 			loading="lazy"
 			decoding="async"
 			unoptimized
+			onError={() => setFailed(true)}
 		/>
 	);
 });
