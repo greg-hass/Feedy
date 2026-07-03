@@ -1,6 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
+import { ArrowUp } from "lucide-react";
+
+import { formatTimelineRefreshLabel } from "@/lib/timeline-refresh";
 
 export function TimelineRefreshToast({
   count,
@@ -11,30 +14,41 @@ export function TimelineRefreshToast({
   onJump: () => void;
   onDismiss: () => void;
 }) {
+  const onDismissRef = useRef(onDismiss);
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
+  useEffect(() => {
+    if (count <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => onDismissRef.current(), 5_000);
+    return () => window.clearTimeout(timer);
+  }, [count]);
+
   if (count <= 0) {
     return null;
   }
 
+  const label = formatTimelineRefreshLabel(count);
+
   return (
-    <div className="fixed inset-x-0 bottom-[84px] z-40 px-5">
-      <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-[24px] border border-subtle bg-[var(--surface)] px-4 py-3 shadow-[0_20px_40px_rgba(0,0,0,0.22)]">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">{count} new articles</p>
-          <p className="text-xs text-secondary">The timeline stayed in place while we refreshed it.</p>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Button size="sm" onClick={onJump}>
-            View new articles
-          </Button>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="rounded-xl border border-subtle bg-[var(--surface-muted)] px-3 py-2 text-xs font-semibold text-secondary"
-          >
-            Dismiss
-          </button>
-        </div>
-      </div>
+    <div
+      className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+64px)] z-40 flex justify-center px-5"
+      aria-live="polite"
+    >
+      <button
+        type="button"
+        onClick={onJump}
+        aria-label={formatTimelineRefreshLabel(count)}
+        className="pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--accent)]/25 bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--accent)] shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+      >
+        <ArrowUp className="size-3.5" aria-hidden />
+        {label.replace(/^↑ /, "")}
+      </button>
     </div>
   );
 }
