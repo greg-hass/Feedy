@@ -438,7 +438,18 @@ export function UnreadScreen() {
 					const element = document.querySelector<HTMLElement>(
 						`[data-timeline-item-id="${targetId}"]`,
 					);
-					element?.scrollIntoView({ block: "start", behavior: "smooth" });
+					if (!element) {
+						setRefreshToast(null);
+						return;
+					}
+
+					const reduceMotion = window.matchMedia(
+						"(prefers-reduced-motion: reduce)",
+					).matches;
+					element.scrollIntoView({
+						block: "start",
+						behavior: reduceMotion ? "auto" : "smooth",
+					});
 					setRefreshToast(null);
 				}}
 				onDismiss={() => setRefreshToast(null)}
