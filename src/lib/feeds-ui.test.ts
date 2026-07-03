@@ -14,6 +14,10 @@ const feedSettingsSource = readFileSync(
 	new URL("../app/app/feeds/[feedId]/page.tsx", import.meta.url),
 	"utf8",
 );
+const feedsScreenSource = readFileSync(
+	new URL("../components/feeds-screen.tsx", import.meta.url),
+	"utf8",
+);
 
 describe("Feeds UI contracts", () => {
 	it("offers pause or resume from feed swipe actions", () => {
@@ -37,5 +41,32 @@ describe("Feeds UI contracts", () => {
 	it("keeps pause management on dedicated feed settings", () => {
 		assert.match(feedSettingsSource, /getFeedPauseActionLabel/);
 		assert.match(feedSettingsSource, /getFeedPausePatch/);
+	});
+
+	it("removes the obsolete swipe hint", () => {
+		assert.doesNotMatch(feedsScreenSource, /Swipe a row left/);
+		assert.doesNotMatch(feedsScreenSource, /feedy-swipe-hint-dismissed/);
+	});
+
+	it("uses tint-only active toolbar controls", () => {
+		assert.match(
+			feedsScreenSource,
+			/variant=\{showAddFolder \? "active" : "default"\}/,
+		);
+		assert.match(
+			feedsScreenSource,
+			/variant=\{showAddFeed \? "active" : "default"\}/,
+		);
+		assert.doesNotMatch(feedsScreenSource, /variant="accent"/);
+	});
+
+	it("opens New Folder in a fixed sheet instead of inline flow", () => {
+		assert.match(formsSource, /export function AddFolderSheet/);
+		assert.match(formsSource, /className="fixed inset-0 z-50/);
+		assert.match(feedsScreenSource, /<AddFolderSheet/);
+		assert.doesNotMatch(
+			feedsScreenSource,
+			/<div className="mb-3">\s*<AddFolderForm/,
+		);
 	});
 });

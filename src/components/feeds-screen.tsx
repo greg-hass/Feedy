@@ -41,8 +41,8 @@ const AddFeedForm = dynamic(
 		ssr: false,
 	},
 );
-const AddFolderForm = dynamic(
-	() => import("@/components/forms").then((module) => module.AddFolderForm),
+const AddFolderSheet = dynamic(
+	() => import("@/components/forms").then((module) => module.AddFolderSheet),
 	{
 		ssr: false,
 	},
@@ -62,13 +62,6 @@ export function FeedsScreen() {
 	const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
 	const [showBulkMove, setShowBulkMove] = useState(false);
 	const [query, setQuery] = useState("");
-	const [showSwipeHint, setShowSwipeHint] = useState(() => {
-		if (typeof window === "undefined") {
-			return false;
-		}
-
-		return !window.localStorage.getItem("feedy-swipe-hint-dismissed");
-	});
 	const queryClient = useQueryClient();
 	const deferredQuery = useDeferredValue(query);
 
@@ -240,7 +233,7 @@ export function FeedsScreen() {
 									setSelectedFeedIds([]);
 									setShowBulkMove(false);
 								}}
-								className="inline-flex h-10 items-center gap-2 rounded-xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
+								className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-dim)] px-3 text-xs font-semibold text-[var(--accent)] transition duration-200"
 							>
 								<X className="size-4" />
 								Cancel
@@ -248,7 +241,7 @@ export function FeedsScreen() {
 							<button
 								onClick={() => setShowBulkMove(true)}
 								disabled={!selectedCount}
-								className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.22)] transition duration-200 disabled:opacity-50 disabled:pointer-events-none"
+								className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-dim)] px-3 text-xs font-semibold text-[var(--accent)] transition duration-200 disabled:pointer-events-none disabled:opacity-50"
 							>
 								<FolderInput className="size-4" />
 								Move {selectedCount ? `(${selectedCount})` : ""}
@@ -264,15 +257,18 @@ export function FeedsScreen() {
 								Select
 							</button>
 							<IconButton
-								onClick={() => setShowAddFolder(true)}
+								variant={showAddFolder ? "active" : "default"}
+								onClick={() => setShowAddFolder((current) => !current)}
 								aria-label="Create folder"
+								aria-pressed={showAddFolder}
 							>
 								<FolderPlus className="size-4" />
 							</IconButton>
 							<IconButton
-								variant="accent"
-								onClick={() => setShowAddFeed(true)}
+								variant={showAddFeed ? "active" : "default"}
+								onClick={() => setShowAddFeed((current) => !current)}
 								aria-label="Add feed"
+								aria-pressed={showAddFeed}
 							>
 								<Plus className="size-4" />
 							</IconButton>
@@ -282,9 +278,7 @@ export function FeedsScreen() {
 			}
 		>
 			{showAddFolder && (
-				<div className="mb-3">
-					<AddFolderForm onClose={() => setShowAddFolder(false)} />
-				</div>
+				<AddFolderSheet onClose={() => setShowAddFolder(false)} />
 			)}
 
 			{showAddFeed && (
@@ -346,26 +340,12 @@ export function FeedsScreen() {
 				</div>
 			</section>
 
-			{!selectionMode && showSwipeHint ? (
-				<section className="mb-4 flex items-center justify-between gap-3 rounded-[20px] bg-[var(--accent-soft)]/35 px-3.5 py-3 text-sm">
-					<p className="text-[13px] text-secondary">
-						Swipe a row left for edit and delete actions.
-					</p>
-					<button
-						onClick={() => {
-							setShowSwipeHint(false);
-							window.localStorage.setItem("feedy-swipe-hint-dismissed", "1");
-						}}
-						className="rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-medium text-secondary"
-					>
-						Got it
-					</button>
-				</section>
-			) : null}
-
-			{selectionMode ? (
-				<>
-					<div className="space-y-4">
+			<>
+				<div
+					className="space-y-4"
+					hidden={!selectionMode}
+					inert={!selectionMode ? true : undefined}
+				>
 						{visibleFolders.length > 0 ? (
 							<section>
 								<SectionLabel
@@ -447,10 +427,12 @@ export function FeedsScreen() {
 								icon={<Rss className="size-6" />}
 							/>
 						)}
-					</div>
-				</>
-			) : (
-				<div className="space-y-4">
+				</div>
+				<div
+					className="space-y-4"
+					hidden={selectionMode}
+					inert={selectionMode ? true : undefined}
+				>
 					{pinnedFeeds.length > 0 && (
 						<section>
 							<SectionLabel
@@ -531,7 +513,7 @@ export function FeedsScreen() {
 							/>
 						)}
 				</div>
-			)}
+			</>
 
 			{showBulkMove ? (
 				<BulkMoveSheet

@@ -55,6 +55,22 @@ export function AddFolderForm({ onClose }: { onClose?: () => void }) {
   );
 }
 
+export function AddFolderSheet({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <AddFolderForm onClose={onClose} />
+      </div>
+    </div>
+  );
+}
+
 export function EditFolderSheet({
   folder,
   onClose,
