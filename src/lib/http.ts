@@ -217,9 +217,24 @@ async function createDnsPinnedFetch(
 			servername,
 			lookup: (
 				_hostname: string,
-				_opts: Record<string, unknown>,
-				cb: (err: Error | null, addr: string, fam: number) => void,
+				opts: { all?: boolean } | undefined,
+				cb: (
+					err: Error | null,
+					addr: string | { address: string; family: number }[],
+					fam?: number,
+				) => void,
 			) => {
+				// When `opts.all` is true (which it is whenever the upstream DNS
+				// call used `all: true`), Node.js expects the callback to receive
+				// an ARRAY of address records, not a single (address, family)
+				// pair. We always pin to one validated IP, so wrap it in an array
+				// in that case. Without this, Node.js treats the single address
+				// string as the `addresses` array and fails with
+				// ERR_INVALID_IP_ADDRESS: undefined when it can't index into it.
+				if (opts?.all) {
+					cb(null, [address]);
+					return;
+				}
 				cb(null, address.address, address.family);
 			},
 		} as Record<string, unknown>,
