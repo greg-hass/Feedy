@@ -3,6 +3,10 @@ export type TimelineRefreshDelta = {
   jumpTargetId: string | null;
 };
 
+export function formatTimelineRefreshLabel(count: number) {
+  return `↑ ${count.toLocaleString()} new ${count === 1 ? "article" : "articles"}`;
+}
+
 export function computeTimelineRefreshDelta(
   beforeIds: string[],
   afterIds: string[],

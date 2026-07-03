@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { computeTimelineRefreshDelta } from "@/lib/timeline-refresh";
+import {
+  computeTimelineRefreshDelta,
+  formatTimelineRefreshLabel,
+} from "@/lib/timeline-refresh";
 
 describe("computeTimelineRefreshDelta", () => {
   it("returns the contiguous new prefix and the oldest new item id", () => {
@@ -16,5 +19,10 @@ describe("computeTimelineRefreshDelta", () => {
 
     assert.equal(delta.newCount, 0);
     assert.equal(delta.jumpTargetId, null);
+  });
+
+  it("formats singular and plural notification labels", () => {
+    assert.equal(formatTimelineRefreshLabel(1), "↑ 1 new article");
+    assert.equal(formatTimelineRefreshLabel(3), "↑ 3 new articles");
   });
 });
