@@ -114,6 +114,7 @@ export function DiscoverScreen() {
 					<Input
 						value={query}
 						onChange={(event) => setQuery(event.target.value)}
+						aria-label="Search feeds"
 						placeholder={
 							sourceFilter === "YOUTUBE"
 								? "creator, channel, presenter..."
@@ -198,8 +199,13 @@ export function DiscoverScreen() {
 										: undefined
 							}
 						/>
-						<div className="space-y-2">
-							{isSearchingDiscover && (
+					<div className="space-y-2">
+						{addFeed.error ? (
+							<p role="alert" className="text-sm text-[var(--danger)]">
+								{addFeed.error.message}
+							</p>
+						) : null}
+						{isSearchingDiscover && (
 								<p className="text-sm text-secondary">Searching...</p>
 							)}
 							{discover.data?.map((result) => {

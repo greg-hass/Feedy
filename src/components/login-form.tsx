@@ -27,7 +27,7 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
     <>
       {/* Error banner */}
       {error ? (
-        <div className="mb-6 flex items-start gap-2.5 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/10 px-4 py-3.5 text-sm text-[var(--danger)] animate-in slide-in-from-top-1 fade-in duration-200">
+        <div role="alert" className="mb-6 flex items-start gap-2.5 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/10 px-4 py-3.5 text-sm text-[var(--danger)] animate-in slide-in-from-top-1 fade-in duration-200">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{error.message}</span>
         </div>
@@ -82,7 +82,6 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
               aria-label={showPassword ? "Hide password" : "Show password"}
-              tabIndex={-1}
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Loader2, Upload } from "lucide-react";
 
 import { MobileShell, useMe } from "@/components/app-shell";
@@ -34,6 +35,7 @@ function formatBytes(bytes: number) {
 export function SettingsScreen() {
 	const me = useMe();
 	const queryClient = useQueryClient();
+	const [pendingLabel, setPendingLabel] = useState("");
 	const storage = useQuery({
 		queryKey: ["settings-storage"],
 		queryFn: () => api<StorageStats>("/api/settings/storage"),
@@ -52,6 +54,17 @@ export function SettingsScreen() {
 	return (
 		<MobileShell title="Settings">
 			<div className="space-y-3">
+				{(settings.error || (settings.isSuccess && pendingLabel)) && (
+					<p
+						role={settings.error ? "alert" : "status"}
+						aria-live="polite"
+						className={settings.error ? "text-sm text-[var(--danger)]" : "text-sm text-secondary"}
+					>
+						{settings.error
+							? `Could not save ${pendingLabel}. ${settings.error.message}`
+							: `${pendingLabel} saved.`}
+					</p>
+				)}
 				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
 					<h3 className="text-sm font-semibold">Account</h3>
 					<p className="mt-2 text-sm text-secondary">
@@ -118,10 +131,12 @@ export function SettingsScreen() {
 						{[15, 30, 60, 180].map((minutes) => (
 							<button
 								key={minutes}
-								onClick={() =>
-									settings.mutate({ refreshIntervalMinutes: minutes })
-								}
+								onClick={() => {
+									setPendingLabel("refresh cadence");
+									settings.mutate({ refreshIntervalMinutes: minutes });
+								}}
 								disabled={settings.isPending}
+								aria-pressed={me.data?.user.settings.refreshIntervalMinutes === minutes}
 								className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 									me.data?.user.settings.refreshIntervalMinutes === minutes
 										? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
@@ -263,10 +278,14 @@ export function SettingsScreen() {
 							automatically unless they are bookmarked.
 						</p>
 						<div className="mt-3 flex gap-2">
-							{[14, 30, 90, 180, 365].map((days) => (
-								<button
-									key={days}
-									onClick={() => settings.mutate({ itemRetentionDays: days })}
+						{[14, 30, 90, 180, 365].map((days) => (
+							<button
+								key={days}
+								onClick={() => {
+									setPendingLabel("retention");
+									settings.mutate({ itemRetentionDays: days });
+								}}
+								aria-pressed={me.data?.user.settings.itemRetentionDays === days}
 									className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 										me.data?.user.settings.itemRetentionDays === days
 											? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
@@ -285,15 +304,12 @@ export function SettingsScreen() {
 					<p className="mt-2 text-xs text-secondary">
 						Move subscriptions with OPML or keep a full JSON backup.
 					</p>
-					<div className="mt-3 grid grid-cols-2 gap-2">
+					<div className="mt-3">
 						<Link href="/app/import-export">
 							<Button variant="secondary" className="w-full text-xs">
 								<Upload className="size-3.5 mr-1.5" />
-								Import / Export
+								Manage imports and backups
 							</Button>
-						</Link>
-						<Link href="/app/import-export">
-							<Button className="w-full text-xs">Backups</Button>
 						</Link>
 					</div>
 				</div>
