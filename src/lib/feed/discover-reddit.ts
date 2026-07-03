@@ -11,7 +11,7 @@ export function normalizeRedditFeed(url: string) {
     title: subreddit ? `r/${subreddit}` : "Reddit RSS",
     description: "Reddit RSS feed",
     siteName: "Reddit",
-    favicon: "https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-180x180.png",
+    favicon: "/icons/reddit.png",
     feedUrl: new URL(feedPath, `${parsed.origin}/`).toString(),
     siteUrl: subreddit ? `https://www.reddit.com/r/${subreddit}/` : "https://www.reddit.com",
     sourceType: "REDDIT_RSS" as const,

@@ -1,27 +1,50 @@
 import { readFile } from "node:fs/promises";
 
+import { FeedSourceType } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { assertApiUser, apiErrorFrom } from "@/lib/api";
 import { prisma } from "@/lib/db";
-import { assertOwnedFeed } from "@/lib/ownership";
 import { enqueueIconFetch } from "@/lib/queue";
 
 type Params = Promise<{ feedId: string }>;
 
-export async function GET(_request: Request, context: { params: Params }) {
+export async function GET(request: Request, context: { params: Params }) {
 	const { feedId } = await context.params;
+
+	let feed: {
+		id: string;
+		sourceType: FeedSourceType;
+		icon: { storagePath: string; mimeType: string | null } | null;
+	} | null = null;
 
 	try {
 		const user = await assertApiUser();
-		await assertOwnedFeed(prisma, user.id, feedId);
+		feed = await prisma.feed.findFirst({
+			where: { id: feedId, userId: user.id },
+			select: {
+				id: true,
+				sourceType: true,
+				icon: { select: { storagePath: true, mimeType: true } },
+			},
+		});
 	} catch (error) {
 		return apiErrorFrom(error, "Feed not found", 404);
 	}
 
-	const icon = await prisma.feedIcon.findUnique({
-		where: { feedId },
-	});
+	if (!feed) {
+		return apiErrorFrom(new Error("Feed not found"), "Feed not found", 404);
+	}
+
+	if (feed.sourceType === FeedSourceType.REDDIT_RSS) {
+		const response = NextResponse.redirect(
+			new URL("/icons/reddit.png", request.url),
+		);
+		response.headers.set("cache-control", "private, max-age=86400");
+		return response;
+	}
+
+	const icon = feed.icon;
 
 	// If no icon is cached yet, return the placeholder immediately and
 	// enqueue a background fetch so the next request picks it up. Never
