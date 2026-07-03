@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Pause, Play } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -15,7 +15,10 @@ import {
 	EmptyState,
 } from "@/components/app-shell";
 import { api } from "@/lib/client";
-import { splitMutePatterns } from "@/lib/feed/mute-rules";
+import {
+	getFeedPauseActionLabel,
+	getFeedPausePatch,
+} from "@/lib/feed-pause";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord, NavFeed } from "@/types/app";
 
@@ -164,18 +167,6 @@ function EditFeedModal({
 	const [excludeFromTimeline, setExcludeFromTimeline] = useState(
 		feed.excludeFromTimeline,
 	);
-	const [muteTitlePatterns, setMuteTitlePatterns] = useState(
-		feed.muteRules?.titlePatterns.join("\n") || "",
-	);
-	const [muteAuthorPatterns, setMuteAuthorPatterns] = useState(
-		feed.muteRules?.authorPatterns.join("\n") || "",
-	);
-	const [muteHideFromTimeline, setMuteHideFromTimeline] = useState(
-		feed.muteRules?.hideFromTimeline ?? true,
-	);
-	const [muteAutoMarkRead, setMuteAutoMarkRead] = useState(
-		feed.muteRules?.autoMarkRead ?? false,
-	);
 
 	const mutation = useMutation({
 		mutationFn: () =>
@@ -186,12 +177,6 @@ function EditFeedModal({
 						label: label || null,
 						folderId: folderId || null,
 						excludeFromTimeline,
-						muteRules: {
-							titlePatterns: splitMutePatterns(muteTitlePatterns),
-							authorPatterns: splitMutePatterns(muteAuthorPatterns),
-							hideFromTimeline: muteHideFromTimeline,
-							autoMarkRead: muteAutoMarkRead,
-						},
 					}),
 				}),
 			),
@@ -244,70 +229,26 @@ function EditFeedModal({
 					</label>
 				)}
 				<button
-					onClick={() => setExcludeFromTimeline(!excludeFromTimeline)}
-					className={`mt-3 flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
+					type="button"
+					onClick={() =>
+						setExcludeFromTimeline(
+							(current) => getFeedPausePatch(current).excludeFromTimeline,
+						)
+					}
+					aria-pressed={excludeFromTimeline}
+					className={`mt-3 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
 						excludeFromTimeline
-							? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-							: "border-subtle text-secondary"
+							? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
+							: "border-subtle bg-[var(--surface)] text-secondary"
 					}`}
 				>
-					<span
-						className={`inline-flex size-4 items-center justify-center rounded border ${excludeFromTimeline ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]" : "border-subtle"}`}
-					>
-						{excludeFromTimeline ? "✓" : ""}
-					</span>
-					Hide from Timeline
+					{excludeFromTimeline ? (
+						<Play className="size-4" />
+					) : (
+						<Pause className="size-4" />
+					)}
+					{getFeedPauseActionLabel(excludeFromTimeline)}
 				</button>
-				<div className="mt-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] p-3.5">
-					<p className="text-sm font-semibold">Mute rules</p>
-					<p className="mt-1 text-xs text-secondary">
-						Match titles or authors for this feed only.
-					</p>
-					<textarea
-						value={muteTitlePatterns}
-						onChange={(e) => setMuteTitlePatterns(e.target.value)}
-						placeholder={"Giveaway\nRoundup\nDeals"}
-						rows={3}
-						className="mt-3 min-h-[84px] w-full rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
-					/>
-					<textarea
-						value={muteAuthorPatterns}
-						onChange={(e) => setMuteAuthorPatterns(e.target.value)}
-						placeholder={"Newswire Bot\nSponsored"}
-						rows={3}
-						className="mt-3 min-h-[84px] w-full rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm"
-					/>
-					<button
-						onClick={() => setMuteHideFromTimeline(!muteHideFromTimeline)}
-						className={`mt-3 flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
-							muteHideFromTimeline
-								? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-								: "border-subtle text-secondary"
-						}`}
-					>
-						<span
-							className={`inline-flex size-4 items-center justify-center rounded border ${muteHideFromTimeline ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]" : "border-subtle"}`}
-						>
-							{muteHideFromTimeline ? "✓" : ""}
-						</span>
-						Hide matching items from Timeline
-					</button>
-					<button
-						onClick={() => setMuteAutoMarkRead(!muteAutoMarkRead)}
-						className={`mt-3 flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
-							muteAutoMarkRead
-								? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-								: "border-subtle text-secondary"
-						}`}
-					>
-						<span
-							className={`inline-flex size-4 items-center justify-center rounded border ${muteAutoMarkRead ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]" : "border-subtle"}`}
-						>
-							{muteAutoMarkRead ? "✓" : ""}
-						</span>
-						Auto-mark matching items as read
-					</button>
-				</div>
 				<button
 					onClick={() => mutation.mutate()}
 					className="mt-4 w-full rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-[var(--accent-contrast)]"

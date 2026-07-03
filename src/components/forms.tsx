@@ -7,7 +7,6 @@ import { X, Trash2, Check, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
-import { splitMutePatterns } from "@/lib/feed/mute-rules";
 import type { NavFeed, NavFolder } from "@/types/app";
 
 export function AddFolderForm({ onClose }: { onClose?: () => void }) {
@@ -249,19 +248,6 @@ export function EditFeedSheet({
   const [label, setLabel] = useState(feed.label || "");
   const [folderId, setFolderId] = useState(feed.folderId || "");
   const [isPinned, setIsPinned] = useState(feed.isPinned);
-  const [excludeFromTimeline, setExcludeFromTimeline] = useState(feed.excludeFromTimeline);
-  const [muteTitlePatterns, setMuteTitlePatterns] = useState(
-    feed.muteRules?.titlePatterns.join("\n") || "",
-  );
-  const [muteAuthorPatterns, setMuteAuthorPatterns] = useState(
-    feed.muteRules?.authorPatterns.join("\n") || "",
-  );
-  const [muteHideFromTimeline, setMuteHideFromTimeline] = useState(
-    feed.muteRules?.hideFromTimeline ?? true,
-  );
-  const [muteAutoMarkRead, setMuteAutoMarkRead] = useState(
-    feed.muteRules?.autoMarkRead ?? false,
-  );
   const queryClient = useQueryClient();
 
   const me = queryClient.getQueryData<{
@@ -277,13 +263,6 @@ export function EditFeedSheet({
           label: label || null,
           folderId: folderId || null,
           isPinned,
-          excludeFromTimeline,
-          muteRules: {
-            titlePatterns: splitMutePatterns(muteTitlePatterns),
-            authorPatterns: splitMutePatterns(muteAuthorPatterns),
-            hideFromTimeline: muteHideFromTimeline,
-            autoMarkRead: muteAutoMarkRead,
-          },
         }),
       }),
     onSuccess: async () => {
@@ -349,75 +328,6 @@ export function EditFeedSheet({
           {isPinned ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
           Pin to top
         </button>
-
-        <button
-          onClick={() => setExcludeFromTimeline(!excludeFromTimeline)}
-          className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
-            excludeFromTimeline
-              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-              : "border-subtle text-secondary"
-          }`}
-        >
-          {excludeFromTimeline ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
-          Hide from Timeline
-        </button>
-
-        <div className="mt-3 rounded-[22px] border border-subtle bg-[var(--surface-muted)] p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h4 className="text-sm font-semibold">Mute rules</h4>
-              <p className="mt-1 text-xs text-secondary">
-                Match words in titles or authors for this feed only.
-              </p>
-            </div>
-          </div>
-
-          <label className="mt-3 block">
-            <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Title patterns</span>
-            <textarea
-              value={muteTitlePatterns}
-              onChange={(event) => setMuteTitlePatterns(event.target.value)}
-              placeholder={"Giveaway\nRoundup\nDeals"}
-              rows={3}
-              className="min-h-[88px] w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none"
-            />
-          </label>
-
-          <label className="mt-2.5 block">
-            <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Author patterns</span>
-            <textarea
-              value={muteAuthorPatterns}
-              onChange={(event) => setMuteAuthorPatterns(event.target.value)}
-              placeholder={"Newswire Bot\nSponsored"}
-              rows={3}
-              className="min-h-[88px] w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none"
-            />
-          </label>
-
-          <button
-            onClick={() => setMuteHideFromTimeline(!muteHideFromTimeline)}
-            className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
-              muteHideFromTimeline
-                ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-                : "border-subtle text-secondary"
-            }`}
-          >
-            {muteHideFromTimeline ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
-            Hide matching items from Timeline
-          </button>
-
-          <button
-            onClick={() => setMuteAutoMarkRead(!muteAutoMarkRead)}
-            className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
-              muteAutoMarkRead
-                ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-                : "border-subtle text-secondary"
-            }`}
-          >
-            {muteAutoMarkRead ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
-            Auto-mark matching items as read
-          </button>
-        </div>
 
         {onReorder && (
           <div className="mt-2.5 flex gap-2">
