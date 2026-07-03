@@ -131,6 +131,7 @@ export function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[
   return (
     <>
       <SwipeRow
+        revealWidth={196}
         actions={
           <>
             <button
@@ -696,9 +697,11 @@ export function FolderRow({ folder, folders, index }: { folder: NavFolder; folde
 function SwipeRow({
   children,
   actions,
+  revealWidth = 132,
 }: {
   children: React.ReactNode;
   actions: React.ReactNode;
+  revealWidth?: number;
 }) {
   const [open, setOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -710,9 +713,10 @@ function SwipeRow({
         {actions}
       </div>
       <div
-        className={`relative z-10 bg-[var(--surface)] transition-transform duration-200 ease-out ${
-          open ? "-translate-x-[132px]" : "translate-x-0"
-        }`}
+        className="relative z-10 bg-[var(--surface)] transition-transform duration-200 ease-out"
+        style={{
+          transform: open ? `translateX(-${revealWidth}px)` : undefined,
+        }}
         onTouchStart={(event) => {
           touchStartX.current = event.touches[0]?.clientX ?? null;
           touchDeltaX.current = 0;

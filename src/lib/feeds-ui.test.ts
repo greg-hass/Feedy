@@ -26,6 +26,14 @@ describe("Feeds UI contracts", () => {
 		assert.match(librarySource, /aria-label=\{`\$\{pauseLabel\}/);
 	});
 
+	it("reveals the full three-action feed toolbar", () => {
+		assert.match(librarySource, /<SwipeRow\s+revealWidth=\{196\}/);
+		assert.match(
+			librarySource,
+			/transform: open \? `translateX\(-\$\{revealWidth\}px\)` : undefined/,
+		);
+	});
+
 	it("marks paused feeds without relying on color alone", () => {
 		assert.match(librarySource, /aria-label="Paused"/);
 		assert.match(librarySource, />Paused</);
