@@ -4,10 +4,14 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, EyeOff, FolderOpen, MoreHorizontal, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, FolderOpen, MoreHorizontal, Pause, Play, Trash2, X } from "lucide-react";
 
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
+import {
+  getFeedPauseActionLabel,
+  getFeedPausePatch,
+} from "@/lib/feed-pause";
 import { formatSourceType } from "@/lib/feed-source";
 import { relativeTime } from "@/lib/utils";
 import type { MeResponse, NavFeed, NavFolder } from "@/types/app";
@@ -87,6 +91,7 @@ export function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[
   const [showHealth, setShowHealth] = useState(false);
   const queryClient = useQueryClient();
   const health = getHealthPresentation(feed.healthStatus);
+  const pauseLabel = getFeedPauseActionLabel(feed.excludeFromTimeline);
 
   const deleteFeed = useMutation({
     mutationFn: () => api(`/api/feeds/${feed.id}`, { method: "DELETE" }),
@@ -111,11 +116,37 @@ export function FeedRow({ feed, feeds, index }: { feed: NavFeed; feeds: NavFeed[
     },
   });
 
+  const pauseFeed = useMutation({
+    mutationFn: () =>
+      api(`/api/feeds/${feed.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(getFeedPausePatch(feed.excludeFromTimeline)),
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      await queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+
   return (
     <>
       <SwipeRow
         actions={
           <>
+            <button
+              type="button"
+              onClick={() => pauseFeed.mutate()}
+              disabled={pauseFeed.isPending}
+              className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--accent-dim)] text-[var(--accent)] disabled:opacity-60"
+              aria-label={`${pauseLabel} ${feed.label || feed.title}`}
+              title={pauseLabel}
+            >
+              {feed.excludeFromTimeline ? (
+                <Play className="size-4" />
+              ) : (
+                <Pause className="size-4" />
+              )}
+            </button>
             <button
               onClick={() => {
                 if (confirm(`Delete ${feed.label || feed.title}?`)) {
@@ -205,11 +236,12 @@ function FeedMetadataRow({
         <>
           <span>·</span>
           <span
-            className="inline-flex items-center text-[var(--status-error)]"
-            aria-label="Hidden from Timeline"
-            title="Hidden from Timeline"
+            className="inline-flex items-center gap-1 text-[var(--accent)]"
+            aria-label="Paused"
+            title="Paused"
           >
-            <EyeOff className="size-3.5" />
+            <Pause className="size-3.5" />
+            <span>Paused</span>
           </span>
         </>
       ) : null}
