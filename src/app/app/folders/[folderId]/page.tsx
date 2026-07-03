@@ -19,6 +19,7 @@ import { FeedAvatar } from "@/components/feed-avatar";
 import { EditFeedSheet } from "@/components/forms";
 import { ItemCard } from "@/components/item-card";
 import { IconButton } from "@/components/ui/icon-button";
+import { Sheet } from "@/components/ui/sheet";
 import {
 	MobileShell,
 	LoadingSkeleton,
@@ -438,77 +439,53 @@ function FolderBulkMoveSheet({
 	isPending: boolean;
 }) {
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40 px-3 pb-[calc(env(safe-area-inset-bottom)+88px)] pt-8"
-			onClick={onClose}
+		<Sheet
+			title="Move selected feeds"
+			subtitle={`Choose where to place ${selectedCount} selected ${selectedCount === 1 ? "feed" : "feeds"}.`}
+			onClose={onClose}
+			panelClassName="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
 		>
-			<div
-				className="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
-				onClick={(event) => event.stopPropagation()}
-			>
-				<div className="mb-3 flex justify-center">
-					<div className="h-1.5 w-11 rounded-full bg-[var(--surface-muted)]" />
-				</div>
-				<div className="flex items-start justify-between gap-3">
-					<div className="min-w-0">
-						<h3 className="truncate text-[15px] font-semibold">
-							Move selected feeds
-						</h3>
+			<div className="mt-4 space-y-2">
+				<button
+					type="button"
+					onClick={() => onMove(null)}
+					disabled={isPending}
+					className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface)] px-4 py-3 text-left disabled:opacity-50"
+				>
+					<div>
+						<p className="text-sm font-semibold">Remove from folder</p>
 						<p className="mt-1 text-xs text-secondary">
-							Choose where to place {selectedCount} selected{" "}
-							{selectedCount === 1 ? "feed" : "feeds"}.
+							Keep these feeds loose in the main library.
 						</p>
 					</div>
-					<button
-						onClick={onClose}
-						className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
-					>
-						<X className="size-5" />
-					</button>
-				</div>
-
-				<div className="mt-4 space-y-2">
-					<button
-						onClick={() => onMove(null)}
-						disabled={isPending}
-						className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface)] px-4 py-3 text-left disabled:opacity-50"
-					>
-						<div>
-							<p className="text-sm font-semibold">Remove from folder</p>
-							<p className="mt-1 text-xs text-secondary">
-								Keep these feeds loose in the main library.
-							</p>
-						</div>
-						<span className="text-[10px] uppercase tracking-[0.16em] text-secondary">
-							Move
-						</span>
-					</button>
-					{folders
-						.filter((folder) => folder.id !== currentFolderId)
-						.map((folder) => (
-							<button
-								key={folder.id}
-								onClick={() => onMove(folder.id)}
-								disabled={isPending}
-								className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface)] px-4 py-3 text-left disabled:opacity-50"
-							>
-								<div className="min-w-0">
-									<p className="truncate text-sm font-semibold">
-										{folder.title}
-									</p>
-									<p className="mt-1 text-xs text-secondary">
-										{folder.counts.feedCount} feeds ·{" "}
-										{folder.counts.unreadCount} unread
-									</p>
-								</div>
-								<span className="text-[10px] uppercase tracking-[0.16em] text-secondary">
-									Move
-								</span>
-							</button>
-						))}
-				</div>
+					<span className="text-[10px] uppercase tracking-[0.16em] text-secondary">
+						Move
+					</span>
+				</button>
+				{folders
+					.filter((folder) => folder.id !== currentFolderId)
+					.map((folder) => (
+						<button
+							key={folder.id}
+							type="button"
+							onClick={() => onMove(folder.id)}
+							disabled={isPending}
+							className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface)] px-4 py-3 text-left disabled:opacity-50"
+						>
+							<div className="min-w-0">
+								<p className="truncate text-sm font-semibold">{folder.title}</p>
+								<p className="mt-1 text-xs text-secondary">
+									{folder.counts.feedCount} feeds · {folder.counts.unreadCount}{" "}
+									unread
+								</p>
+							</div>
+							<span className="text-[10px] uppercase tracking-[0.16em] text-secondary">
+								Move
+							</span>
+						</button>
+					))}
 			</div>
-		</div>
+		</Sheet>
 	);
 }
 

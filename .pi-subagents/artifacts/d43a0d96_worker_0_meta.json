@@ -1,0 +1,36 @@
+{
+  "runId": "d43a0d96",
+  "agent": "worker",
+  "task": "[Read from: /Users/greg/Developer/Feedy/context.md, /Users/greg/Developer/Feedy/plan.md]\n\nYou are a delegated subagent running from a fork of the parent session. Treat the inherited conversation as reference-only context, not a live thread to continue. Do not continue or answer prior messages as if they are waiting for a reply. Your sole job is to execute the task below and return a focused result for that task using your tools.\n\nTask:\nIn the Feedy project at /Users/greg/Developer/Feedy, adopt the Sheet primitive in two more files. The Sheet component is at `@/components/ui/sheet` and exports `Sheet` with props: `{ title, subtitle?, onClose, children?, className?, panelClassName?, showHandle? }`.\n\n## File 1: src/app/app/folders/[folderId]/page.tsx\n\nThe **FolderBulkMoveSheet** component has an outer backdrop div and inner panel div that need to be replaced with `<Sheet>`. \n\nReplace the outer structure (backdrop div + panel div + drag handle + header with title 'Move selected feeds' and subtitle and close button with X icon) with:\n```tsx\n<Sheet\n  title=\"Move selected feeds\"\n  subtitle={`Choose where to place ${selectedCount} selected ${selectedCount === 1 ? \"feed\" : \"feeds\"}.`}\n  onClose={onClose}\n  panelClassName=\"max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]\"\n>\n  <folder list content as children>\n</Sheet>\n```\n\nRemove the drag handle, header (title/subtitle), and close button (Sheet provides these). Add `type=\"button\"` to the folder move buttons. Add import: `import { Sheet } from \"@/components/ui/sheet\";`. If X from lucide-react is no longer used, remove it from the import.\n\n## File 2: src/app/app/feeds/[feedId]/page.tsx\n\nThe **EditFeedModal** component has an outer backdrop div and inner panel div that need to be replaced with `<Sheet>`.\n\nReplace the outer structure (backdrop div + panel div + h3 'Edit feed' + p with feed.sourceUrl) with:\n```tsx\n<Sheet\n  title=\"Edit feed\"\n  subtitle={feed.sourceUrl}\n  onClose={onClose}\n  showHandle={false}\n  panelClassName=\"w-full max-w-md rounded-t-[24px] bg-[var(--surface)] p-5 pb-8\"\n>\n  <form content, pause button, save button, delete button as children>\n</Sheet>\n```\n\nRemove the title/subtitle header (Sheet provides these). Add import: `import { Sheet } from \"@/components/ui/sheet\";`. Add `type=\"button\"` to the delete button. If any imports become unused, remove them.\n\n## Verification\nAfter both changes, run:\n```bash\nnpx tsx --test src/lib/feeds-ui.test.ts src/components/ui/sheet.test.ts\nnpm run lint\nnpm run build\n```\nAll must pass.\n\n---\nUpdate progress at: /Users/greg/Developer/Feedy/.pi-subagents/artifacts/progress/d43a0d96/progress.md",
+  "exitCode": 0,
+  "usage": {
+    "input": 412088,
+    "output": 6504,
+    "cacheRead": 1741856,
+    "cacheWrite": 0,
+    "cost": 1.05842336,
+    "turns": 16
+  },
+  "model": "clinepass/cline-pass/glm-5.2:high",
+  "attemptedModels": [
+    "clinepass/cline-pass/glm-5.2:high"
+  ],
+  "modelAttempts": [
+    {
+      "model": "clinepass/cline-pass/glm-5.2:high",
+      "success": true,
+      "exitCode": 0,
+      "usage": {
+        "input": 412088,
+        "output": 6504,
+        "cacheRead": 1741856,
+        "cacheWrite": 0,
+        "cost": 1.05842336,
+        "turns": 16
+      }
+    }
+  ],
+  "durationMs": 197704,
+  "toolCount": 15,
+  "timestamp": 1783085014918
+}

@@ -70,7 +70,7 @@ describe("Feeds UI contracts", () => {
 
 	it("opens New Folder in a fixed sheet instead of inline flow", () => {
 		assert.match(formsSource, /export function AddFolderSheet/);
-		assert.match(formsSource, /className="fixed inset-0 z-50/);
+		assert.match(formsSource, /<Sheet[^>]*title="New folder"/);
 		assert.match(feedsScreenSource, /<AddFolderSheet/);
 		assert.doesNotMatch(
 			feedsScreenSource,
@@ -79,7 +79,7 @@ describe("Feeds UI contracts", () => {
 	});
 
 	it("submits create forms through onSubmit only", () => {
-		assert.match(formsSource, /<Button type="submit"/);
+		assert.match(formsSource, /<Button\s+type="submit"/);
 		assert.doesNotMatch(
 			formsSource,
 			/<Button onClick=\{\(\) => mutation\.mutate\(\)\}/,

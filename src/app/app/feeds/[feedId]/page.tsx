@@ -8,6 +8,7 @@ import { useState } from "react";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { ItemCard } from "@/components/item-card";
 import { IconButton } from "@/components/ui/icon-button";
+import { Sheet } from "@/components/ui/sheet";
 import {
 	MobileShell,
 	LoadingSkeleton,
@@ -15,10 +16,7 @@ import {
 	EmptyState,
 } from "@/components/app-shell";
 import { api } from "@/lib/client";
-import {
-	getFeedPauseActionLabel,
-	getFeedPausePatch,
-} from "@/lib/feed-pause";
+import { getFeedPauseActionLabel, getFeedPausePatch } from "@/lib/feed-pause";
 import { decodeHtmlEntities, relativeTime } from "@/lib/utils";
 import type { ItemRecord, NavFeed } from "@/types/app";
 
@@ -188,85 +186,82 @@ function EditFeedModal({
 	});
 
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--text-primary)]/40"
-			onClick={onClose}
+		<Sheet
+			title="Edit feed"
+			subtitle={feed.sourceUrl}
+			onClose={onClose}
+			showHandle={false}
+			panelClassName="w-full max-w-md rounded-t-[24px] bg-[var(--surface)] p-5 pb-8"
 		>
-			<div
-				className="w-full max-w-md rounded-t-[24px] bg-[var(--surface)] p-5 pb-8"
-				onClick={(e) => e.stopPropagation()}
-			>
-				<h3 className="text-base font-semibold">Edit feed</h3>
-				<p className="mt-1 truncate text-xs text-secondary">{feed.sourceUrl}</p>
-				<label className="mt-4 block">
+			<label className="mt-4 block">
+				<span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">
+					Label
+				</span>
+				<input
+					value={label}
+					onChange={(e) => setLabel(e.target.value)}
+					placeholder={feed.title}
+					className="h-12 w-full rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm"
+				/>
+			</label>
+			{folders.length > 0 && (
+				<label className="mt-3 block">
 					<span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">
-						Label
+						Folder
 					</span>
-					<input
-						value={label}
-						onChange={(e) => setLabel(e.target.value)}
-						placeholder={feed.title}
+					<select
+						value={folderId}
+						onChange={(e) => setFolderId(e.target.value)}
 						className="h-12 w-full rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm"
-					/>
+					>
+						<option value="">No folder</option>
+						{folders.map((f) => (
+							<option key={f.id} value={f.id}>
+								{f.title}
+							</option>
+						))}
+					</select>
 				</label>
-				{folders.length > 0 && (
-					<label className="mt-3 block">
-						<span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">
-							Folder
-						</span>
-						<select
-							value={folderId}
-							onChange={(e) => setFolderId(e.target.value)}
-							className="h-12 w-full rounded-xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm"
-						>
-							<option value="">No folder</option>
-							{folders.map((f) => (
-								<option key={f.id} value={f.id}>
-									{f.title}
-								</option>
-							))}
-						</select>
-					</label>
+			)}
+			<button
+				type="button"
+				onClick={() =>
+					setExcludeFromTimeline(
+						(current) => getFeedPausePatch(current).excludeFromTimeline,
+					)
+				}
+				aria-pressed={excludeFromTimeline}
+				className={`mt-3 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
+					excludeFromTimeline
+						? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
+						: "border-subtle bg-[var(--surface)] text-secondary"
+				}`}
+			>
+				{excludeFromTimeline ? (
+					<Play className="size-4" />
+				) : (
+					<Pause className="size-4" />
 				)}
-				<button
-					type="button"
-					onClick={() =>
-						setExcludeFromTimeline(
-							(current) => getFeedPausePatch(current).excludeFromTimeline,
-						)
+				{getFeedPauseActionLabel(excludeFromTimeline)}
+			</button>
+			<button
+				onClick={() => mutation.mutate()}
+				className="mt-4 w-full rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-[var(--accent-contrast)]"
+			>
+				Save
+			</button>
+			<button
+				type="button"
+				onClick={() => {
+					if (confirm("Delete this feed?")) {
+						onDelete();
+						onClose();
 					}
-					aria-pressed={excludeFromTimeline}
-					className={`mt-3 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
-						excludeFromTimeline
-							? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
-							: "border-subtle bg-[var(--surface)] text-secondary"
-					}`}
-				>
-					{excludeFromTimeline ? (
-						<Play className="size-4" />
-					) : (
-						<Pause className="size-4" />
-					)}
-					{getFeedPauseActionLabel(excludeFromTimeline)}
-				</button>
-				<button
-					onClick={() => mutation.mutate()}
-					className="mt-4 w-full rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-[var(--accent-contrast)]"
-				>
-					Save
-				</button>
-				<button
-					onClick={() => {
-						if (confirm("Delete this feed?")) {
-							onDelete();
-							onClose();
-						}
-					}}
-					className="mt-3 w-full rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 py-2.5 text-sm font-medium text-[var(--danger)]"
-				>
-					Delete feed
-				</button>
-			</div>
-		</div>
+				}}
+				className="mt-3 w-full rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 py-2.5 text-sm font-medium text-[var(--danger)]"
+			>
+				Delete feed
+			</button>
+		</Sheet>
 	);
 }
