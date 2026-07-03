@@ -378,28 +378,36 @@ async function fetchWithPolicy(
 						undiciFetch(fUrl, {
 							...(fInit as Record<string, unknown>),
 						}) as unknown as Promise<Response>
-			: // For testing, allow injecting a mock fetch implementation.
+				: // For testing, allow injecting a mock fetch implementation.
 					// In production, this is always undefined.
 					(testFetchOverride ??
 					(await createDnsPinnedFetch(primaryAddress, url.hostname)));
 
-		const response = await outboundFetch(fetchUrl as string | URL, {
-			...(init as Record<string, unknown>),
+		const fetchInit: RequestInit = {
+			...init,
 			signal: controller.signal,
 			redirect: "manual",
 			headers,
-		});
+		};
+		let response = await outboundFetch(fetchUrl as string | URL, fetchInit);
 
 		if (response.status === 429) {
 			const cooldownMs = getRateLimitCooldownMs(response);
 			rememberRateLimit(url.hostname, cooldownMs);
 		}
 
-		// HTTP 421 "Misdirected Request" — Reddit/Cloudflare returns this
-		// when a connection arrives at the wrong edge node. Apply a short
-		// cooldown so the next attempt lets Cloudflare re-route.
+		// HTTP 421 "Misdirected Request" commonly comes from CDN/edge routing
+		// when a validated DNS-pinned connection lands on the wrong edge. Retry
+		// once without the pinned dispatcher after SSRF validation has already
+		// passed, then keep the host on a short cooldown for future attempts.
 		if (response.status === 421) {
 			rememberRateLimit(url.hostname, 5_000);
+			await response.body?.cancel().catch(() => undefined);
+			response = testFetchOverride
+				? await testFetchOverride(fetchUrl as string | URL, fetchInit)
+				: ((await undiciFetch(fetchUrl as string | URL, {
+						...(fetchInit as Record<string, unknown>),
+					})) as unknown as Response);
 		}
 
 		if (

@@ -109,4 +109,26 @@ describe("fetchWithTimeout", () => {
 			__setOutboundFetch(undefined);
 		}
 	});
+
+	it("retries once on HTTP 421 without DNS pinning", async () => {
+		let firstCall = true;
+		__setOutboundFetch(async () => {
+			if (firstCall) {
+				firstCall = false;
+				return new Response("misdirected", { status: 421 });
+			}
+			return new Response("ok", { status: 200 });
+		});
+
+		try {
+			const response = await fetchWithTimeout(
+				"https://8.8.8.8/feed.xml",
+				{},
+				2_000,
+			);
+			assert.equal(response.status, 200);
+		} finally {
+			__setOutboundFetch(undefined);
+		}
+	});
 });
