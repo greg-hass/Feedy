@@ -1,6 +1,6 @@
 # Feedy application assessment
 
-Date: 2026-07-03
+Date: 2026-07-03 (updated after reliability and UX improvements)
 
 ## Audit scope
 
@@ -9,117 +9,96 @@ Combined architecture, wiring, UX, and accessibility review of the Feedy reposit
 ## Evidence and limits
 
 - Source, route, schema, configuration, and automated tests were inspected.
-- `npm run lint`, `npm run test`, and `npm run build` completed successfully.
-- The existing development server could not render a page. Requests to `localhost:3000` timed out. Its log identifies a missing `DATABASE_URL` and repeated Redis connection failures.
-- Docker could not be checked because Docker is not installed or not available on this machine.
-- Because the running product could not be rendered, no valid current-run screenshots could be captured. Visual and responsive findings below are source-based and must be confirmed in a healthy runtime. This audit does not claim WCAG compliance.
+- `npm run lint`, `npm run test` (230 tests), and `npm run build` completed successfully.
+- `.env.example` was added with all required variables and non-secret development values.
+- `dependency-preflight.ts` provides bounded, injectable PostgreSQL and Redis readiness checks with actionable errors that never expose credentials.
+- Docker could not be checked because Docker is not installed or not available on this machine. This remains an environmental blocker.
+- No current-run screenshots were captured because the running product could not be rendered without Docker or local PostgreSQL/Redis. Visual findings are source-based and must be confirmed in a healthy runtime. This audit does not claim WCAG compliance.
 
-## Step health
+## Resolved findings
 
-1. **Application startup — blocked**
-   - The documented `npm run dev` path starts Next.js but the app is not usable without PostgreSQL and Redis.
-   - `src/lib/env.ts` supplies a default database URL to application code, but Prisma reads `DATABASE_URL` directly from the process environment. The current `.env` does not define it.
-   - The server repeatedly attempts Redis reconnection and stopped responding to HTTP requests.
+### P1: development startup contract — RESOLVED
 
-2. **Sign in — code-complete, runtime unverified**
-   - The page has explicit labels, appropriate autocomplete values, a password visibility control, and clear error copy.
-   - The password visibility button is removed from keyboard order with `tabIndex={-1}`, making a useful control unavailable to keyboard-only users.
-   - Error feedback is visually presented but is not marked as an alert or live region.
+- `.env.example` now documents every required variable with non-secret development values.
+- `TROUBLESHOOTING.md` defines two explicit supported paths (Docker Compose vs direct `npm run dev`) and adds diagnostics for missing `DATABASE_URL`, Redis unavailable, port conflicts, and stale `.next/dev/lock`.
+- `src/lib/dependency-preflight.ts` provides bounded, injectable checks that throw actionable errors naming the missing service without exposing connection details.
+- The health route at `/api/health` reuses `checkRuntimeDependencies` and returns 503 with a safe error label on failure.
 
-3. **Timeline and reading — structurally strong, runtime unverified**
-   - Routes, API handlers, pagination, refresh delta behavior, read state, bookmarks, reader sanitization, and media resolution have focused automated coverage.
-   - Empty, loading, and error components exist.
-   - The fixed mobile shell and bottom navigation need visual testing at small-height viewports, zoom, and safe-area variants.
+### P1: inactive navigation unreadable in light mode — RESOLVED
 
-4. **Feed discovery — code-complete, runtime unverified**
-   - The separation between library results and new discovery results is clear.
-   - Search begins after two characters and exposes source filters.
-   - Search fields rely on placeholder text without an explicit accessible label.
-   - Add failures are not surfaced next to discovery results, so a failed add can look like an inert button.
+- `--nav-inactive` token added: `#52525b` (light), `#d4d4d8` (dark).
+- `app-shell.tsx` uses `var(--nav-inactive)` instead of hard-coded `#ffffff`.
+- `aria-current={active ? "page" : undefined}` added to the active navigation link.
+- Theme contract test (`theme-contract.test.ts`) provides regression protection.
 
-5. **Feed and folder management — wiring risk**
-   - `AddFolderForm` and `AddFeedForm` place a default submit button inside a form and also call the mutation from `onClick`. A pointer activation can invoke the mutation from both click and form submit.
-   - Create-folder errors are not displayed.
-   - Bottom sheets are visually modal but lack `role="dialog"`, `aria-modal`, accessible dialog naming, Escape handling, initial focus, focus trapping, and focus restoration.
-   - Several icon-only close buttons have no accessible name.
-   - Native `confirm()` is used for destructive actions, which is functional but visually inconsistent and offers limited explanatory context.
+### P1: duplicate create requests — RESOLVED
 
-6. **Settings and import/export — mostly wired, polish gaps**
-   - Settings, storage statistics, purge, OPML import/export, and JSON export have corresponding API routes.
-   - Most settings mutations do not expose success or failure feedback. A network failure can leave the user unsure whether a tap was saved.
-   - “Import / Export” and “Backups” are two adjacent buttons that navigate to the same page, creating a false choice.
-   - Refresh and retention option groups do not expose their selected state with `aria-pressed`.
+- All create/edit form buttons changed from `onClick={() => mutation.mutate()}` to `type="submit"`.
+- Edit sheets (EditFolderSheet, EditFeedSheet) now wrap their fields in `<form onSubmit>` elements.
+- Buttons disable during pending state.
+- Submitted values are trimmed.
+- Create-form errors are announced with `role="alert"`.
+- Source-contract tests in `feeds-ui.test.ts` verify no `onClick` mutation handlers remain on `<Button>` components.
 
-## Strengths
+### P2: modal accessibility — RESOLVED
 
-- The repository is organized around clear service and ownership boundaries.
-- Authentication, CSRF, security headers, outbound request restrictions, sanitization, workload bounds, queue recovery, and single-user ownership have meaningful tests.
-- The schema has sensible uniqueness constraints and indexes for core timeline access patterns.
-- Loading, empty, error, offline, and global-error surfaces exist.
-- Mobile concerns such as safe-area spacing, pull-to-refresh, wake lock, scroll restoration, and PWA registration are deliberately handled.
-- The 201-test suite is broad and fast, and the production build succeeds.
+- New `Sheet` primitive (`src/components/ui/sheet.tsx`) provides:
+  - `role="dialog"`, `aria-modal="true"`, `aria-labelledby` connected to the title
+  - Escape key closes the sheet
+  - Focus trap (Tab stays within the sheet)
+  - Initial focus on first interactive control
+  - Focus restoration to trigger element on close
+  - Backdrop click closes, panel click does not
+  - Close button with `aria-label="Close {title}"`
+- Adopted in: AddFolderSheet, EditFolderSheet, EditFeedSheet, BulkMoveSheet, FeedHealthSheet, FolderBulkMoveSheet, EditFeedModal.
+- Tests verify dialog semantics and helper functions (`isEscapeKey`, `findFirstFocusable`).
 
-## Notable risks
+### P2: mutation feedback — RESOLVED
 
-### P0: none found
+- Login errors use `role="alert"`.
+- Password visibility button no longer has `tabIndex={-1}` (keyboard-focusable).
+- Discovery search input has `aria-label="Search feeds"`.
+- Add-feed errors surfaced with `role="alert"` near discovery results.
+- Settings screen has a polite live region (`aria-live="polite"`) that announces success or error for the most recent setting change.
+- Cadence and retention buttons expose `aria-pressed` for their selected state.
+- Duplicate import/export links replaced with a single "Manage imports and backups" action.
 
-No evidence of an immediate destructive data or authentication defect was found.
+### P2: semantic color token incorrect — RESOLVED
 
-### P1: development startup contract is misleading
+- `--success` corrected from `#ef4444` (red) to `#059669` (green) in light mode.
+- `--success` corrected from `#f87171` (light red) to `#34d399` (green) in dark mode.
+- Contrast values updated accordingly.
+- Theme contract test verifies green success values.
 
-The documented local workflow says `npm install`, Prisma generation, then `npm run dev`, but the web app also requires reachable PostgreSQL and Redis plus a process-level `DATABASE_URL`. On the audited machine, this produces a server that listens but does not answer requests. This prevents onboarding and masks UI defects.
-
-Recommendation: make the supported local path explicit and self-validating. Either document Docker as required for dependencies and provide a checked `.env.example`, or add a preflight that fails quickly with actionable dependency errors.
-
-### P1: inactive navigation can be unreadable in light mode
-
-Inactive bottom-navigation items use hard-coded white text while the light glass surface is derived from a white surface. This is likely to produce insufficient contrast or invisible labels/icons in light mode.
-
-Recommendation: use a semantic theme token for inactive navigation text and verify contrast for both themes and every accent.
-
-### P1: duplicate create requests
-
-Add-feed and add-folder buttons can submit through both `onClick` and the form `onSubmit`. Duplicate folder records are possible; feed uniqueness may convert the second request into a confusing error.
-
-Recommendation: let the form own submission and make the button `type="submit"` without a mutation click handler.
-
-### P2: modal accessibility is incomplete
-
-Sheets lack modal semantics and focus management. Keyboard and screen-reader users can move into obscured page content, may not hear the dialog title, and may not return to the trigger after closing.
-
-Recommendation: establish one existing-pattern dialog primitive with naming, Escape close, focus trap, initial focus, and restoration. Apply it without redesigning the sheets.
-
-### P2: mutation feedback is inconsistent
-
-Several settings and discovery actions communicate pending state but not failure. Some controls remain interactive while a shared settings mutation is pending.
-
-Recommendation: provide local error/status feedback and prevent conflicting requests at the control-group level.
-
-### P2: semantic color token is incorrect
-
-`--success` is red in both light and dark themes. Even if currently unused, this is a high-risk token because future success UI will communicate the opposite state.
-
-Recommendation: correct or remove the token and add a small theme contract test.
+## Remaining limitations
 
 ### P3: visual hierarchy is polished but dense
 
-The UI consistently uses rounded cards, small uppercase eyebrow text, and numerous nested surfaces. On mobile this can make secondary screens feel busy and reduce scan speed.
+The UI consistently uses rounded cards, small uppercase eyebrow text, and numerous nested surfaces. On mobile this can make secondary screens feel busy and reduce scan speed. Treat as future polish, not a structural rewrite.
 
-Recommendation: after runtime recovery, test whether section headings and spacing can carry hierarchy without enclosing every group in a card. Treat this as polish, not a structural rewrite.
+### Runtime verification blocked
 
-## Verification gaps
+Docker is not available on this machine. The following could not be verified and require a healthy runtime with PostgreSQL and Redis:
 
-- No current-run screenshots due to the blocked runtime.
-- No authenticated end-to-end flow.
+- No current-run screenshots at 390x844 or 1280x720.
+- No authenticated end-to-end flow (login, timeline, discovery, add feed, move to folder, mark read, bookmark, reader mode, settings persistence, OPML export, JSON backup, logout).
+- No keyboard-only traversal test of sheets (Enter to open, Escape to close, focus starts inside, focus returns to trigger, Tab cannot escape).
+- No 200% zoom or reduced-motion test.
 - No Docker Compose configuration or healthcheck execution.
-- No keyboard, screen-reader, reduced-motion, 200% zoom, or device safe-area test.
 - No real feed discovery, refresh, OPML, reader extraction, or worker execution against live PostgreSQL and Redis.
 
-## Recommended order
+## Test suite status
 
-1. Repair and document the local startup contract.
-2. Fix duplicate form submission and add regression tests.
-3. Correct light-mode navigation contrast and the success token.
-4. Add dialog semantics and focus behavior.
-5. Add mutation error/status feedback.
-6. Run an authenticated visual audit at mobile, tablet, and desktop widths with light/dark themes.
+- 230 tests across 70 suites, all passing.
+- New test files: `dependency-preflight.test.ts` (5 tests), `sheet.test.tsx` (9 tests), `theme-contract.test.ts` (5 tests), `async-feedback.test.ts` (8 tests).
+- Existing test files updated: `feeds-ui.test.ts` (now 10 tests, up from 8).
+- Lint and build pass cleanly.
+
+## Recommended next steps
+
+1. Install Docker and run `docker compose up --build` to verify the full stack.
+2. Capture the six named screenshots at 390x844 after each page is stable.
+3. Exercise the full authenticated core flow.
+4. Test keyboard-only sheet behavior and focus management in a real browser.
+5. Test at 200% zoom and with reduced motion enabled.
+6. Address P3 visual density as a separate polish pass.
