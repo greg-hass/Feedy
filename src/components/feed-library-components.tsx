@@ -524,96 +524,96 @@ function FeedHealthSheet({
 			panelClassName="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
 		>
 			<div className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
-								Status
-							</p>
-							<p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-								{getHealthSummary(feed)}
-							</p>
-						</div>
-						<span
-							className={`inline-flex items-center gap-2 rounded-full bg-[var(--surface-strong)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${health.className}`}
-						>
-							<span className={`size-2 rounded-full ${health.dotClassName}`} />
-							{health.label}
-						</span>
+				<div className="flex items-center justify-between gap-3">
+					<div>
+						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
+							Status
+						</p>
+						<p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+							{getHealthSummary(feed)}
+						</p>
 					</div>
+					<span
+						className={`inline-flex items-center gap-2 rounded-full bg-[var(--surface-strong)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${health.className}`}
+					>
+						<span className={`size-2 rounded-full ${health.dotClassName}`} />
+						{health.label}
+					</span>
+				</div>
+			</div>
+
+			<div className="mt-3 space-y-2">
+				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
+						Refresh cadence
+					</p>
+					<p className="mt-1 text-sm text-[var(--text-primary)]">
+						Every {effectiveRefreshMinutes} minutes
+					</p>
+					<p className="mt-1 text-xs text-secondary">
+						All feeds use the cadence configured in Settings.
+					</p>
 				</div>
 
-				<div className="mt-3 space-y-2">
-					<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
-						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
-							Refresh cadence
-						</p>
-						<p className="mt-1 text-sm text-[var(--text-primary)]">
-							Every {effectiveRefreshMinutes} minutes
-						</p>
-						<p className="mt-1 text-xs text-secondary">
-							All feeds use the cadence configured in Settings.
-						</p>
-					</div>
-
-					<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
-						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
-							Last refresh
-						</p>
-						<p className="mt-1 text-sm text-[var(--text-primary)]">
-							{feed.lastRefreshedAt
-								? relativeTime(feed.lastRefreshedAt)
-								: "Never"}
-						</p>
-					</div>
-
-					<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
-						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
-							Last successful refresh
-						</p>
-						<p className="mt-1 text-sm text-[var(--text-primary)]">
-							{feed.lastSuccessfulRefreshAt
-								? relativeTime(feed.lastSuccessfulRefreshAt)
-								: "No successful refresh yet"}
-						</p>
-					</div>
-
-					<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
-						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
-							Last failure
-						</p>
-						<p className="mt-1 text-sm text-[var(--text-primary)]">
-							{feed.lastFailureAt
-								? relativeTime(feed.lastFailureAt)
-								: "No recent failures"}
-						</p>
-					</div>
-
-					<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
-						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
-							Recent refresh speed
-						</p>
-						<p className="mt-1 text-sm text-[var(--text-primary)]">
-							Latest {formatDuration(feed.performance.latestDurationMs)} · Avg{" "}
-							{formatDuration(feed.performance.averageDurationMs)}
-						</p>
-						<p className="mt-1 text-xs text-secondary">
-							{feed.performance.slowCount24h > 0
-								? `${feed.performance.slowCount24h} slow refreshes in the last 24 hours`
-								: "No slow refreshes in the last 24 hours"}
-						</p>
-					</div>
-
-					{feed.lastError ? (
-						<div className="rounded-[18px] border border-rose-500/20 bg-rose-500/10 px-3.5 py-3">
-							<p className="text-[11px] uppercase tracking-[0.18em] text-[var(--status-error)]">
-								Latest error
-							</p>
-							<p className="mt-1 text-sm leading-relaxed text-[var(--text-primary)]">
-								{feed.lastError}
-							</p>
-						</div>
-					) : null}
+				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
+						Last refresh
+					</p>
+					<p className="mt-1 text-sm text-[var(--text-primary)]">
+						{feed.lastRefreshedAt
+							? relativeTime(feed.lastRefreshedAt)
+							: "Never"}
+					</p>
 				</div>
+
+				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
+						Last successful refresh
+					</p>
+					<p className="mt-1 text-sm text-[var(--text-primary)]">
+						{feed.lastSuccessfulRefreshAt
+							? relativeTime(feed.lastSuccessfulRefreshAt)
+							: "No successful refresh yet"}
+					</p>
+				</div>
+
+				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
+						Last failure
+					</p>
+					<p className="mt-1 text-sm text-[var(--text-primary)]">
+						{feed.lastFailureAt
+							? relativeTime(feed.lastFailureAt)
+							: "No recent failures"}
+					</p>
+				</div>
+
+				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
+						Recent refresh speed
+					</p>
+					<p className="mt-1 text-sm text-[var(--text-primary)]">
+						Latest {formatDuration(feed.performance.latestDurationMs)} · Avg{" "}
+						{formatDuration(feed.performance.averageDurationMs)}
+					</p>
+					<p className="mt-1 text-xs text-secondary">
+						{feed.performance.slowCount24h > 0
+							? `${feed.performance.slowCount24h} slow refreshes in the last 24 hours`
+							: "No slow refreshes in the last 24 hours"}
+					</p>
+				</div>
+
+				{feed.lastError ? (
+					<div className="rounded-[18px] border border-rose-500/20 bg-rose-500/10 px-3.5 py-3">
+						<p className="text-[11px] uppercase tracking-[0.18em] text-[var(--status-error)]">
+							Latest error
+						</p>
+						<p className="mt-1 text-sm leading-relaxed text-[var(--text-primary)]">
+							{feed.lastError}
+						</p>
+					</div>
+				) : null}
+			</div>
 		</Sheet>
 	);
 }

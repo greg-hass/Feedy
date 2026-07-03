@@ -17,8 +17,9 @@
   --accent-rgb: 16, 185, 129;
   --accent-contrast: #03110b;
   --danger: #ef4444;
-  --success: #ef4444;
+  --success: #059669;
   --success-contrast: #ffffff;
+  --nav-inactive: #52525b;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
   /* iOS-style glass material (used by bottom nav) */
   --glass-bg: color-mix(in srgb, var(--surface) 68%, transparent);
@@ -52,8 +53,9 @@
   --accent-rgb: 16, 185, 129;
   --accent-contrast: #03110b;
   --danger: #ef4444;
-  --success: #f87171;
-  --success-contrast: #450a0a;
+  --success: #34d399;
+  --success-contrast: #052e16;
+  --nav-inactive: #d4d4d8;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   /* iOS-style glass material (dark) — matches Apple's tab bar:
      blur(20px) saturate(180%), single dark tint at 72% opacity */

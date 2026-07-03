@@ -174,8 +174,9 @@ export function MobileShell({
 											active ? "font-semibold" : "font-medium"
 										}`}
 										style={{
-											color: active ? "var(--accent)" : "#ffffff",
+											color: active ? "var(--accent)" : "var(--nav-inactive)",
 										}}
+										aria-current={active ? "page" : undefined}
 									>
 										<Icon
 											className="size-[26px]"
