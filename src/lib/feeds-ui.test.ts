@@ -77,4 +77,16 @@ describe("Feeds UI contracts", () => {
 			/<div className="mb-3">\s*<AddFolderForm/,
 		);
 	});
+
+	it("submits create forms through onSubmit only", () => {
+		assert.match(formsSource, /<Button type="submit"/);
+		assert.doesNotMatch(
+			formsSource,
+			/<Button onClick=\{\(\) => mutation\.mutate\(\)\}/,
+		);
+	});
+
+	it("announces create-form errors", () => {
+		assert.match(formsSource, /role="alert"/);
+	});
 });

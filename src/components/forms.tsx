@@ -35,22 +35,29 @@ export function AddFolderForm({ onClose }: { onClose?: () => void }) {
           </button>
         )}
       </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (title.trim()) mutation.mutate();
-        }}
-      >
-        <Input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="Daily reads"
-          className="mt-3"
-        />
-        <Button onClick={() => mutation.mutate()} className="mt-3 w-full" disabled={!title.trim()}>
-          Create folder
-        </Button>
-      </form>
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				if (title.trim()) mutation.mutate();
+			}}
+		>
+			<label className="mt-3 block">
+				<span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Folder name</span>
+				<Input
+					value={title}
+					onChange={(event) => setTitle(event.target.value)}
+					placeholder="Daily reads"
+				/>
+			</label>
+			<Button type="submit" className="mt-3 w-full" disabled={!title.trim() || mutation.isPending}>
+				{mutation.isPending ? "Creating..." : "Create folder"}
+			</Button>
+			{mutation.error ? (
+				<p role="alert" className="mt-2 text-sm text-[var(--danger)]">
+					{mutation.error.message}
+				</p>
+			) : null}
+		</form>
     </div>
   );
 }
@@ -121,33 +128,47 @@ export function EditFolderSheet({
           </button>
         </div>
 
-        <label className="mt-3 block">
-          <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Name</span>
-          <Input value={title} onChange={(event) => setTitle(event.target.value)} />
-        </label>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutation.mutate();
+          }}
+        >
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Name</span>
+            <Input value={title} onChange={(event) => setTitle(event.target.value)} />
+          </label>
 
-        {onReorder && (
-          <div className="mt-2.5 flex gap-2">
-            <button
-              onClick={() => onReorder("up")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
-            >
-              <ArrowUp className="size-4" />
-              Move up
-            </button>
-            <button
-              onClick={() => onReorder("down")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
-            >
-              <ArrowDown className="size-4" />
-              Move down
-            </button>
-          </div>
-        )}
+          {onReorder && (
+            <div className="mt-2.5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => onReorder("up")}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
+              >
+                <ArrowUp className="size-4" />
+                Move up
+              </button>
+              <button
+                type="button"
+                onClick={() => onReorder("down")}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
+              >
+                <ArrowDown className="size-4" />
+                Move down
+              </button>
+            </div>
+          )}
 
-        <Button onClick={() => mutation.mutate()} className="mt-3.5 w-full" disabled={!title.trim()}>
-          Save
-        </Button>
+          <Button type="submit" className="mt-3.5 w-full" disabled={!title.trim() || mutation.isPending}>
+            {mutation.isPending ? "Saving..." : "Save"}
+          </Button>
+          {mutation.error ? (
+            <p role="alert" className="mt-2 text-sm text-[var(--danger)]">
+              {mutation.error.message}
+            </p>
+          ) : null}
+        </form>
 
         <button
           onClick={() => {
@@ -207,45 +228,52 @@ export function AddFeedForm({
           </button>
         )}
       </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (sourceUrl.trim()) mutation.mutate();
-        }}
-      >
-        <Input
-          value={sourceUrl}
-          onChange={(event) => setSourceUrl(event.target.value)}
-          placeholder="https://example.com/feed.xml"
-          className="mt-3"
-        />
-        <Input
-          value={label}
-          onChange={(event) => setLabel(event.target.value)}
-          placeholder="Optional label"
-          className="mt-3"
-        />
-        {folders.length > 0 && (
-          <select
-            value={folderId}
-            onChange={(event) => setFolderId(event.target.value)}
-            className="mt-3 h-12 w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-[var(--text-primary)]"
-          >
-            <option value="">No folder</option>
-            {folders.map((folder) => (
-              <option key={folder.id} value={folder.id}>
-                {folder.title}
-              </option>
-            ))}
-          </select>
-        )}
-        <Button onClick={() => mutation.mutate()} className="mt-3 w-full" disabled={!sourceUrl.trim()}>
-          {mutation.isPending ? "Validating..." : "Validate and add"}
-        </Button>
-        {mutation.error && (
-          <p className="mt-2 text-sm text-[var(--danger)]">{mutation.error.message}</p>
-        )}
-      </form>
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				if (sourceUrl.trim()) mutation.mutate();
+			}}
+		>
+			<label className="mt-3 block">
+				<span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Feed URL</span>
+				<Input
+					value={sourceUrl}
+					onChange={(event) => setSourceUrl(event.target.value)}
+					placeholder="https://example.com/feed.xml"
+				/>
+			</label>
+			<label className="mt-3 block">
+				<span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Label (optional)</span>
+				<Input
+					value={label}
+					onChange={(event) => setLabel(event.target.value)}
+					placeholder="My daily news"
+				/>
+			</label>
+			{folders.length > 0 && (
+				<label className="mt-3 block">
+					<span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Folder</span>
+					<select
+						value={folderId}
+						onChange={(event) => setFolderId(event.target.value)}
+						className="mt-0 h-12 w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-[var(--text-primary)]"
+					>
+						<option value="">No folder</option>
+						{folders.map((folder) => (
+							<option key={folder.id} value={folder.id}>
+								{folder.title}
+							</option>
+						))}
+					</select>
+				</label>
+			)}
+			<Button type="submit" className="mt-3 w-full" disabled={!sourceUrl.trim() || mutation.isPending}>
+				{mutation.isPending ? "Validating..." : "Validate and add"}
+			</Button>
+			{mutation.error && (
+				<p role="alert" className="mt-2 text-sm text-[var(--danger)]">{mutation.error.message}</p>
+			)}
+		</form>
     </div>
   );
 }
@@ -310,65 +338,81 @@ export function EditFeedSheet({
           </button>
         </div>
 
-        <label className="mt-3 block">
-          <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Label</span>
-          <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder={feed.title} />
-        </label>
-
-        {folders.length > 0 && (
-          <label className="mt-2.5 block">
-            <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Folder</span>
-            <select
-              value={folderId}
-              onChange={(event) => setFolderId(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-[var(--text-primary)]"
-            >
-              <option value="">No folder</option>
-              {folders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.title}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-
-        <button
-          onClick={() => setIsPinned(!isPinned)}
-          className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
-            isPinned
-              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
-              : "border-subtle text-secondary"
-          }`}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutation.mutate();
+          }}
         >
-          {isPinned ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
-          Pin to top
-        </button>
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Label</span>
+            <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder={feed.title} />
+          </label>
 
-        {onReorder && (
-          <div className="mt-2.5 flex gap-2">
-            <button
-              onClick={() => onReorder("up")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
-            >
-              <ArrowUp className="size-4" />
-              Move up
-            </button>
-            <button
-              onClick={() => onReorder("down")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
-            >
-              <ArrowDown className="size-4" />
-              Move down
-            </button>
-          </div>
-        )}
+          {folders.length > 0 && (
+            <label className="mt-2.5 block">
+              <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-secondary">Folder</span>
+              <select
+                value={folderId}
+                onChange={(event) => setFolderId(event.target.value)}
+                className="h-12 w-full rounded-2xl border border-subtle bg-[var(--surface-muted)] px-4 text-sm text-[var(--text-primary)]"
+              >
+                <option value="">No folder</option>
+                {folders.map((folder) => (
+                  <option key={folder.id} value={folder.id}>
+                    {folder.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
-        <Button onClick={() => mutation.mutate()} className="mt-3.5 w-full" disabled={mutation.isPending}>
-          Save
-        </Button>
+          <button
+            type="button"
+            onClick={() => setIsPinned(!isPinned)}
+            className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
+              isPinned
+                ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
+                : "border-subtle text-secondary"
+            }`}
+          >
+            {isPinned ? <Check className="size-4" /> : <div className="size-4 rounded border border-subtle" />}
+            Pin to top
+          </button>
+
+          {onReorder && (
+            <div className="mt-2.5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => onReorder("up")}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
+              >
+                <ArrowUp className="size-4" />
+                Move up
+              </button>
+              <button
+                type="button"
+                onClick={() => onReorder("down")}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-subtle bg-[var(--surface-muted)] py-3 text-xs font-medium text-secondary"
+              >
+                <ArrowDown className="size-4" />
+                Move down
+              </button>
+            </div>
+          )}
+
+          <Button type="submit" className="mt-3.5 w-full" disabled={mutation.isPending}>
+            {mutation.isPending ? "Saving..." : "Save"}
+          </Button>
+          {mutation.error ? (
+            <p role="alert" className="mt-2 text-sm text-[var(--danger)]">
+              {mutation.error.message}
+            </p>
+          ) : null}
+        </form>
 
         <button
+          type="button"
           onClick={() => {
             if (confirm("Delete this feed and all its items?")) {
               onDelete();
