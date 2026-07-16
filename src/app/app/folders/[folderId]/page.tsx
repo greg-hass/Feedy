@@ -219,7 +219,14 @@ export default function FolderDetailPage() {
 					</section>
 				)}
 				{folderFeeds.length > 0 ? (
-					<div data-flat-section-divider="true" aria-hidden="true" />
+					<div
+						data-flat-articles-header="true"
+						className="flex items-center justify-between gap-3"
+					>
+						<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary">
+							Articles
+						</p>
+					</div>
 				) : null}
 
 				<main className="flex-1">

@@ -16,6 +16,9 @@ import {
 	subscribeToLayoutMode,
 	type LayoutMode,
 } from "@/lib/layout";
+import type { MeResponse } from "@/types/app";
+
+type SettingKey = keyof MeResponse["user"]["settings"];
 
 type StorageStats = {
 	dbSizeBytes: number;
@@ -43,6 +46,7 @@ export function SettingsScreen() {
 	const me = useMe();
 	const queryClient = useQueryClient();
 	const [pendingLabel, setPendingLabel] = useState("");
+	const [pendingSetting, setPendingSetting] = useState<SettingKey | null>(null);
 	const layoutMode = useSyncExternalStore<LayoutMode>(
 		subscribeToLayoutMode,
 		getStoredLayoutMode,
@@ -62,6 +66,15 @@ export function SettingsScreen() {
 			await queryClient.invalidateQueries({ queryKey: ["me"] });
 		},
 	});
+	const saveSetting = (
+		key: SettingKey,
+		label: string,
+		body: Record<string, unknown>,
+	) => {
+		setPendingLabel(label);
+		setPendingSetting(key);
+		settings.mutate(body);
+	};
 
 	return (
 		<MobileShell title="Settings">
@@ -137,7 +150,11 @@ export function SettingsScreen() {
 								return (
 									<button
 										key={option.key}
-										onClick={() => settings.mutate({ accentColor: option.key })}
+										onClick={() => {
+										saveSetting("accentColor", "accent colour", {
+										accentColor: option.key,
+									});
+								}}
 										disabled={settings.isPending}
 										className={`flex size-11 items-center justify-center rounded-full border-2 transition-transform ${
 											active
@@ -178,8 +195,9 @@ export function SettingsScreen() {
 							<button
 								key={minutes}
 								onClick={() => {
-									setPendingLabel("refresh cadence");
-									settings.mutate({ refreshIntervalMinutes: minutes });
+									saveSetting("refreshIntervalMinutes", "refresh cadence", {
+										refreshIntervalMinutes: minutes,
+									});
 								}}
 								disabled={settings.isPending}
 								aria-pressed={
@@ -193,7 +211,8 @@ export function SettingsScreen() {
 							>
 								<span className="inline-flex items-center gap-1.5">
 									{me.data?.user.settings.refreshIntervalMinutes === minutes &&
-									settings.isPending ? (
+									settings.isPending &&
+									pendingSetting === "refreshIntervalMinutes" ? (
 										<Loader2 className="size-3.5 animate-spin" />
 									) : null}
 									{minutes}m
@@ -216,7 +235,7 @@ export function SettingsScreen() {
 						<button
 							type="button"
 							onClick={() =>
-								settings.mutate({
+								saveSetting("keepScreenAwake", "keep screen awake", {
 									keepScreenAwake: !me.data?.user.settings.keepScreenAwake,
 								})
 							}
@@ -247,7 +266,7 @@ export function SettingsScreen() {
 						<button
 							type="button"
 							onClick={() =>
-								settings.mutate({
+								saveSetting("hideYouTubeShorts", "hide YouTube Shorts", {
 									hideYouTubeShorts: !me.data?.user.settings.hideYouTubeShorts,
 								})
 							}
