@@ -195,6 +195,7 @@ export function FeedRow({
 				}
 			>
 				<div
+					data-flat-library-row="true"
 					className="flex min-w-0 items-center gap-3 rounded-[20px] px-3 py-3"
 					style={{ contentVisibility: "auto", containIntrinsicSize: "92px" }}
 				>
@@ -328,6 +329,7 @@ export function SelectableFeedRow({
 			type="button"
 			onClick={onToggle}
 			data-flat-selectable="true"
+			data-flat-library-row="true"
 			aria-pressed={selected}
 			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
@@ -385,6 +387,7 @@ export function SelectableFolderRow({
 			type="button"
 			onClick={onToggle}
 			data-flat-selectable="true"
+			data-flat-library-row="true"
 			aria-pressed={selected}
 			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
@@ -699,6 +702,7 @@ export function FolderRow({
 			>
 				<Link
 					href={`/app/folders/${folder.id}`}
+					data-flat-library-row="true"
 					className="group flex items-center justify-between gap-3 rounded-[24px] px-3.5 py-3.5"
 					style={{ contentVisibility: "auto", containIntrinsicSize: "86px" }}
 				>

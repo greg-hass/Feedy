@@ -139,7 +139,11 @@ export default function FolderDetailPage() {
 		>
 			<div className="space-y-3">
 				{folderFeeds.length > 0 && (
-					<section data-flat-surface="true" className="panel p-3">
+					<section
+						data-flat-library-section="true"
+						data-flat-surface="true"
+						className="panel p-3"
+					>
 						<div
 							data-flat-library-header="true"
 							className="mb-2 flex items-center justify-between gap-3 px-1"
@@ -192,7 +196,7 @@ export default function FolderDetailPage() {
 								)}
 							</div>
 						</div>
-						<div className="space-y-2">
+						<div data-flat-library-list="true" className="space-y-2">
 							{selectionMode
 								? folderFeeds.map((feed) => (
 										<SelectableFolderFeedRow
@@ -214,6 +218,9 @@ export default function FolderDetailPage() {
 						</div>
 					</section>
 				)}
+				{folderFeeds.length > 0 ? (
+					<div data-flat-section-divider="true" aria-hidden="true" />
+				) : null}
 
 				<main className="flex-1">
 					{items.isLoading ? (

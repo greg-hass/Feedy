@@ -9,6 +9,8 @@ final result: passed
 - Selection-state implementation: `/private/tmp/Feedy-flat-layout/output/playwright/folders-after-selected-final.png` and `/private/tmp/Feedy-flat-layout/output/playwright/folders-gutter-fix-selected.png`
 - Navigation regression evidence: `/private/tmp/Feedy-flat-layout/output/playwright/folder-article-back-preserved.png`
 - Shared tab-bar evidence: `/private/tmp/Feedy-flat-layout/output/playwright/tab-bar-card.png` and `/private/tmp/Feedy-flat-layout/output/playwright/tab-bar-flat.png`
+- Current spacing/separator evidence: `/private/tmp/Feedy-flat-layout/output/playwright/timeline-separators-after.png`, `/private/tmp/Feedy-flat-layout/output/playwright/feeds-padding-after.png`, and `/private/tmp/Feedy-flat-layout/output/playwright/folder-detail-separators-after.png`
+- Long-title evidence: `/private/tmp/Feedy-flat-layout/output/playwright/long-feed-title-after.png`
 - Browser viewport: 390 x 844 CSS pixels; dark theme; Flat layout selected
 
 The normal and selected source states were each inspected together with their corresponding rendered implementation screenshot. The focused comparison covered the folder header/back control, the `Feeds in folder` toolbar, feed-row gutters, selection state, separators, and the article transition below the library.
@@ -21,6 +23,10 @@ The normal and selected source states were each inspected together with their co
 - P1 follow-up: the section gutter was normalized, but the folder header and row components still retained their own horizontal padding, leaving their content farther right than article text. Fix: explicitly set Flat folder-library header and row padding to zero. Post-fix evidence: `folders-after-gutter-fix.png` and `folders-gutter-fix-selected.png`; live DOM measured row left edge x16 and horizontal padding 0px.
 - P2: Flat used a separate tab-bar override, making the navigation flat while Card used the glass/card treatment. Fix: remove the Flat-only override so both layouts use the shared rounded glass tab bar.
 - P1: opening a folder article marked it read, then the folder query’s default unread filter removed it on return. Fix: folder detail requests `stateFilter=ALL`, preserving read articles in the folder view.
+- P1: Flat article separators extended to the viewport edges while article text used the shared content gutter. Fix: render an inset separator pseudo-element at 16px on both sides while keeping media full-bleed.
+- P1: Feeds folder and loose-feed rows added an extra inner gutter. Fix: apply the shared Flat library-row padding reset to normal and selectable rows across the Feeds view.
+- P2: Folder-detail feed rows and the section surface created two adjacent separators before articles. Fix: remove the final row/section borders and add one dedicated inset gradient divider.
+- P1: Long source/folder titles could overlap the right-side header actions. Fix: use zero-minimum grid tracks and a shrinkable, single-line truncated title in the shared mobile header.
 
 ## Required fidelity surfaces
 
@@ -37,6 +43,10 @@ The normal and selected source states were each inspected together with their co
 - Confirmed the back button is visible beside `A.I.` with reader-style default border and emerald arrow.
 - Opened `Please Stop Making Me Opt Out of AI` from the A.I. folder, returned with the reader back button, and confirmed the same article remained in the folder after it was marked read.
 - Compared Card and Flat tab bars live: both used the same `rounded-[34px]` class and computed `34px` radius, glass background, border, shadow, and `blur(20px) saturate(1.8)` backdrop filter. Flat was restored as the selected layout.
+- Verified Timeline article separators use `left: 16px` and `right: 16px` on full-bleed Flat articles.
+- Verified Feeds folder and loose-feed content starts at x16 with 0px horizontal row padding; folder-detail selectable rows also report x16, 0px padding, 0px radius, and no shadow.
+- Verified folder detail has one dedicated divider between the feed library and articles, with the section and final feed-row borders removed.
+- Verified the long `r/coolgithubprojects` header title truncates within its safe width; title bounds ended at x175.5 while the right action began at x319, with no overlap.
 - Confirmed the live isolated stack at `http://192.168.1.163:4002` reports database and Redis healthy, with all four `feedy-flat` services healthy.
 - Browser console still reports three pre-existing CSP errors from feed content attempting to load an HTTP `.mp4` as an image; unrelated to this UI change.
 

@@ -336,9 +336,20 @@ select {
 :root[data-layout="flat"] .feed-item-card {
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 0;
   border-radius: 0;
   box-shadow: none;
+  position: relative;
+}
+
+:root[data-layout="flat"] .feed-item-card::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  bottom: 0;
+  left: 16px;
+  border-bottom: 1px solid var(--border);
+  pointer-events: none;
 }
 
 :root[data-layout="flat"] .feed-item-card:hover {
@@ -377,6 +388,31 @@ select {
 :root[data-layout="flat"] [data-flat-library-row="true"] {
   padding-left: 0 !important;
   padding-right: 0 !important;
+}
+
+:root[data-layout="flat"] [data-flat-library-section="true"] {
+  border-bottom: 0 !important;
+}
+
+:root[data-layout="flat"] [data-flat-library-list] > .panel:last-child,
+:root[data-layout="flat"] [data-flat-library-list] > .panel:last-child > [data-flat-surface="true"] {
+  border-bottom: 0 !important;
+}
+
+[data-flat-section-divider="true"] {
+  display: none;
+}
+
+:root[data-layout="flat"] [data-flat-section-divider="true"] {
+  display: block;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border) 12%,
+    var(--border) 88%,
+    transparent
+  );
 }
 
 :root[data-layout="flat"] [data-flat-sheet="true"] {

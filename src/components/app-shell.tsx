@@ -79,11 +79,11 @@ export function MobileShell({
 					}}
 				>
 					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
-						<div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-							<div className="flex min-w-0 items-center gap-2 justify-self-start">
+						<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+							<div className="flex min-w-0 max-w-full items-center gap-2 justify-self-start">
 								{backButton ? <div className="shrink-0">{backButton}</div> : null}
 								<h1
-									className="truncate text-[2rem] font-bold leading-[1.1] tracking-[-0.045em]"
+									className="min-w-0 flex-1 truncate text-[2rem] font-bold leading-[1.1] tracking-[-0.045em]"
 									style={{ color: "var(--text-primary)" }}
 								>
 									{title}
