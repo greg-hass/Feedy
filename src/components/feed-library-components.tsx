@@ -750,7 +750,7 @@ function SwipeRow({
 	const touchDeltaX = useRef(0);
 
 	return (
-		<div className="relative overflow-hidden rounded-[24px] border border-subtle bg-[var(--surface)] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+		<div className="panel relative overflow-hidden">
 			<div className="absolute inset-y-[5px] right-[5px] flex items-center gap-2">
 				{actions}
 			</div>

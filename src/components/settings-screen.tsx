@@ -9,6 +9,13 @@ import { MobileShell, useMe } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
 import { accentOptions } from "@/lib/theme";
+import {
+	applyLayoutMode,
+	getStoredLayoutMode,
+	layoutModeStorageKey,
+	layoutModes,
+	type LayoutMode,
+} from "@/lib/layout";
 
 type StorageStats = {
 	dbSizeBytes: number;
@@ -36,6 +43,7 @@ export function SettingsScreen() {
 	const me = useMe();
 	const queryClient = useQueryClient();
 	const [pendingLabel, setPendingLabel] = useState("");
+	const [layoutMode, setLayoutMode] = useState<LayoutMode>(getStoredLayoutMode);
 	const storage = useQuery({
 		queryKey: ["settings-storage"],
 		queryFn: () => api<StorageStats>("/api/settings/storage"),
@@ -69,7 +77,7 @@ export function SettingsScreen() {
 							: `${pendingLabel} saved.`}
 					</p>
 				)}
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Account</h3>
 					<p className="mt-2 text-sm text-secondary">
 						Signed in as{" "}
@@ -79,8 +87,41 @@ export function SettingsScreen() {
 					</p>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Appearance</h3>
+					<div className="mt-4">
+						<p className="text-xs font-medium text-[var(--text-primary)]">
+							Layout style
+						</p>
+						<p className="mt-1 text-xs text-secondary">
+							Choose between floating cards and a flatter list layout.
+						</p>
+						<div className="mt-3 grid grid-cols-2 gap-2">
+							{layoutModes.map((mode) => {
+								const active = layoutMode === mode;
+								return (
+									<button
+										key={mode}
+										type="button"
+										onClick={() => {
+											setLayoutMode(mode);
+											window.localStorage.setItem(layoutModeStorageKey, mode);
+											applyLayoutMode(mode);
+											window.dispatchEvent(new Event("feedy-layout-mode-change"));
+										}}
+										className={`rounded-xl border px-3 py-2 text-xs font-medium capitalize transition-colors ${
+											active
+												? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
+												: "border-subtle bg-[var(--surface-muted)] text-secondary"
+										}`}
+										aria-pressed={active}
+									>
+										{mode}
+									</button>
+								);
+							})}
+						</div>
+					</div>
 					<div className="mt-4">
 						<p className="text-xs font-medium text-[var(--text-primary)]">
 							Accent colour
@@ -125,7 +166,7 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Refresh cadence</h3>
 					<p className="mt-2 text-xs text-secondary">
 						Current: {me.data?.user.settings.refreshIntervalMinutes ?? 15}{" "}
@@ -161,7 +202,7 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Device</h3>
 					<div className="mt-3 flex items-start justify-between gap-4">
 						<div className="min-w-0">
@@ -228,7 +269,7 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Database</h3>
 					<p className="mt-2 text-xs leading-relaxed text-secondary">
 						Local storage usage, retention, and safe purge controls. Bookmarked
@@ -307,7 +348,7 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Import & export</h3>
 					<p className="mt-2 text-xs text-secondary">
 						Move subscriptions with OPML or keep a full JSON backup.

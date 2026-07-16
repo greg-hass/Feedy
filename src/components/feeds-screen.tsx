@@ -290,7 +290,7 @@ export function FeedsScreen() {
 				</div>
 			)}
 
-			<section className="mb-4 rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+			<section className="panel mb-4 p-3">
 				<div className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
 					<Search className="size-4 shrink-0 text-secondary" />
 					<Input

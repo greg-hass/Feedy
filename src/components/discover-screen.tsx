@@ -87,7 +87,7 @@ export function DiscoverScreen() {
 
 	return (
 		<MobileShell title="Discover">
-			<section className="rounded-[26px] border border-subtle bg-[var(--surface)] p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+			<section className="panel p-3.5">
 				<div>
 					<p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
 						Source scope
@@ -148,7 +148,7 @@ export function DiscoverScreen() {
 							{local.data?.map((feed) => (
 								<div
 									key={feed.id}
-									className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
+									className="panel p-4"
 									style={{
 										contentVisibility: "auto",
 										containIntrinsicSize: "104px",
@@ -217,7 +217,7 @@ export function DiscoverScreen() {
 								return (
 									<div
 										key={result.feedUrl}
-										className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
+										className="panel p-4"
 										style={{
 											contentVisibility: "auto",
 											containIntrinsicSize: "112px",

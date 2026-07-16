@@ -204,7 +204,7 @@ export const ItemCard = memo(function ItemCard({
 			onClick={navigateFromCard}
 			onPointerEnter={prefetchReader}
 			onFocus={prefetchReader}
-			className={`group card-elevated overflow-hidden rounded-[24px] transition-all duration-300 ${!isYouTube ? "cursor-pointer" : ""} ${hoverCardClass}`}
+			className={`group feed-item-card overflow-hidden transition-all duration-300 ${!isYouTube ? "cursor-pointer" : ""} ${hoverCardClass}`}
 		>
 			{thumbnailUrl &&
 				(isYouTube && item.youtubeVideoId ? (

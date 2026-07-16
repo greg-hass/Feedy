@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { createPortal } from "react-dom";
 
 import { WakeLockManager } from "@/components/wake-lock-manager";
+import { applyLayoutMode, getStoredLayoutMode } from "@/lib/layout";
 import { YouTubeInlinePlayer } from "@/components/youtube-inline-player";
 import {
 	getYouTubePlaybackHostStyle,
@@ -192,6 +193,21 @@ export function Providers({
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 		};
 	}, [queryClient]);
+
+	useLayoutEffect(() => {
+		applyLayoutMode(getStoredLayoutMode());
+	}, []);
+
+	useEffect(() => {
+		const onLayoutModeChange = () => applyLayoutMode(getStoredLayoutMode());
+		window.addEventListener("storage", onLayoutModeChange);
+		window.addEventListener("feedy-layout-mode-change", onLayoutModeChange);
+
+		return () => {
+			window.removeEventListener("storage", onLayoutModeChange);
+			window.removeEventListener("feedy-layout-mode-change", onLayoutModeChange);
+		};
+	}, []);
 
 	useLayoutEffect(() => {
 		if (!pathname.startsWith("/reader/")) {
