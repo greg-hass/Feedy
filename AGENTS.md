@@ -168,7 +168,7 @@ New dependencies must:
 
 ## Validation
 
-Commands run by `/land` and CI. Runtime daemons (worker) are NOT validation commands.
+Commands run before landing and by CI. Runtime daemons (worker) are NOT validation commands.
 
 ```bash
 npm run lint
