@@ -392,6 +392,50 @@ select {
   -webkit-backdrop-filter: none;
 }
 
+:root[data-layout="flat"] .icon-button,
+:root[data-layout="flat"] .app-button,
+:root[data-layout="flat"] [data-flat-control="true"] {
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+:root[data-layout="flat"] .icon-button {
+  background: transparent;
+}
+
+:root[data-layout="flat"] .app-button {
+  background-image: none;
+}
+
+:root[data-layout="flat"] [data-flat-avatar="true"],
+:root[data-layout="flat"] [data-flat-icon="true"] {
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 640px) {
+  :root[data-layout="flat"] .app-shell > div {
+    max-width: none;
+  }
+
+  :root[data-layout="flat"] .app-shell > div > .px-5 {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  :root[data-layout="flat"] [data-mobile-shell-header] > div {
+    max-width: none;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  :root[data-layout="flat"] .app-shell nav > div {
+    max-width: none;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 .text-secondary {
   color: var(--text-secondary);
 }

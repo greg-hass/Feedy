@@ -15,6 +15,7 @@ export const FeedAvatar = memo(function FeedAvatar({
 	if (failed) {
 		return (
 			<div
+				data-flat-avatar="true"
 				className="flex shrink-0 items-center justify-center rounded-2xl border border-subtle bg-[var(--surface-strong)] text-sm font-semibold text-secondary"
 				style={{ width: size, height: size }}
 			>
@@ -25,6 +26,7 @@ export const FeedAvatar = memo(function FeedAvatar({
 
 	return (
 		<Image
+			data-flat-avatar="true"
 			src={`/api/icons/${feedId}?v=3`}
 			alt={title}
 			width={size}

@@ -270,6 +270,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 								}
 							}}
 							disabled={deleteFeed.isPending}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[16px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
 							aria-label={`Delete ${feed.label || feed.title}`}
 						>
@@ -277,6 +278,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 						</button>
 						<button
 							onClick={() => setShowEdit(true)}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[16px] bg-[var(--surface-muted)] text-secondary"
 							aria-label={`Edit ${feed.label || feed.title}`}
 						>

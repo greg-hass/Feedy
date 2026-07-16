@@ -37,6 +37,7 @@ export function SegmentedControl<T extends string>({
 }) {
 	return (
 		<div
+			data-flat-control="true"
 			className={`grid gap-1 rounded-[20px] bg-[var(--surface-strong)] p-1 ${columns ?? `grid-cols-${options.length}`}`}
 		>
 			{options.map((option) => {

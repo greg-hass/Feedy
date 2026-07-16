@@ -30,5 +30,5 @@ type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof iconButtonVariants>;
 
 export function IconButton({ className, variant, size, ...props }: IconButtonProps) {
-  return <button className={cn(iconButtonVariants({ variant, size }), className)} {...props} />;
+  return <button className={cn("icon-button", iconButtonVariants({ variant, size }), className)} {...props} />;
 }

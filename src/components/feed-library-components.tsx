@@ -159,6 +159,7 @@ export function FeedRow({
 							type="button"
 							onClick={() => pauseFeed.mutate()}
 							disabled={pauseFeed.isPending}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--accent-dim)] text-[var(--accent)] disabled:opacity-60"
 							aria-label={`${pauseLabel} ${feed.label || feed.title}`}
 							title={pauseLabel}
@@ -176,6 +177,7 @@ export function FeedRow({
 								}
 							}}
 							disabled={deleteFeed.isPending}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
 							aria-label={`Delete ${feed.label || feed.title}`}
 						>
@@ -183,6 +185,7 @@ export function FeedRow({
 						</button>
 						<button
 							onClick={() => setShowEdit(true)}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
 							aria-label={`Edit ${feed.label || feed.title}`}
 						>
@@ -398,7 +401,7 @@ export function SelectableFolderRow({
 			>
 				<Check className="size-3.5" />
 			</div>
-			<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+			<div data-flat-icon="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
 				<FolderOpen className="size-5" />
 			</div>
 			<div className="min-w-0 flex-1">
@@ -673,14 +676,16 @@ export function FolderRow({
 								}
 							}}
 							disabled={deleteFolder.isPending}
-							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
+						data-flat-control="true"
+						className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
 							aria-label={`Delete folder ${folder.title}`}
 						>
 							<Trash2 className="size-4" />
 						</button>
 						<button
 							onClick={() => setShowEdit(true)}
-							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
+						data-flat-control="true"
+						className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
 							aria-label={`Edit folder ${folder.title}`}
 						>
 							<MoreHorizontal className="size-4" />
@@ -694,7 +699,7 @@ export function FolderRow({
 					style={{ contentVisibility: "auto", containIntrinsicSize: "86px" }}
 				>
 					<div className="flex min-w-0 items-center gap-3">
-						<div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+						<div data-flat-icon="true" className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
 							<FolderOpen className="size-5" />
 						</div>
 						<div className="min-w-0">

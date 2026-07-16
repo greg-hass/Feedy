@@ -156,7 +156,7 @@ export function SavedScreen() {
 			) : null}
 			{searchOpen || query.trim() ? (
 				<section className="mb-3">
-					<div className="flex items-center gap-3 rounded-[22px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
+					<div data-flat-control="true" className="flex items-center gap-3 rounded-[22px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
 						<Search className="size-4 shrink-0 text-secondary" />
 						<Input
 							id="saved-search-input"
