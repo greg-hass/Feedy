@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Loader2, Upload } from "lucide-react";
 
 import { MobileShell, useMe } from "@/components/app-shell";
@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
 import { accentOptions } from "@/lib/theme";
 import {
-	applyLayoutMode,
 	getStoredLayoutMode,
-	layoutModeStorageKey,
 	layoutModes,
+	setStoredLayoutMode,
+	subscribeToLayoutMode,
 	type LayoutMode,
 } from "@/lib/layout";
 
@@ -43,7 +43,11 @@ export function SettingsScreen() {
 	const me = useMe();
 	const queryClient = useQueryClient();
 	const [pendingLabel, setPendingLabel] = useState("");
-	const [layoutMode, setLayoutMode] = useState<LayoutMode>(getStoredLayoutMode);
+	const layoutMode = useSyncExternalStore<LayoutMode>(
+		subscribeToLayoutMode,
+		getStoredLayoutMode,
+		() => "card",
+	);
 	const storage = useQuery({
 		queryKey: ["settings-storage"],
 		queryFn: () => api<StorageStats>("/api/settings/storage"),
@@ -103,11 +107,8 @@ export function SettingsScreen() {
 									<button
 										key={mode}
 										type="button"
-										onClick={() => {
-											setLayoutMode(mode);
-											window.localStorage.setItem(layoutModeStorageKey, mode);
-											applyLayoutMode(mode);
-											window.dispatchEvent(new Event("feedy-layout-mode-change"));
+									onClick={() => {
+										setStoredLayoutMode(mode);
 										}}
 										className={`rounded-xl border px-3 py-2 text-xs font-medium capitalize transition-colors ${
 											active

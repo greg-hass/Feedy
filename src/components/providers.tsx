@@ -8,7 +8,11 @@ import { ThemeProvider } from "next-themes";
 import { createPortal } from "react-dom";
 
 import { WakeLockManager } from "@/components/wake-lock-manager";
-import { applyLayoutMode, getStoredLayoutMode } from "@/lib/layout";
+import {
+	applyLayoutMode,
+	getStoredLayoutMode,
+	layoutModeChangeEvent,
+} from "@/lib/layout";
 import { YouTubeInlinePlayer } from "@/components/youtube-inline-player";
 import {
 	getYouTubePlaybackHostStyle,
@@ -201,11 +205,11 @@ export function Providers({
 	useEffect(() => {
 		const onLayoutModeChange = () => applyLayoutMode(getStoredLayoutMode());
 		window.addEventListener("storage", onLayoutModeChange);
-		window.addEventListener("feedy-layout-mode-change", onLayoutModeChange);
+		window.addEventListener(layoutModeChangeEvent, onLayoutModeChange);
 
 		return () => {
 			window.removeEventListener("storage", onLayoutModeChange);
-			window.removeEventListener("feedy-layout-mode-change", onLayoutModeChange);
+			window.removeEventListener(layoutModeChangeEvent, onLayoutModeChange);
 		};
 	}, []);
 
