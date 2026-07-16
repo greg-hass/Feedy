@@ -23,6 +23,11 @@ import {
   findYouTubeChannelCandidates,
   normalizeYoutubeFeed,
 } from "@/lib/feed/discover-youtube";
+import { mapInBatches } from "@/lib/workload-limits";
+
+const DISCOVERY_DEADLINE_MS = 10_000;
+const DISCOVERY_WEBSITE_LIMIT = 8;
+const DISCOVERY_FEED_CANDIDATE_LIMIT = 4;
 
 function mapValidatedSourceType(
   sourceType: Awaited<ReturnType<typeof validateFeedUrl>>["sourceType"],
@@ -196,7 +201,7 @@ async function searchDuckDuckGo(query: string) {
   const response = await fetchWithTimeout(
     `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
     {},
-    10_000,
+    5_000,
   );
   if (!response.ok) {
     return [];
@@ -230,7 +235,7 @@ function decodeDuckDuckGoResult(rawUrl: string) {
 }
 
 async function discoverFromWebsite(url: string): Promise<DiscoveryResult[]> {
-  const response = await fetchWithTimeout(url, {}, 10_000);
+  const response = await fetchWithTimeout(url, {}, 6_000);
   if (!response.ok) {
     return [];
   }
@@ -253,31 +258,41 @@ async function discoverFromWebsite(url: string): Promise<DiscoveryResult[]> {
   const candidates = [...new Set([...autodiscovered, ...buildCommonFeedCandidates(url)])];
   const results: DiscoveryResult[] = [];
 
-  for (const candidate of candidates.slice(0, 8)) {
-    try {
-      const validated = await validateFeedUrl(candidate);
-      results.push({
-        title: validated.title || title,
-        description: validated.description || description,
-        siteName: new URL(url).hostname,
-        favicon: icon ? new URL(icon, url).toString() : null,
-        feedUrl: normalizeDiscoveryFeedUrl(validated.feedUrl),
-        siteUrl: validated.siteUrl || url,
-        sourceType:
-          validated.sourceType === "REDDIT_RSS"
-            ? "REDDIT_RSS"
-            : validated.sourceType === "YOUTUBE_RSS" ||
-                validated.sourceType === "YOUTUBE_CHANNEL_RSS" ||
-                validated.sourceType === "YOUTUBE_PLAYLIST_RSS"
-              ? "YOUTUBE_RSS"
-              : "RSS",
-      });
-    } catch (error) {
-      console.warn("[discover] Feed autodiscovery failed", {
-        url: candidate,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      continue;
+  const validatedResults = await mapInBatches(
+    candidates.slice(0, DISCOVERY_FEED_CANDIDATE_LIMIT),
+    2,
+    async (candidate) => {
+      try {
+        const validated = await validateFeedUrl(candidate);
+        return {
+          title: validated.title || title,
+          description: validated.description || description,
+          siteName: new URL(url).hostname,
+          favicon: icon ? new URL(icon, url).toString() : null,
+          feedUrl: normalizeDiscoveryFeedUrl(validated.feedUrl),
+          siteUrl: validated.siteUrl || url,
+          sourceType:
+            validated.sourceType === "REDDIT_RSS"
+              ? "REDDIT_RSS"
+              : validated.sourceType === "YOUTUBE_RSS" ||
+                  validated.sourceType === "YOUTUBE_CHANNEL_RSS" ||
+                  validated.sourceType === "YOUTUBE_PLAYLIST_RSS"
+                ? "YOUTUBE_RSS"
+                : "RSS",
+        } satisfies DiscoveryResult;
+      } catch (error) {
+        console.warn("[discover] Feed autodiscovery failed", {
+          url: candidate,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+      }
+    },
+  );
+
+  for (const result of validatedResults) {
+    if (result) {
+      results.push(result);
     }
   }
 
@@ -378,8 +393,15 @@ async function discoverRedditByKeyword(keyword: string): Promise<DiscoveryResult
   const queries = buildDiscoverySearchQueries(keyword);
   const results = new Map<string, DiscoveryResult>();
 
-  for (const query of queries) {
-    const searchResults = await searchDuckDuckGo(`${query} site:reddit.com/r`);
+  const settled = await Promise.allSettled(
+    queries.map((query) => searchDuckDuckGo(`${query} site:reddit.com/r`)),
+  );
+  for (const outcome of settled) {
+    if (outcome.status !== "fulfilled") {
+      continue;
+    }
+
+    const searchResults = outcome.value;
     const subredditPages = searchResults.filter((url) => url.includes("reddit.com/r/"));
 
     for (const candidate of subredditPages.slice(0, 8)) {
@@ -402,6 +424,58 @@ async function discoverRedditByKeyword(keyword: string): Promise<DiscoveryResult
   }
 
   return Array.from(results.values());
+}
+
+async function discoverRssByKeyword(keyword: string): Promise<DiscoveryResult[]> {
+  const rawUrls = new Set<string>();
+  for (const guessedUrl of buildWebsiteKeywordGuesses(keyword)) {
+    rawUrls.add(guessedUrl);
+  }
+
+  const searchOutcomes = await Promise.allSettled(
+    buildDiscoverySearchQueries(keyword, 5).map((query) =>
+      searchDuckDuckGo(`${query} rss`),
+    ),
+  );
+  for (const outcome of searchOutcomes) {
+    if (outcome.status !== "fulfilled") {
+      continue;
+    }
+
+    for (const url of outcome.value.slice(0, 6)) {
+      rawUrls.add(url);
+    }
+  }
+
+  const discovered = await mapInBatches(
+    Array.from(rawUrls).slice(0, DISCOVERY_WEBSITE_LIMIT),
+    4,
+    async (rawUrl) => {
+      try {
+        const youtube = normalizeYoutubeFeed(rawUrl);
+        if (youtube) {
+          return [youtube];
+        }
+
+        const reddit = normalizeRedditFeed(rawUrl);
+        if (reddit) {
+          return [reddit];
+        }
+
+        return (await discoverFromWebsite(rawUrl)).filter(
+          (result) => result.sourceType === "RSS",
+        );
+      } catch (error) {
+        console.warn("[discover] Search result discovery failed", {
+          url: rawUrl,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return [];
+      }
+    },
+  );
+
+  return discovered.flat();
 }
 
 function normalizeDirectUrlInput(value: string) {
@@ -442,53 +516,31 @@ export async function discoverFeeds(
     }
   }
 
-  const rawUrls = new Set<string>();
-  if (sourceFilter === "ALL" || sourceFilter === "RSS") {
-    for (const guessedUrl of buildWebsiteKeywordGuesses(trimmedKeyword)) {
-      rawUrls.add(guessedUrl);
-    }
-
-    for (const query of buildDiscoverySearchQueries(trimmedKeyword, 5)) {
-      const searchResults = await searchDuckDuckGo(`${query} rss`);
-      for (const url of searchResults.slice(0, 6)) {
-        rawUrls.add(url);
-      }
-    }
-  }
-
   const results: DiscoveryResult[] = [];
+  const sourceTasks: Promise<DiscoveryResult[]>[] = [];
 
   if (sourceFilter === "ALL" || sourceFilter === "REDDIT") {
-    results.push(...buildKeywordGuesses(trimmedKeyword), ...(await discoverRedditByKeyword(trimmedKeyword)));
+    results.push(...buildKeywordGuesses(trimmedKeyword));
+    sourceTasks.push(discoverRedditByKeyword(trimmedKeyword));
+  }
+
+  if (sourceFilter === "ALL" || sourceFilter === "RSS") {
+    sourceTasks.push(discoverRssByKeyword(trimmedKeyword));
   }
 
   if (sourceFilter === "ALL" || sourceFilter === "YOUTUBE") {
-    results.push(...(await discoverYoutubeByKeyword(trimmedKeyword)));
+    sourceTasks.push(discoverYoutubeByKeyword(trimmedKeyword));
   }
 
-  for (const rawUrl of rawUrls) {
-    try {
-      const decoded = rawUrl!;
-      const youtube = normalizeYoutubeFeed(decoded);
-      if (youtube) {
-        results.push(youtube);
-        continue;
+  const deadline = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), DISCOVERY_DEADLINE_MS);
+  });
+  const settled = await Promise.race([Promise.allSettled(sourceTasks), deadline]);
+  if (settled) {
+    for (const outcome of settled) {
+      if (outcome.status === "fulfilled") {
+        results.push(...outcome.value);
       }
-
-      const reddit = normalizeRedditFeed(decoded);
-      if (reddit) {
-        results.push(reddit);
-        continue;
-      }
-
-      const discovered = await discoverFromWebsite(decoded);
-      results.push(...discovered.filter((result) => result.sourceType === "RSS"));
-    } catch (error) {
-      console.warn("[discover] Search result discovery failed", {
-        url: rawUrl,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      continue;
     }
   }
 

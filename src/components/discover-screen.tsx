@@ -87,7 +87,7 @@ export function DiscoverScreen() {
 
 	return (
 		<MobileShell title="Discover">
-			<section className="rounded-[26px] border border-subtle bg-[var(--surface)] p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+			<section className="panel p-3.5">
 				<div>
 					<p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]/80">
 						Source scope
@@ -109,7 +109,7 @@ export function DiscoverScreen() {
 						columns="grid-cols-4"
 					/>
 				</div>
-				<div className="mt-3 flex items-center gap-3 rounded-[22px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
+			<div data-flat-control="true" className="mt-3 flex items-center gap-3 rounded-[22px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
 					<Search className="size-4 shrink-0 text-secondary" />
 					<Input
 						value={query}
@@ -148,7 +148,7 @@ export function DiscoverScreen() {
 							{local.data?.map((feed) => (
 								<div
 									key={feed.id}
-									className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
+									className="panel p-4"
 									style={{
 										contentVisibility: "auto",
 										containIntrinsicSize: "104px",
@@ -217,7 +217,7 @@ export function DiscoverScreen() {
 								return (
 									<div
 										key={result.feedUrl}
-										className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
+										className="panel p-4"
 										style={{
 											contentVisibility: "auto",
 											containIntrinsicSize: "112px",
@@ -310,13 +310,14 @@ function DiscoveryAvatar({
 
 	if (favicon && !failed) {
 		return (
-			<div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-strong)] p-1.5">
+			<div data-flat-avatar="true" className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-strong)] p-1.5">
 				<Image
 					src={favicon}
 					alt=""
 					width={48}
 					height={48}
 					unoptimized
+					data-flat-avatar="true"
 					className="size-full rounded-[12px] object-contain"
 					loading="lazy"
 					onError={() => setFailed(true)}
@@ -327,6 +328,7 @@ function DiscoveryAvatar({
 
 	return (
 		<div
+			data-flat-avatar="true"
 			className={`flex size-12 shrink-0 items-center justify-center rounded-2xl border border-subtle text-sm font-semibold ${
 				isYouTube
 					? "bg-[var(--status-error-bg)] text-[var(--status-error)]"

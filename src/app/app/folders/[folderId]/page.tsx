@@ -87,7 +87,10 @@ export default function FolderDetailPage() {
 
 	const items = useQuery({
 		queryKey: ["items", "folder", params.folderId],
-		queryFn: () => api<ItemRecord[]>(`/api/items?folderId=${params.folderId}`),
+		queryFn: () =>
+			api<ItemRecord[]>(
+				`/api/items?folderId=${params.folderId}&stateFilter=ALL`,
+			),
 		enabled: !!folderFeeds.length,
 		staleTime: 15_000,
 		refetchOnWindowFocus: "always",
@@ -136,8 +139,15 @@ export default function FolderDetailPage() {
 		>
 			<div className="space-y-3">
 				{folderFeeds.length > 0 && (
-					<section className="rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
-						<div className="mb-2 flex items-center justify-between gap-3 px-1">
+					<section
+						data-flat-library-section="true"
+						data-flat-surface="true"
+						className="panel p-3"
+					>
+						<div
+							data-flat-library-header="true"
+							className="mb-2 flex items-center justify-between gap-3 px-1"
+						>
 							<div>
 								<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary">
 									Feeds in folder
@@ -186,7 +196,7 @@ export default function FolderDetailPage() {
 								)}
 							</div>
 						</div>
-						<div className="space-y-2">
+						<div data-flat-library-list="true" className="space-y-2">
 							{selectionMode
 								? folderFeeds.map((feed) => (
 										<SelectableFolderFeedRow
@@ -208,6 +218,16 @@ export default function FolderDetailPage() {
 						</div>
 					</section>
 				)}
+				{folderFeeds.length > 0 ? (
+					<div
+						data-flat-articles-header="true"
+						className="flex items-center justify-between gap-3"
+					>
+						<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary">
+							Articles
+						</p>
+					</div>
+				) : null}
 
 				<main className="flex-1">
 					{items.isLoading ? (
@@ -270,6 +290,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 								}
 							}}
 							disabled={deleteFeed.isPending}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[16px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
 							aria-label={`Delete ${feed.label || feed.title}`}
 						>
@@ -277,6 +298,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 						</button>
 						<button
 							onClick={() => setShowEdit(true)}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[16px] bg-[var(--surface-muted)] text-secondary"
 							aria-label={`Edit ${feed.label || feed.title}`}
 						>
@@ -287,6 +309,8 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 			>
 				<Link
 					href={`/app/feeds/${feed.id}`}
+					data-flat-library-row="true"
+					data-flat-surface="true"
 					className="flex items-center gap-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]/20"
 				>
 					<FeedAvatar
@@ -360,6 +384,10 @@ function SelectableFolderFeedRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-selectable="true"
+			data-flat-library-row="true"
+			data-flat-surface="true"
+			aria-pressed={selected}
 			className={`flex w-full items-center gap-3 rounded-[18px] border px-3 py-2.5 text-left transition-colors ${
 				selected
 					? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface-muted)_90%)]"
@@ -491,7 +519,12 @@ function FolderBulkMoveSheet({
 
 function HighlightBackButton({ onClick }: { onClick: () => void }) {
 	return (
-		<IconButton onClick={onClick} aria-label="Go back" variant="accent">
+		<IconButton
+			variant="default"
+			onClick={onClick}
+			aria-label="Go back"
+			className="text-[var(--accent)]"
+		>
 			<ArrowLeft className="size-4" />
 		</IconButton>
 	);
@@ -510,7 +543,12 @@ function SwipeRow({
 
 	return (
 		<div className="relative overflow-hidden rounded-[18px]">
-			<div className="absolute inset-y-[5px] right-[5px] flex items-center gap-2">
+			<div
+				data-swipe-actions="true"
+				data-swipe-actions-open={open ? "true" : "false"}
+				aria-hidden={!open}
+				className="absolute inset-y-[5px] right-[5px] flex items-center gap-2"
+			>
 				{actions}
 			</div>
 			<div

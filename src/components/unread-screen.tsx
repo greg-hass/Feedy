@@ -486,7 +486,7 @@ export function UnreadScreen() {
 					}
 				>
 					<div
-						className="mx-auto w-full max-w-md px-5"
+						className="mx-auto w-full max-w-md px-4"
 						style={{
 							paddingTop: `${timelineControlsTopGap}px`,
 							paddingBottom: `${timelineControlsBottomGap}px`,
@@ -536,7 +536,7 @@ export function UnreadScreen() {
 
 						{searchOpen || query.trim() ? (
 							<section className={filtersOpen ? "mt-3" : undefined}>
-								<div className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
+								<div data-flat-control="true" className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
 									<Search className="size-4 shrink-0 text-secondary" />
 									<Input
 										id="timeline-search-input"

@@ -140,7 +140,7 @@ export function RefreshButton({
       </IconButton>
       {refresh.active ? (
         <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+88px)] z-50 px-5">
-          <div className="mx-auto w-full max-w-md rounded-[24px] border border-[var(--accent)]/18 bg-[linear-gradient(180deg,var(--surface)_0%,var(--surface-strong)_100%)] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.52)] ring-1 ring-[var(--text-primary)]/5 backdrop-blur-2xl">
+          <div data-flat-toast="true" className="mx-auto w-full max-w-md rounded-[24px] border border-[var(--accent)]/18 bg-[linear-gradient(180deg,var(--surface)_0%,var(--surface-strong)_100%)] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.52)] ring-1 ring-[var(--text-primary)]/5 backdrop-blur-2xl">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[12px] font-semibold text-[var(--accent)]">

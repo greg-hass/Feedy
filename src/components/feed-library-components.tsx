@@ -159,6 +159,7 @@ export function FeedRow({
 							type="button"
 							onClick={() => pauseFeed.mutate()}
 							disabled={pauseFeed.isPending}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--accent-dim)] text-[var(--accent)] disabled:opacity-60"
 							aria-label={`${pauseLabel} ${feed.label || feed.title}`}
 							title={pauseLabel}
@@ -176,6 +177,7 @@ export function FeedRow({
 								}
 							}}
 							disabled={deleteFeed.isPending}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
 							aria-label={`Delete ${feed.label || feed.title}`}
 						>
@@ -183,6 +185,7 @@ export function FeedRow({
 						</button>
 						<button
 							onClick={() => setShowEdit(true)}
+							data-flat-control="true"
 							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
 							aria-label={`Edit ${feed.label || feed.title}`}
 						>
@@ -192,6 +195,7 @@ export function FeedRow({
 				}
 			>
 				<div
+					data-flat-library-row="true"
 					className="flex min-w-0 items-center gap-3 rounded-[20px] px-3 py-3"
 					style={{ contentVisibility: "auto", containIntrinsicSize: "92px" }}
 				>
@@ -324,6 +328,10 @@ export function SelectableFeedRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-selectable="true"
+			data-flat-library-row="true"
+			aria-pressed={selected}
+			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
 				selected
 					? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
@@ -378,6 +386,10 @@ export function SelectableFolderRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-selectable="true"
+			data-flat-library-row="true"
+			aria-pressed={selected}
+			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
 				selected || partiallySelected
 					? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
@@ -396,7 +408,7 @@ export function SelectableFolderRow({
 			>
 				<Check className="size-3.5" />
 			</div>
-			<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+			<div data-flat-icon="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
 				<FolderOpen className="size-5" />
 			</div>
 			<div className="min-w-0 flex-1">
@@ -466,6 +478,7 @@ export function BulkMoveSheet({
 					type="button"
 					onClick={() => onMove(null)}
 					disabled={isPending}
+					data-flat-surface="true"
 					className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
 				>
 					<div>
@@ -479,11 +492,12 @@ export function BulkMoveSheet({
 					</span>
 				</button>
 				{folders.map((folder) => (
-					<button
-						key={folder.id}
-						type="button"
-						onClick={() => onMove(folder.id)}
-						disabled={isPending}
+						<button
+							key={folder.id}
+							type="button"
+							onClick={() => onMove(folder.id)}
+							disabled={isPending}
+							data-flat-surface="true"
 						className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
 					>
 						<div className="min-w-0">
@@ -523,7 +537,7 @@ function FeedHealthSheet({
 			onClose={onClose}
 			panelClassName="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
 		>
-			<div className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4">
+			<div data-flat-surface="true" className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4">
 				<div className="flex items-center justify-between gap-3">
 					<div>
 						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
@@ -543,7 +557,7 @@ function FeedHealthSheet({
 			</div>
 
 			<div className="mt-3 space-y-2">
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Refresh cadence
 					</p>
@@ -555,7 +569,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last refresh
 					</p>
@@ -566,7 +580,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last successful refresh
 					</p>
@@ -577,7 +591,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last failure
 					</p>
@@ -588,7 +602,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Recent refresh speed
 					</p>
@@ -669,14 +683,16 @@ export function FolderRow({
 								}
 							}}
 							disabled={deleteFolder.isPending}
-							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
+						data-flat-control="true"
+						className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
 							aria-label={`Delete folder ${folder.title}`}
 						>
 							<Trash2 className="size-4" />
 						</button>
 						<button
 							onClick={() => setShowEdit(true)}
-							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
+						data-flat-control="true"
+						className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
 							aria-label={`Edit folder ${folder.title}`}
 						>
 							<MoreHorizontal className="size-4" />
@@ -686,11 +702,12 @@ export function FolderRow({
 			>
 				<Link
 					href={`/app/folders/${folder.id}`}
+					data-flat-library-row="true"
 					className="group flex items-center justify-between gap-3 rounded-[24px] px-3.5 py-3.5"
 					style={{ contentVisibility: "auto", containIntrinsicSize: "86px" }}
 				>
 					<div className="flex min-w-0 items-center gap-3">
-						<div className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+						<div data-flat-icon="true" className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
 							<FolderOpen className="size-5" />
 						</div>
 						<div className="min-w-0">
@@ -750,11 +767,17 @@ function SwipeRow({
 	const touchDeltaX = useRef(0);
 
 	return (
-		<div className="relative overflow-hidden rounded-[24px] border border-subtle bg-[var(--surface)] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
-			<div className="absolute inset-y-[5px] right-[5px] flex items-center gap-2">
+		<div className="panel relative overflow-hidden">
+			<div
+				data-swipe-actions="true"
+				data-swipe-actions-open={open ? "true" : "false"}
+				aria-hidden={!open}
+				className="absolute inset-y-[5px] right-[5px] flex items-center gap-2"
+			>
 				{actions}
 			</div>
 			<div
+				data-flat-surface="true"
 				className="relative z-10 bg-[var(--surface)] transition-transform duration-200 ease-out"
 				style={{
 					transform: open ? `translateX(-${revealWidth}px)` : undefined,

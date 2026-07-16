@@ -102,7 +102,7 @@ export function ImportExportScreen() {
 	return (
 		<MobileShell title="Import / Export">
 			<div className="space-y-3">
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Import OPML</h3>
 					<p className="mt-1 text-xs leading-relaxed text-secondary">
 						Upload an OPML file from another feed reader. Imports support files
@@ -162,7 +162,7 @@ export function ImportExportScreen() {
 						{status === "uploading" ? "Importing..." : "Import subscriptions"}
 					</Button>
 					{status === "uploading" ? (
-						<div className="mt-3 rounded-2xl border border-subtle bg-[var(--surface-strong)] px-4 py-3">
+						<div data-flat-surface="true" className="mt-3 rounded-2xl border border-subtle bg-[var(--surface-strong)] px-4 py-3">
 							<div className="flex items-center justify-between gap-3">
 								<p className="text-xs font-medium text-[var(--text-primary)]">
 									Importing feeds
@@ -194,7 +194,7 @@ export function ImportExportScreen() {
 					)}
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Export</h3>
 					<p className="mt-1 text-xs leading-relaxed text-secondary">
 						JSON backups include up to {MAX_JSON_EXPORT_ITEMS.toLocaleString()}{" "}

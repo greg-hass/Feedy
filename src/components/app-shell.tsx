@@ -79,11 +79,11 @@ export function MobileShell({
 					}}
 				>
 					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
-						<div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-							<div className="flex min-w-0 items-center gap-2 justify-self-start">
-								<div className="shrink-0">{backButton ?? null}</div>
+						<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+							<div className="flex min-w-0 max-w-full items-center gap-2 justify-self-start">
+								{backButton ? <div className="shrink-0">{backButton}</div> : null}
 								<h1
-									className="truncate text-[2rem] font-bold leading-[1.1] tracking-[-0.045em]"
+									className="min-w-0 flex-1 truncate text-[2rem] font-bold leading-[1.1] tracking-[-0.045em]"
 									style={{ color: "var(--text-primary)" }}
 								>
 									{title}
@@ -131,6 +131,7 @@ export function MobileShell({
 				>
 					<div className="mx-auto max-w-md px-5">
 						<div
+							data-flat-navigation="true"
 							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-1.5 backdrop-blur-2xl"
 							style={{
 								background: "var(--glass-bg)",
@@ -203,11 +204,7 @@ export function LoadingSkeleton() {
 			{[1, 2, 3].map((i) => (
 				<div
 					key={i}
-					className="overflow-hidden rounded-[24px]"
-					style={{
-						border: "1px solid var(--border)",
-						backgroundColor: "var(--surface)",
-					}}
+					className="panel overflow-hidden"
 				>
 					<div className="aspect-video w-full shimmer" />
 					<div className="p-4">
@@ -256,12 +253,7 @@ export function ErrorState({
 }) {
 	return (
 		<div
-			className="rounded-[24px] p-6 text-center"
-			style={{
-				backgroundColor: "var(--surface)",
-				border: "1px solid var(--border)",
-				boxShadow: "var(--shadow)",
-			}}
+			className="panel state-panel p-6 text-center"
 		>
 			<div
 				className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
@@ -308,11 +300,7 @@ export function EmptyState({
 }) {
 	return (
 		<div
-			className="rounded-[24px] px-6 py-12 text-center"
-			style={{
-				backgroundColor: "var(--surface)",
-				border: "1px dashed var(--border)",
-			}}
+			className="panel empty-state-panel px-6 py-12 text-center"
 		>
 			{icon && (
 				<div

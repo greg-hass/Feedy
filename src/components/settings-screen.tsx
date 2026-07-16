@@ -2,13 +2,23 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Loader2, Upload } from "lucide-react";
 
 import { MobileShell, useMe } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
 import { accentOptions } from "@/lib/theme";
+import {
+	getStoredLayoutMode,
+	layoutModes,
+	setStoredLayoutMode,
+	subscribeToLayoutMode,
+	type LayoutMode,
+} from "@/lib/layout";
+import type { MeResponse } from "@/types/app";
+
+type SettingKey = keyof MeResponse["user"]["settings"];
 
 type StorageStats = {
 	dbSizeBytes: number;
@@ -36,6 +46,12 @@ export function SettingsScreen() {
 	const me = useMe();
 	const queryClient = useQueryClient();
 	const [pendingLabel, setPendingLabel] = useState("");
+	const [pendingSetting, setPendingSetting] = useState<SettingKey | null>(null);
+	const layoutMode = useSyncExternalStore<LayoutMode>(
+		subscribeToLayoutMode,
+		getStoredLayoutMode,
+		() => "card",
+	);
 	const storage = useQuery({
 		queryKey: ["settings-storage"],
 		queryFn: () => api<StorageStats>("/api/settings/storage"),
@@ -50,6 +66,15 @@ export function SettingsScreen() {
 			await queryClient.invalidateQueries({ queryKey: ["me"] });
 		},
 	});
+	const saveSetting = (
+		key: SettingKey,
+		label: string,
+		body: Record<string, unknown>,
+	) => {
+		setPendingLabel(label);
+		setPendingSetting(key);
+		settings.mutate(body);
+	};
 
 	return (
 		<MobileShell title="Settings">
@@ -69,7 +94,7 @@ export function SettingsScreen() {
 							: `${pendingLabel} saved.`}
 					</p>
 				)}
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Account</h3>
 					<p className="mt-2 text-sm text-secondary">
 						Signed in as{" "}
@@ -79,8 +104,38 @@ export function SettingsScreen() {
 					</p>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Appearance</h3>
+					<div className="mt-4">
+						<p className="text-xs font-medium text-[var(--text-primary)]">
+							Layout style
+						</p>
+						<p className="mt-1 text-xs text-secondary">
+							Choose between floating cards and a flatter list layout.
+						</p>
+						<div className="mt-3 grid grid-cols-2 gap-2">
+							{layoutModes.map((mode) => {
+								const active = layoutMode === mode;
+								return (
+									<button
+										key={mode}
+										type="button"
+									onClick={() => {
+										setStoredLayoutMode(mode);
+										}}
+										className={`rounded-xl border px-3 py-2 text-xs font-medium capitalize transition-colors ${
+											active
+												? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
+												: "border-subtle bg-[var(--surface-muted)] text-secondary"
+										}`}
+										aria-pressed={active}
+									>
+										{mode}
+									</button>
+								);
+							})}
+						</div>
+					</div>
 					<div className="mt-4">
 						<p className="text-xs font-medium text-[var(--text-primary)]">
 							Accent colour
@@ -88,14 +143,18 @@ export function SettingsScreen() {
 						<p className="mt-1 text-xs text-secondary">
 							Used for active states and highlights.
 						</p>
-						<div className="mt-3 flex flex-wrap gap-2.5">
+						<div className="mt-3 grid grid-cols-6 justify-items-center gap-2.5">
 							{accentOptions.map((option) => {
 								const active =
 									me.data?.user.settings.accentColor === option.key;
 								return (
 									<button
 										key={option.key}
-										onClick={() => settings.mutate({ accentColor: option.key })}
+										onClick={() => {
+										saveSetting("accentColor", "accent colour", {
+										accentColor: option.key,
+									});
+								}}
 										disabled={settings.isPending}
 										className={`flex size-11 items-center justify-center rounded-full border-2 transition-transform ${
 											active
@@ -125,7 +184,7 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Refresh cadence</h3>
 					<p className="mt-2 text-xs text-secondary">
 						Current: {me.data?.user.settings.refreshIntervalMinutes ?? 15}{" "}
@@ -136,8 +195,9 @@ export function SettingsScreen() {
 							<button
 								key={minutes}
 								onClick={() => {
-									setPendingLabel("refresh cadence");
-									settings.mutate({ refreshIntervalMinutes: minutes });
+									saveSetting("refreshIntervalMinutes", "refresh cadence", {
+										refreshIntervalMinutes: minutes,
+									});
 								}}
 								disabled={settings.isPending}
 								aria-pressed={
@@ -151,7 +211,8 @@ export function SettingsScreen() {
 							>
 								<span className="inline-flex items-center gap-1.5">
 									{me.data?.user.settings.refreshIntervalMinutes === minutes &&
-									settings.isPending ? (
+									settings.isPending &&
+									pendingSetting === "refreshIntervalMinutes" ? (
 										<Loader2 className="size-3.5 animate-spin" />
 									) : null}
 									{minutes}m
@@ -161,7 +222,7 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Device</h3>
 					<div className="mt-3 flex items-start justify-between gap-4">
 						<div className="min-w-0">
@@ -174,7 +235,7 @@ export function SettingsScreen() {
 						<button
 							type="button"
 							onClick={() =>
-								settings.mutate({
+								saveSetting("keepScreenAwake", "keep screen awake", {
 									keepScreenAwake: !me.data?.user.settings.keepScreenAwake,
 								})
 							}
@@ -205,7 +266,7 @@ export function SettingsScreen() {
 						<button
 							type="button"
 							onClick={() =>
-								settings.mutate({
+								saveSetting("hideYouTubeShorts", "hide YouTube Shorts", {
 									hideYouTubeShorts: !me.data?.user.settings.hideYouTubeShorts,
 								})
 							}
@@ -228,14 +289,14 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Database</h3>
 					<p className="mt-2 text-xs leading-relaxed text-secondary">
 						Local storage usage, retention, and safe purge controls. Bookmarked
 						items are never deleted.
 					</p>
 					<div className="mt-4 grid grid-cols-2 gap-2">
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Database size
 							</p>
@@ -243,7 +304,7 @@ export function SettingsScreen() {
 								{storage.data ? formatBytes(storage.data.dbSizeBytes) : "—"}
 							</p>
 						</div>
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Feeds stored
 							</p>
@@ -251,7 +312,7 @@ export function SettingsScreen() {
 								{storage.data ? storage.data.feedCount.toLocaleString() : "—"}
 							</p>
 						</div>
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Articles stored
 							</p>
@@ -261,7 +322,7 @@ export function SettingsScreen() {
 									: "—"}
 							</p>
 						</div>
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Saved items
 							</p>
@@ -272,7 +333,7 @@ export function SettingsScreen() {
 							</p>
 						</div>
 					</div>
-					<div className="mt-4 rounded-2xl bg-[var(--surface-strong)] p-3">
+					<div data-flat-surface="true" className="mt-4 rounded-2xl bg-[var(--surface-strong)] p-3">
 						<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 							Retention
 						</p>
@@ -307,7 +368,7 @@ export function SettingsScreen() {
 					</div>
 				</div>
 
-				<div className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Import & export</h3>
 					<p className="mt-2 text-xs text-secondary">
 						Move subscriptions with OPML or keep a full JSON backup.
