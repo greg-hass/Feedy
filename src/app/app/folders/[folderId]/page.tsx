@@ -136,7 +136,7 @@ export default function FolderDetailPage() {
 		>
 			<div className="space-y-3">
 				{folderFeeds.length > 0 && (
-					<section data-flat-surface="true" className="rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+					<section data-flat-surface="true" className="panel p-3">
 						<div className="mb-2 flex items-center justify-between gap-3 px-1">
 							<div>
 								<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary">
@@ -363,6 +363,9 @@ function SelectableFolderFeedRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-selectable="true"
+			data-flat-surface="true"
+			aria-pressed={selected}
 			className={`flex w-full items-center gap-3 rounded-[18px] border px-3 py-2.5 text-left transition-colors ${
 				selected
 					? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface-muted)_90%)]"
@@ -494,7 +497,12 @@ function FolderBulkMoveSheet({
 
 function HighlightBackButton({ onClick }: { onClick: () => void }) {
 	return (
-		<IconButton onClick={onClick} aria-label="Go back" variant="accent">
+		<IconButton
+			variant="default"
+			onClick={onClick}
+			aria-label="Go back"
+			className="text-[var(--accent)]"
+		>
 			<ArrowLeft className="size-4" />
 		</IconButton>
 	);

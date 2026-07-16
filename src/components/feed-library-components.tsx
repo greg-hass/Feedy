@@ -327,6 +327,8 @@ export function SelectableFeedRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-selectable="true"
+			aria-pressed={selected}
 			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
 				selected
@@ -382,6 +384,8 @@ export function SelectableFolderRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-selectable="true"
+			aria-pressed={selected}
 			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
 				selected || partiallySelected

@@ -368,6 +368,11 @@ select {
   box-shadow: none !important;
 }
 
+:root[data-layout="flat"] [data-flat-selectable="true"][aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 8%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--accent) 45%, var(--border)) !important;
+}
+
 :root[data-layout="flat"] [data-flat-sheet="true"] {
   background: var(--app-bg) !important;
   border: 0 !important;
