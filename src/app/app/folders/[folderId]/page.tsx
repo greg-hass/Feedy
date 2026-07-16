@@ -137,7 +137,10 @@ export default function FolderDetailPage() {
 			<div className="space-y-3">
 				{folderFeeds.length > 0 && (
 					<section data-flat-surface="true" className="panel p-3">
-						<div className="mb-2 flex items-center justify-between gap-3 px-1">
+						<div
+							data-flat-library-header="true"
+							className="mb-2 flex items-center justify-between gap-3 px-1"
+						>
 							<div>
 								<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary">
 									Feeds in folder
@@ -289,6 +292,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 			>
 				<Link
 					href={`/app/feeds/${feed.id}`}
+					data-flat-library-row="true"
 					data-flat-surface="true"
 					className="flex items-center gap-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]/20"
 				>
@@ -364,6 +368,7 @@ function SelectableFolderFeedRow({
 			type="button"
 			onClick={onToggle}
 			data-flat-selectable="true"
+			data-flat-library-row="true"
 			data-flat-surface="true"
 			aria-pressed={selected}
 			className={`flex w-full items-center gap-3 rounded-[18px] border px-3 py-2.5 text-left transition-colors ${

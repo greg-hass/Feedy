@@ -373,6 +373,12 @@ select {
   border-bottom-color: color-mix(in srgb, var(--accent) 45%, var(--border)) !important;
 }
 
+:root[data-layout="flat"] [data-flat-library-header="true"],
+:root[data-layout="flat"] [data-flat-library-row="true"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 :root[data-layout="flat"] [data-flat-sheet="true"] {
   background: var(--app-bg) !important;
   border: 0 !important;
