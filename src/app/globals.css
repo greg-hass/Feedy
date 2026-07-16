@@ -394,15 +394,6 @@ select {
   box-shadow: none !important;
 }
 
-:root[data-layout="flat"] [data-flat-navigation="true"] {
-  background: var(--app-bg) !important;
-  border-color: var(--border) !important;
-  border-radius: 0;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
 :root[data-layout="flat"] .icon-button,
 :root[data-layout="flat"] .app-button,
 :root[data-layout="flat"] [data-flat-control="true"] {

@@ -87,7 +87,10 @@ export default function FolderDetailPage() {
 
 	const items = useQuery({
 		queryKey: ["items", "folder", params.folderId],
-		queryFn: () => api<ItemRecord[]>(`/api/items?folderId=${params.folderId}`),
+		queryFn: () =>
+			api<ItemRecord[]>(
+				`/api/items?folderId=${params.folderId}&stateFilter=ALL`,
+			),
 		enabled: !!folderFeeds.length,
 		staleTime: 15_000,
 		refetchOnWindowFocus: "always",
