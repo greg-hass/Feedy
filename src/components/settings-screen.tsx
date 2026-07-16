@@ -143,7 +143,7 @@ export function SettingsScreen() {
 						<p className="mt-1 text-xs text-secondary">
 							Used for active states and highlights.
 						</p>
-						<div className="mt-3 flex flex-wrap gap-2.5">
+						<div className="mt-3 grid grid-cols-6 justify-items-center gap-2.5">
 							{accentOptions.map((option) => {
 								const active =
 									me.data?.user.settings.accentColor === option.key;
