@@ -403,10 +403,6 @@ select {
   background: transparent;
 }
 
-:root[data-layout="flat"] .app-button {
-  background-image: none;
-}
-
 :root[data-layout="flat"] [data-flat-avatar="true"],
 :root[data-layout="flat"] [data-flat-icon="true"] {
   border-radius: 8px !important;
