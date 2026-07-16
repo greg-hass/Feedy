@@ -315,7 +315,11 @@ select {
 }
 
 :root[data-layout="flat"] .panel {
+  background: transparent;
+  border: 0;
   border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 :root[data-layout="flat"] .empty-state-panel {
@@ -330,14 +334,58 @@ select {
 }
 
 :root[data-layout="flat"] .feed-item-card {
-  background: var(--surface);
+  background: transparent;
   border: 0;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   box-shadow: none;
 }
 
+:root[data-layout="flat"] .feed-item-card:hover {
+  border-color: var(--border);
+  box-shadow: none !important;
+}
+
+:root[data-layout="flat"] .card,
+:root[data-layout="flat"] .card-elevated,
+:root[data-layout="flat"] .surface,
+:root[data-layout="flat"] .surface-elevated {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-layout="flat"] .card-elevated {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+:root[data-layout="flat"] [data-flat-surface="true"] {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+:root[data-layout="flat"] [data-flat-sheet="true"] {
+  background: var(--app-bg) !important;
+  border: 0 !important;
+  border-top: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+:root[data-layout="flat"] [data-flat-toast="true"] {
+  background: var(--app-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
 :root[data-layout="flat"] [data-flat-navigation="true"] {
+  background: var(--app-bg) !important;
+  border-color: var(--border) !important;
   border-radius: 0;
   box-shadow: none;
   backdrop-filter: none;

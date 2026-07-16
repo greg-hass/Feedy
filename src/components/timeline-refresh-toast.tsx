@@ -44,6 +44,7 @@ export function TimelineRefreshToast({
         type="button"
         onClick={onJump}
         aria-label={formatTimelineRefreshLabel(count)}
+        data-flat-toast="true"
         className="pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--accent)]/25 bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--accent)] shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
       >
         <ArrowUp className="size-3.5" aria-hidden />

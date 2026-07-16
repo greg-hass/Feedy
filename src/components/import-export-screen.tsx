@@ -162,7 +162,7 @@ export function ImportExportScreen() {
 						{status === "uploading" ? "Importing..." : "Import subscriptions"}
 					</Button>
 					{status === "uploading" ? (
-						<div className="mt-3 rounded-2xl border border-subtle bg-[var(--surface-strong)] px-4 py-3">
+						<div data-flat-surface="true" className="mt-3 rounded-2xl border border-subtle bg-[var(--surface-strong)] px-4 py-3">
 							<div className="flex items-center justify-between gap-3">
 								<p className="text-xs font-medium text-[var(--text-primary)]">
 									Importing feeds

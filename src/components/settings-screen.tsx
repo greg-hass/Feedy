@@ -277,7 +277,7 @@ export function SettingsScreen() {
 						items are never deleted.
 					</p>
 					<div className="mt-4 grid grid-cols-2 gap-2">
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Database size
 							</p>
@@ -285,7 +285,7 @@ export function SettingsScreen() {
 								{storage.data ? formatBytes(storage.data.dbSizeBytes) : "—"}
 							</p>
 						</div>
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Feeds stored
 							</p>
@@ -293,7 +293,7 @@ export function SettingsScreen() {
 								{storage.data ? storage.data.feedCount.toLocaleString() : "—"}
 							</p>
 						</div>
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Articles stored
 							</p>
@@ -303,7 +303,7 @@ export function SettingsScreen() {
 									: "—"}
 							</p>
 						</div>
-						<div className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Saved items
 							</p>
@@ -314,7 +314,7 @@ export function SettingsScreen() {
 							</p>
 						</div>
 					</div>
-					<div className="mt-4 rounded-2xl bg-[var(--surface-strong)] p-3">
+					<div data-flat-surface="true" className="mt-4 rounded-2xl bg-[var(--surface-strong)] p-3">
 						<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 							Retention
 						</p>

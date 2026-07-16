@@ -326,6 +326,7 @@ export function FeedsScreen() {
 						].map((item) => (
 							<div
 								key={item.label}
+								data-flat-surface="true"
 								className="rounded-2xl bg-[var(--surface-strong)] px-3 py-2.5 text-center"
 							>
 								<p className={`text-sm font-semibold ${item.tone}`}>

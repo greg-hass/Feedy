@@ -324,6 +324,7 @@ export function SelectableFeedRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
 				selected
 					? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
@@ -378,6 +379,7 @@ export function SelectableFolderRow({
 		<button
 			type="button"
 			onClick={onToggle}
+			data-flat-surface="true"
 			className={`flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-colors ${
 				selected || partiallySelected
 					? "border-[var(--accent)]/45 bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface)_90%)]"
@@ -466,6 +468,7 @@ export function BulkMoveSheet({
 					type="button"
 					onClick={() => onMove(null)}
 					disabled={isPending}
+					data-flat-surface="true"
 					className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
 				>
 					<div>
@@ -479,11 +482,12 @@ export function BulkMoveSheet({
 					</span>
 				</button>
 				{folders.map((folder) => (
-					<button
-						key={folder.id}
-						type="button"
-						onClick={() => onMove(folder.id)}
-						disabled={isPending}
+						<button
+							key={folder.id}
+							type="button"
+							onClick={() => onMove(folder.id)}
+							disabled={isPending}
+							data-flat-surface="true"
 						className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
 					>
 						<div className="min-w-0">
@@ -523,7 +527,7 @@ function FeedHealthSheet({
 			onClose={onClose}
 			panelClassName="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
 		>
-			<div className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4">
+			<div data-flat-surface="true" className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4">
 				<div className="flex items-center justify-between gap-3">
 					<div>
 						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
@@ -543,7 +547,7 @@ function FeedHealthSheet({
 			</div>
 
 			<div className="mt-3 space-y-2">
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Refresh cadence
 					</p>
@@ -555,7 +559,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last refresh
 					</p>
@@ -566,7 +570,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last successful refresh
 					</p>
@@ -577,7 +581,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last failure
 					</p>
@@ -588,7 +592,7 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Recent refresh speed
 					</p>
@@ -755,6 +759,7 @@ function SwipeRow({
 				{actions}
 			</div>
 			<div
+				data-flat-surface="true"
 				className="relative z-10 bg-[var(--surface)] transition-transform duration-200 ease-out"
 				style={{
 					transform: open ? `translateX(-${revealWidth}px)` : undefined,

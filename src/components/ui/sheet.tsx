@@ -113,6 +113,7 @@ export function Sheet({
 		<div className={className ?? DEFAULT_BACKDROP} onClick={onClose}>
 			<div
 				ref={panelRef}
+				data-flat-sheet="true"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={titleId}

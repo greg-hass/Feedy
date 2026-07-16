@@ -136,7 +136,7 @@ export default function FolderDetailPage() {
 		>
 			<div className="space-y-3">
 				{folderFeeds.length > 0 && (
-					<section className="rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+					<section data-flat-surface="true" className="rounded-[24px] border border-subtle bg-[var(--surface)] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
 						<div className="mb-2 flex items-center justify-between gap-3 px-1">
 							<div>
 								<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary">
@@ -287,6 +287,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 			>
 				<Link
 					href={`/app/feeds/${feed.id}`}
+					data-flat-surface="true"
 					className="flex items-center gap-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]/20"
 				>
 					<FeedAvatar
