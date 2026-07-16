@@ -4,32 +4,33 @@ final result: passed
 
 ## Comparison setup
 
-- Source visual truth: `/Users/greg/Downloads/Feedy 2.png` and `/Users/greg/Downloads/Feedy 3.png`
-- Feeds implementation: `/private/tmp/Feedy-flat-layout/output/playwright/audit-03-feeds-after.png`
-- Folder implementation: `/private/tmp/Feedy-flat-layout/output/playwright/audit-05-folder-after.png`
-- Other implementation evidence: `/private/tmp/Feedy-flat-layout/output/playwright/audit-06-timeline-top-after.png`, `/private/tmp/Feedy-flat-layout/output/playwright/audit-07-saved-after.png`, `/private/tmp/Feedy-flat-layout/output/playwright/audit-08-settings-after.png`, and `/private/tmp/Feedy-flat-layout/output/playwright/audit-09-discover-after.png`
+- Source visual truth: `/Users/greg/Downloads/Feedy 4.png` and `/Users/greg/Downloads/Feedy 5.png`
+- Normal-state implementation: `/private/tmp/Feedy-flat-layout/output/playwright/folders-after-normal.png`
+- Selection-state implementation: `/private/tmp/Feedy-flat-layout/output/playwright/folders-after-selected-final.png`
 - Browser viewport: 390 x 844 CSS pixels; dark theme; Flat layout selected
 
-The two supplied references were reviewed alongside their corresponding final implementation screenshots. The pass covered typography, spacing and alignment, colors/tokens, image treatment, copy/content density, responsive clipping, and interaction states.
+The normal and selected source states were each inspected together with their corresponding rendered implementation screenshot. The focused comparison covered the folder header/back control, the `Feeds in folder` toolbar, feed-row gutters, selection state, separators, and the article transition below the library.
 
-## Findings and fixes
+## Comparison history
 
-- P1: Flat content gutters were inconsistent. Added a shared 16px mobile gutter for headers, toolbars, panels, library labels, metadata, and controls; article media still bleeds edge-to-edge while article text remains inset.
-- P1: Folder and feed delete/edit controls were visible in their resting state. Both Flat `SwipeRow` implementations now keep action controls hidden and non-interactive until the row is swiped open.
-- P2: The folder-detail back arrow used an effectively invisible dark accent color. Flat accent icon buttons now retain an emerald outline and icon color; the back button is visible beside the folder title.
-- P2: Normal headers retained an empty back-button slot. The shell now removes that slot when no back action exists, aligning top-level titles with the shared content gutter.
+- P1: Folder-detail feed rows had an extra nested panel gutter, so the library header and feed content did not align with the rest of the Flat app. Fix: route the section through the shared `panel` styling so Flat mobile padding is normalized. Post-fix evidence: `folders-after-normal.png`.
+- P1: Selecting feeds exposed rounded, elevated cards. Fix: mark selectable rows as Flat surfaces, add pressed-state semantics, remove card geometry in Flat, and retain only a subtle selected-row tint plus the checkbox. Post-fix evidence: `folders-after-selected-final.png`.
+- P2: Folder back control used the accent-filled variant instead of matching reader view. Fix: use the reader’s default `IconButton` variant with an accent-colored arrow. Post-fix evidence: both final screenshots.
+
+## Required fidelity surfaces
+
+- Fonts and typography: folder title, section label, feed metadata, action labels, and article copy retain the established Flat hierarchy and wrapping.
+- Spacing and layout rhythm: shared 16px content gutter, consistent feed-row inset, flat separators, no rounded selection containers, and no card shadows.
+- Colors and visual tokens: accent green remains reserved for the arrow, Move action, unread badges, checkbox, and selected-row tint; the back button border now uses the reader/default token.
+- Image quality and asset fidelity: feed avatars and article media remain the existing live assets with unchanged cropping and quality.
+- Copy and content: `Feeds in folder`, source count, Move/Cancel, feed metadata, and article content remain intact.
 
 ## Runtime checks
 
-- Opened all five tabs: Timeline, Feeds, Discover, Saved, and Settings.
-- Confirmed Flat persisted after navigation.
-- Confirmed Feeds folder labels and `10 groups` share the article gutter.
-- Confirmed folder-detail feed rows have no visible delete/edit actions at rest.
-- Performed a synthetic horizontal swipe: action state changed from closed/hidden to open/visible with the expected translated action row.
-- Confirmed the folder-detail back button is present, emerald, and visible.
-- Searched Discover for `technology`; live results included `r/technology` and the Reddit keyword search with visible Add actions.
-- Final Discover console check: 0 errors and 0 warnings.
-
-The folder-detail run also reported three pre-existing CSP errors for an HTTP `.mp4` being attempted as an image by feed content. They are unrelated to this layout pass and do not block the UI findings above.
+- Opened Feeds, entered the A.I. folder, and confirmed the library header/feed rows align with the shared content frame.
+- Entered Select mode and confirmed both rows remain flat; selected one feed and confirmed `aria-pressed="true"`, zero border radius, no box shadow, and only a subtle accent tint.
+- Confirmed the back button is visible beside `A.I.` with reader-style default border and emerald arrow.
+- Confirmed the live isolated stack at `http://192.168.1.163:4002` reports database and Redis healthy, with all four `feedy-flat` services healthy.
+- Browser console still reports three pre-existing CSP errors from feed content attempting to load an HTTP `.mp4` as an image; unrelated to this UI change.
 
 No actionable P0, P1, or P2 visual issues remain.
