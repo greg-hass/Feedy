@@ -760,7 +760,12 @@ function SwipeRow({
 
 	return (
 		<div className="panel relative overflow-hidden">
-			<div className="absolute inset-y-[5px] right-[5px] flex items-center gap-2">
+			<div
+				data-swipe-actions="true"
+				data-swipe-actions-open={open ? "true" : "false"}
+				aria-hidden={!open}
+				className="absolute inset-y-[5px] right-[5px] flex items-center gap-2"
+			>
 				{actions}
 			</div>
 			<div

@@ -403,6 +403,17 @@ select {
   background: transparent;
 }
 
+:root[data-layout="flat"] .icon-button[data-icon-variant="accent"] {
+  background: transparent !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+:root[data-layout="flat"] [data-swipe-actions="true"][data-swipe-actions-open="false"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 :root[data-layout="flat"] [data-flat-avatar="true"],
 :root[data-layout="flat"] [data-flat-icon="true"] {
   border-radius: 8px !important;
@@ -415,8 +426,19 @@ select {
   }
 
   :root[data-layout="flat"] .app-shell > div > .px-5 {
-    padding-left: 0;
-    padding-right: 0;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  :root[data-layout="flat"] .app-shell main .panel {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  :root[data-layout="flat"] .app-shell .feed-item-card {
+    width: calc(100% + 32px);
+    margin-left: -16px;
+    margin-right: -16px;
   }
 
   :root[data-layout="flat"] [data-mobile-shell-header] > div {

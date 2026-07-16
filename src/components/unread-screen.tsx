@@ -486,7 +486,7 @@ export function UnreadScreen() {
 					}
 				>
 					<div
-						className="mx-auto w-full max-w-md px-5"
+						className="mx-auto w-full max-w-md px-4"
 						style={{
 							paddingTop: `${timelineControlsTopGap}px`,
 							paddingBottom: `${timelineControlsBottomGap}px`,
