@@ -39,6 +39,7 @@ const navigationFeedSelect = {
 	description: true,
 	sourceUrl: true,
 	siteUrl: true,
+	iconHintUrl: true,
 	sourceType: true,
 	isPinned: true,
 	excludeFromTimeline: true,

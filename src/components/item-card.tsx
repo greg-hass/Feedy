@@ -9,6 +9,7 @@ import { memo, useEffect, useState } from "react";
 
 import { IconButton } from "@/components/ui/icon-button";
 import { SearchHighlight } from "@/components/search-highlight";
+import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
 import {
 	getYouTubeThumbnailUrls,
@@ -345,16 +346,11 @@ export const ItemCard = memo(function ItemCard({
 
 			<div className="p-4">
 				<div className="flex items-center gap-2.5">
-					<Image
-						src={`/api/icons/${item.feed.id}?v=3`}
-						alt=""
-						width={20}
-						height={20}
-						className="size-5 shrink-0 rounded-[6px] object-cover"
-						unoptimized
-						onError={(e) => {
-							(e.target as HTMLImageElement).style.display = "none";
-						}}
+					<FeedAvatar
+						feedId={item.feed.id}
+						title={item.feed.label || item.feed.title}
+						iconHintUrl={item.feed.iconHintUrl}
+						size={20}
 					/>
 					<p className="truncate text-[12px] font-medium text-secondary">
 						{feedTitle}

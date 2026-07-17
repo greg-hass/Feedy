@@ -22,6 +22,7 @@ type LocalSearchResult = {
 	description: string | null;
 	sourceType: string;
 	sourceUrl: string;
+	iconHintUrl: string | null;
 };
 
 type DiscoverResult = {
@@ -32,6 +33,10 @@ type DiscoverResult = {
 	feedUrl: string;
 	sourceType: string;
 };
+
+function getRemoteIconHint(value: string | null | undefined) {
+	return value?.startsWith("http") ? value : null;
+}
 
 export function DiscoverScreen() {
 	const [query, setQuery] = useState("");
@@ -163,6 +168,14 @@ export function DiscoverScreen() {
 											<FeedAvatar
 												feedId={feed.id}
 												title={feed.label || feed.title}
+															iconHintUrl={
+																feed.iconHintUrl ||
+																getRemoteIconHint(
+																	discover.data?.find(
+																		(result) => result.feedUrl === feed.sourceUrl,
+																	)?.favicon,
+																)
+															}
 											/>
 											<div className="min-w-0 flex-1">
 												<p className="text-[10px] uppercase tracking-[0.2em] text-secondary">

@@ -4,15 +4,20 @@ import { memo, useState } from "react";
 export const FeedAvatar = memo(function FeedAvatar({
 	feedId,
 	title,
+	iconHintUrl,
 	size = 48,
 }: {
 	feedId: string;
 	title: string;
+	iconHintUrl?: string | null;
 	size?: number;
 }) {
-	const [failed, setFailed] = useState(false);
+	const [failedSrc, setFailedSrc] = useState<string | null>(null);
+	const cachedIconSrc = `/api/icons/${feedId}?v=4`;
+	const imageSrc =
+		iconHintUrl && failedSrc !== iconHintUrl ? iconHintUrl : cachedIconSrc;
 
-	if (failed) {
+	if (failedSrc === cachedIconSrc) {
 		return (
 			<div
 				data-flat-avatar="true"
@@ -27,7 +32,7 @@ export const FeedAvatar = memo(function FeedAvatar({
 	return (
 		<Image
 			data-flat-avatar="true"
-			src={`/api/icons/${feedId}?v=3`}
+			src={imageSrc}
 			alt={title}
 			width={size}
 			height={size}
@@ -36,7 +41,7 @@ export const FeedAvatar = memo(function FeedAvatar({
 			loading="lazy"
 			decoding="async"
 			unoptimized
-			onError={() => setFailed(true)}
+			onError={() => setFailedSrc(imageSrc)}
 		/>
 	);
 });

@@ -18,6 +18,10 @@ const feedsScreenSource = readFileSync(
 	new URL("../components/feeds-screen.tsx", import.meta.url),
 	"utf8",
 );
+const feedAvatarSource = readFileSync(
+	new URL("../components/feed-avatar.tsx", import.meta.url),
+	"utf8",
+);
 
 describe("Feeds UI contracts", () => {
 	it("offers pause or resume from feed swipe actions", () => {
@@ -66,6 +70,12 @@ describe("Feeds UI contracts", () => {
 			/variant=\{showAddFeed \? "active" : "default"\}/,
 		);
 		assert.doesNotMatch(feedsScreenSource, /variant="accent"/);
+	});
+
+	it("uses the persisted discovery icon before the cached fallback", () => {
+		assert.match(feedAvatarSource, /iconHintUrl\?: string \| null/);
+		assert.match(feedAvatarSource, /iconHintUrl && failedSrc !== iconHintUrl/);
+		assert.match(feedAvatarSource, /\?v=4/);
 	});
 
 	it("opens New Folder in a fixed sheet instead of inline flow", () => {

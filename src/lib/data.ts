@@ -22,6 +22,7 @@ const itemCommonSelect = {
       title: true,
       label: true,
       sourceType: true,
+      iconHintUrl: true,
     },
   },
   bookmarks: {
@@ -252,6 +253,7 @@ export async function getFeedSearch(
       description: true,
       sourceType: true,
       sourceUrl: true,
+      iconHintUrl: true,
     },
     orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
     take: 20,

@@ -5,6 +5,7 @@ export type NavFeed = {
   description: string | null;
   sourceUrl: string;
   siteUrl: string | null;
+  iconHintUrl: string | null;
   sourceType: string;
   isPinned: boolean;
   excludeFromTimeline: boolean;
@@ -65,6 +66,7 @@ export type ItemRecord = {
     id: string;
     title: string;
     label: string | null;
+    iconHintUrl: string | null;
     sourceType: string;
   };
 };

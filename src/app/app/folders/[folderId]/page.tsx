@@ -316,6 +316,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 					<FeedAvatar
 						feedId={feed.id}
 						title={decodeHtmlEntities(feed.label || feed.title)}
+						iconHintUrl={feed.iconHintUrl}
 					/>
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center justify-between gap-2">
@@ -406,6 +407,7 @@ function SelectableFolderFeedRow({
 			<FeedAvatar
 				feedId={feed.id}
 				title={decodeHtmlEntities(feed.label || feed.title)}
+				iconHintUrl={feed.iconHintUrl}
 			/>
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center justify-between gap-2">

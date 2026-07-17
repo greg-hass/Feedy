@@ -203,7 +203,11 @@ export function FeedRow({
 						href={`/app/feeds/${feed.id}`}
 						className="flex min-w-0 flex-1 items-center gap-3"
 					>
-						<FeedAvatar feedId={feed.id} title={feed.label || feed.title} />
+						<FeedAvatar
+							feedId={feed.id}
+							title={feed.label || feed.title}
+							iconHintUrl={feed.iconHintUrl}
+						/>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center justify-between gap-2">
 								<h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">
@@ -348,7 +352,11 @@ export function SelectableFeedRow({
 			>
 				<Check className="size-3.5" />
 			</div>
-			<FeedAvatar feedId={feed.id} title={feed.label || feed.title} />
+				<FeedAvatar
+					feedId={feed.id}
+					title={feed.label || feed.title}
+					iconHintUrl={feed.iconHintUrl}
+				/>
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center justify-between gap-2">
 					<h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">

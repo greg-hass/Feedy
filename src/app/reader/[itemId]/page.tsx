@@ -280,6 +280,7 @@ export default function ReaderPage() {
 					<FeedAvatar
 						feedId={data.feed.id}
 						title={data.feed.label || data.feed.title}
+						iconHintUrl={data.feed.iconHintUrl}
 						size={32}
 					/>
 					<p className="text-xs uppercase tracking-[0.18em] text-secondary">

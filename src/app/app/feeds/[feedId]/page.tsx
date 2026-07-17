@@ -101,7 +101,11 @@ export default function FeedDetailPage() {
 			<div className="space-y-3">
 				<div data-flat-surface="true" className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
 					<div className="flex items-center gap-3">
-						<FeedAvatar feedId={feed.id} title={feedTitle} />
+						<FeedAvatar
+							feedId={feed.id}
+							title={feedTitle}
+							iconHintUrl={feed.iconHintUrl}
+						/>
 						<div className="min-w-0 flex-1">
 							<h1 className="truncate text-base font-semibold">{feedTitle}</h1>
 							<p className="text-xs text-secondary">
