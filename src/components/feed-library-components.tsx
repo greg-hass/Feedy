@@ -16,6 +16,7 @@ import {
 
 import { FeedAvatar } from "@/components/feed-avatar";
 import { Sheet } from "@/components/ui/sheet";
+import { saveListScrollPosition } from "@/components/use-list-scroll-restoration";
 import { api } from "@/lib/client";
 import { getFeedPauseActionLabel, getFeedPausePatch } from "@/lib/feed-pause";
 import { formatSourceType } from "@/lib/feed-source";
@@ -201,6 +202,7 @@ export function FeedRow({
 				>
 					<Link
 						href={`/app/feeds/${feed.id}`}
+						onClick={() => saveListScrollPosition("feedy-feeds-scroll")}
 						className="flex min-w-0 flex-1 items-center gap-3"
 					>
 						<FeedAvatar
@@ -710,6 +712,7 @@ export function FolderRow({
 			>
 				<Link
 					href={`/app/folders/${folder.id}`}
+					onClick={() => saveListScrollPosition("feedy-feeds-scroll")}
 					data-flat-library-row="true"
 					className="group flex items-center justify-between gap-3 rounded-[24px] px-3.5 py-3.5"
 					style={{ contentVisibility: "auto", containIntrinsicSize: "86px" }}

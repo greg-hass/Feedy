@@ -20,7 +20,10 @@ import { EditFeedSheet } from "@/components/forms";
 import { ItemCard } from "@/components/item-card";
 import { IconButton } from "@/components/ui/icon-button";
 import { Sheet } from "@/components/ui/sheet";
-import { useListScrollRestoration } from "@/components/use-list-scroll-restoration";
+import {
+	saveListScrollPosition,
+	useListScrollRestoration,
+} from "@/components/use-list-scroll-restoration";
 import {
 	MobileShell,
 	LoadingSkeleton,
@@ -218,7 +221,11 @@ export default function FolderDetailPage() {
 										/>
 									))
 								: folderFeeds.map((feed) => (
-										<FolderFeedRow key={feed.id} feed={feed} />
+										<FolderFeedRow
+											key={feed.id}
+											feed={feed}
+											scrollStorageKey={`feedy-folder-scroll:${params.folderId}`}
+										/>
 									))}
 						</div>
 					</section>
@@ -271,7 +278,13 @@ export default function FolderDetailPage() {
 	);
 }
 
-function FolderFeedRow({ feed }: { feed: NavFeed }) {
+function FolderFeedRow({
+	feed,
+	scrollStorageKey,
+}: {
+	feed: NavFeed;
+	scrollStorageKey: string;
+}) {
 	const queryClient = useQueryClient();
 	const [showEdit, setShowEdit] = useState(false);
 
@@ -314,6 +327,7 @@ function FolderFeedRow({ feed }: { feed: NavFeed }) {
 			>
 				<Link
 					href={`/app/feeds/${feed.id}`}
+					onClick={() => saveListScrollPosition(scrollStorageKey)}
 					data-flat-library-row="true"
 					data-flat-surface="true"
 					className="flex items-center gap-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]/20"

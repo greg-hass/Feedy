@@ -1,6 +1,28 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect } from "react";
+
+export function saveListScrollPosition(storageKey: string) {
+	if (typeof window === "undefined") {
+		return;
+	}
+
+	const scrollY = Math.max(
+		window.scrollY,
+		document.documentElement.scrollTop,
+		document.body.scrollTop,
+	);
+	window.sessionStorage.setItem(
+		storageKey,
+		String(Math.max(0, Math.round(scrollY))),
+	);
+}
+
+function restoreListScrollPosition(scrollY: number) {
+	window.scrollTo({ top: scrollY, behavior: "auto" });
+	document.documentElement.scrollTop = scrollY;
+	document.body.scrollTop = scrollY;
+}
 
 export function useListScrollRestoration({
 	storageKey,
@@ -9,56 +31,29 @@ export function useListScrollRestoration({
 	storageKey: string;
 	enabled?: boolean;
 }) {
-	const restoredKeyRef = useRef<string | null>(null);
-	const saveFrameRef = useRef<number | null>(null);
-	const latestScrollYRef = useRef(0);
-
 	useEffect(() => {
 		if (!enabled) {
 			return;
 		}
 
-		const flush = () => {
-			window.sessionStorage.setItem(
-				storageKey,
-				String(Math.max(0, Math.round(latestScrollYRef.current))),
-			);
-		};
-		const save = () => {
-			latestScrollYRef.current = window.scrollY;
-			if (saveFrameRef.current != null) {
-				return;
-			}
-
-			saveFrameRef.current = window.requestAnimationFrame(() => {
-				saveFrameRef.current = null;
-				flush();
-			});
-		};
-
+		const save = () => saveListScrollPosition(storageKey);
 		window.addEventListener("scroll", save, { passive: true });
-		window.addEventListener("pagehide", flush);
-		window.addEventListener("visibilitychange", flush);
+		window.addEventListener("pagehide", save);
+		window.addEventListener("visibilitychange", save);
 
 		return () => {
-			if (saveFrameRef.current != null) {
-				window.cancelAnimationFrame(saveFrameRef.current);
-				saveFrameRef.current = null;
-			}
-			latestScrollYRef.current = window.scrollY;
-			flush();
+			save();
 			window.removeEventListener("scroll", save);
-			window.removeEventListener("pagehide", flush);
-			window.removeEventListener("visibilitychange", flush);
+			window.removeEventListener("pagehide", save);
+			window.removeEventListener("visibilitychange", save);
 		};
 	}, [enabled, storageKey]);
 
 	useLayoutEffect(() => {
-		if (!enabled || restoredKeyRef.current === storageKey) {
+		if (!enabled) {
 			return;
 		}
 
-		restoredKeyRef.current = storageKey;
 		const savedScrollY = Number(
 			window.sessionStorage.getItem(storageKey) || "0",
 		);
@@ -66,33 +61,21 @@ export function useListScrollRestoration({
 			return;
 		}
 
-		let active = true;
-		let attempts = 0;
-		let frame: number | null = null;
-		let timeout: number | null = null;
+		let cancelled = false;
 		const restore = () => {
-			if (!active) {
-				return;
-			}
-
-			window.scrollTo({ top: savedScrollY, behavior: "auto" });
-			attempts += 1;
-			if (attempts < 8 && Math.abs(window.scrollY - savedScrollY) > 1) {
-				frame = window.requestAnimationFrame(restore);
+			if (!cancelled) {
+				restoreListScrollPosition(savedScrollY);
 			}
 		};
-
-		frame = window.requestAnimationFrame(restore);
-		timeout = window.setTimeout(restore, 250);
+		const frame = window.requestAnimationFrame(restore);
+		const timers = [0, 50, 150, 300, 600].map((delay) =>
+			window.setTimeout(restore, delay),
+		);
 
 		return () => {
-			active = false;
-			if (frame != null) {
-				window.cancelAnimationFrame(frame);
-			}
-			if (timeout != null) {
-				window.clearTimeout(timeout);
-			}
+			cancelled = true;
+			window.cancelAnimationFrame(frame);
+			timers.forEach((timer) => window.clearTimeout(timer));
 		};
 	}, [enabled, storageKey]);
 }

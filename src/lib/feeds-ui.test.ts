@@ -88,9 +88,10 @@ describe("Feeds UI contracts", () => {
 
 	it("restores feed and folder list position after returning", () => {
 		assert.match(feedsScreenScrollSource, /sessionStorage/);
-		assert.match(feedsScreenScrollSource, /window\.scrollTo\(\{ top: savedScrollY/);
+		assert.match(feedsScreenScrollSource, /window\.scrollTo\(\{ top: scrollY/);
 		assert.match(feedsScreenSource, /storageKey: "feedy-feeds-scroll"/);
 		assert.match(folderDetailSource, /storageKey: `feedy-folder-scroll:/);
+		assert.match(librarySource, /saveListScrollPosition\("feedy-feeds-scroll"\)/);
 	});
 
 	it("opens New Folder in a fixed sheet instead of inline flow", () => {
