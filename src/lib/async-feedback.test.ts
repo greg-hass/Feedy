@@ -34,6 +34,11 @@ describe("Async feedback contracts", () => {
 		it("surfaces add-feed errors with role alert", () => {
 			assert.match(discoverSource, /role="alert"/);
 		});
+
+		it("passes the discovered remote icon into the add-feed request", () => {
+			assert.match(discoverSource, /iconHintUrl:/);
+			assert.match(discoverSource, /result\.favicon\?\.startsWith\("http"\)/);
+		});
 	});
 
 	describe("Settings screen", () => {

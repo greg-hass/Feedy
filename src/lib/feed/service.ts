@@ -34,6 +34,7 @@ async function createValidatedFeedForUser(
 		sourceUrl: string;
 		folderId?: string | null;
 		label?: string | null;
+		iconHintUrl?: string | null;
 	},
 	validated: FeedValidationResult,
 	options?: {
@@ -41,6 +42,8 @@ async function createValidatedFeedForUser(
 		queueInitialIconFetch?: boolean;
 	},
 ) {
+	const iconHintUrl = validated.iconUrl ?? input.iconHintUrl ?? null;
+
 	if (input.folderId) {
 		await assertOwnedFolder(prisma, userId, input.folderId);
 	}
@@ -74,7 +77,7 @@ async function createValidatedFeedForUser(
 					sourceUrl: validated.feedUrl,
 					title: validated.title,
 					description: validated.description,
-					iconHintUrl: validated.iconUrl,
+					iconHintUrl,
 					sourceType: validated.sourceType,
 				},
 			});
@@ -95,7 +98,7 @@ async function createValidatedFeedForUser(
 				description: validated.description,
 				sourceUrl: validated.feedUrl,
 				siteUrl: validated.siteUrl,
-				iconHintUrl: validated.iconUrl,
+				iconHintUrl,
 				sourceType: validated.sourceType,
 			},
 		});
@@ -141,6 +144,7 @@ export async function createFeedForUser(
 		sourceUrl: string;
 		folderId?: string | null;
 		label?: string | null;
+		iconHintUrl?: string | null;
 	},
 ) {
 	const reddit = normalizeRedditFeed(input.sourceUrl);
@@ -313,7 +317,9 @@ async function finalizeSuccessfulRefresh(input: {
 				title: input.result.feed.title,
 				description: input.result.feed.description,
 				siteUrl: input.result.feed.siteUrl,
-				iconHintUrl: input.result.feed.iconUrl,
+				// Preserve a discovery-provided hint for feeds such as YouTube whose
+				// RSS document does not expose the channel avatar.
+				iconHintUrl: input.result.feed.iconUrl ?? undefined,
 				sourceType: input.result.feed.sourceType,
 				etag: input.result.etag,
 				lastModified: input.result.lastModified,

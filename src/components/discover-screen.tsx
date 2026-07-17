@@ -67,7 +67,11 @@ export function DiscoverScreen() {
 	});
 	const queryClient = useQueryClient();
 	const addFeed = useMutation({
-		mutationFn: (body: { sourceUrl: string; label?: string | null }) =>
+		mutationFn: (body: {
+			sourceUrl: string;
+			label?: string | null;
+			iconHintUrl?: string | null;
+		}) =>
 			api("/api/feeds", {
 				method: "POST",
 				body: JSON.stringify(body),
@@ -257,6 +261,10 @@ export function DiscoverScreen() {
 														addFeed.mutate({
 															sourceUrl: result.feedUrl,
 															label: result.title,
+															iconHintUrl:
+																result.favicon?.startsWith("http")
+																	? result.favicon
+																	: null,
 														})
 													}
 													disabled={addFeed.isPending}

@@ -143,6 +143,11 @@ describe("Request validation schemas", () => {
     const { feedSchema } = await import("@/lib/schemas");
     const valid = feedSchema.safeParse({ sourceUrl: "https://example.com/feed.xml" });
     assert.ok(valid.success);
+    const withIconHint = feedSchema.safeParse({
+      sourceUrl: "https://example.com/feed.xml",
+      iconHintUrl: "https://cdn.example.com/icon.png",
+    });
+    assert.ok(withIconHint.success);
 
     const invalid = feedSchema.safeParse({ sourceUrl: "not-a-url" });
     assert.ok(!invalid.success);

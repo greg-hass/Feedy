@@ -24,6 +24,7 @@ export const feedSchema = z.object({
   sourceUrl: z.string().url(),
   folderId: z.string().nullable().optional(),
   label: z.string().max(120).nullable().optional(),
+  iconHintUrl: z.string().url().max(2048).nullable().optional(),
 });
 
 export const updateFeedSchema = z.object({
