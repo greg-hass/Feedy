@@ -20,6 +20,7 @@ import { EditFeedSheet } from "@/components/forms";
 import { ItemCard } from "@/components/item-card";
 import { IconButton } from "@/components/ui/icon-button";
 import { Sheet } from "@/components/ui/sheet";
+import { useListScrollRestoration } from "@/components/use-list-scroll-restoration";
 import {
 	MobileShell,
 	LoadingSkeleton,
@@ -64,6 +65,10 @@ export default function FolderDetailPage() {
 			.sort(compareFeedLabels) ?? [];
 	const folders = me.data?.navigation.folders ?? [];
 	const folderTitle = decodeHtmlEntities(folder?.title || "");
+	useListScrollRestoration({
+		storageKey: `feedy-folder-scroll:${params.folderId}`,
+		enabled: Boolean(folder),
+	});
 	const selectedSet = new Set(selectedFeedIds);
 	const selectedCount = selectedFeedIds.length;
 	const goBack = () => {

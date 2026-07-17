@@ -18,8 +18,16 @@ const feedsScreenSource = readFileSync(
 	new URL("../components/feeds-screen.tsx", import.meta.url),
 	"utf8",
 );
+const folderDetailSource = readFileSync(
+	new URL("../app/app/folders/[folderId]/page.tsx", import.meta.url),
+	"utf8",
+);
 const feedAvatarSource = readFileSync(
 	new URL("../components/feed-avatar.tsx", import.meta.url),
+	"utf8",
+);
+const feedsScreenScrollSource = readFileSync(
+	new URL("../components/use-list-scroll-restoration.ts", import.meta.url),
 	"utf8",
 );
 
@@ -76,6 +84,13 @@ describe("Feeds UI contracts", () => {
 		assert.match(feedAvatarSource, /iconHintUrl\?: string \| null/);
 		assert.match(feedAvatarSource, /iconHintUrl && failedSrc !== iconHintUrl/);
 		assert.match(feedAvatarSource, /\?v=4/);
+	});
+
+	it("restores feed and folder list position after returning", () => {
+		assert.match(feedsScreenScrollSource, /sessionStorage/);
+		assert.match(feedsScreenScrollSource, /window\.scrollTo\(\{ top: savedScrollY/);
+		assert.match(feedsScreenSource, /storageKey: "feedy-feeds-scroll"/);
+		assert.match(folderDetailSource, /storageKey: `feedy-folder-scroll:/);
 	});
 
 	it("opens New Folder in a fixed sheet instead of inline flow", () => {

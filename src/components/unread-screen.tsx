@@ -82,9 +82,10 @@ export function UnreadScreen() {
 	} | null>(null);
 	const timelinePanelRef = useRef<HTMLElement | null>(null);
 	const pendingRefreshIdsRef = useRef<string[] | null>(null);
-	const pendingScrollAnchorRef = useRef<{ itemId: string; top: number } | null>(
-		null,
-	);
+	const pendingViewportAnchorRef = useRef<{
+		itemId: string;
+		top: number;
+	} | null>(null);
 	const lastRefreshFingerprintRef = useRef<string | null>(null);
 	const refreshStartRef = useRef<(() => void) | null>(null);
 
@@ -175,8 +176,7 @@ export function UnreadScreen() {
 
 	const captureRefreshSnapshot = useCallback(() => {
 		pendingRefreshIdsRef.current = timelineItems.map((item) => item.id);
-		pendingScrollAnchorRef.current =
-			captureTimelineScrollAnchor(timelineFixedTop);
+		pendingViewportAnchorRef.current = captureTimelineScrollAnchor(timelineFixedTop);
 	}, [timelineFixedTop, timelineItems]);
 
 	const startRefresh = useCallback(() => {
@@ -209,9 +209,55 @@ export function UnreadScreen() {
 
 	useEffect(() => {
 		pendingRefreshIdsRef.current = null;
-		pendingScrollAnchorRef.current = null;
+		pendingViewportAnchorRef.current = null;
 		queueMicrotask(() => setRefreshToast(null));
 	}, [deferredQuery, sourceFilter, stateFilter]);
+
+	// Capture the visible article before any background refetch. This covers
+	// focus/resume refetches and cache invalidations as well as pull-to-refresh,
+	// so newly inserted articles do not move an article or inline video out of
+	// the viewport. Pagination is intentionally excluded because it appends.
+	useLayoutEffect(() => {
+		if (
+			!items.isFetching ||
+			items.isFetchingNextPage ||
+			!timelineItems.length ||
+			pendingViewportAnchorRef.current
+		) {
+			return;
+		}
+
+		pendingViewportAnchorRef.current = captureTimelineScrollAnchor(timelineFixedTop);
+	}, [
+		items.isFetching,
+		items.isFetchingNextPage,
+		timelineFixedTop,
+		timelineItems,
+	]);
+
+	useLayoutEffect(() => {
+		if (
+			items.isFetching ||
+			items.isFetchingNextPage ||
+			!pendingViewportAnchorRef.current
+		) {
+			return;
+		}
+
+		const anchor = pendingViewportAnchorRef.current;
+		pendingViewportAnchorRef.current = null;
+		if (!anchor?.itemId) {
+			return;
+		}
+
+		const element = document.querySelector<HTMLElement>(
+			`[data-timeline-item-id="${anchor.itemId}"]`,
+		);
+		if (element) {
+			const nextTop = element.getBoundingClientRect().top;
+			window.scrollBy({ top: nextTop - anchor.top, behavior: "auto" });
+		}
+	}, [items.isFetching, items.isFetchingNextPage, timelineItems]);
 
 	useEffect(() => {
 		if (!refreshFingerprint) {
@@ -361,22 +407,10 @@ export function UnreadScreen() {
 		pendingRefreshIdsRef.current = null;
 
 		const delta = computeTimelineRefreshDelta(previousIds, nextIds);
-		const anchor = pendingScrollAnchorRef.current;
-		pendingScrollAnchorRef.current = null;
 
 		if (delta.newCount <= 0) {
 			queueMicrotask(() => setRefreshToast(null));
 			return;
-		}
-
-		if (anchor?.itemId) {
-			const element = document.querySelector<HTMLElement>(
-				`[data-timeline-item-id="${anchor.itemId}"]`,
-			);
-			if (element) {
-				const nextTop = element.getBoundingClientRect().top;
-				window.scrollBy({ top: nextTop - anchor.top, behavior: "auto" });
-			}
 		}
 
 		setRefreshToast({

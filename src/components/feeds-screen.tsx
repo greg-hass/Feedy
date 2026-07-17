@@ -30,6 +30,7 @@ import {
 import { SectionLabel } from "@/components/screen-primitives";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
+import { useListScrollRestoration } from "@/components/use-list-scroll-restoration";
 import { api } from "@/lib/client";
 import { formatSourceType } from "@/lib/feed-source";
 import { decodeHtmlEntities } from "@/lib/utils";
@@ -56,6 +57,10 @@ function compareFeedLabels(a: NavFeed, b: NavFeed) {
 
 export function FeedsScreen() {
 	const me = useMe();
+	useListScrollRestoration({
+		storageKey: "feedy-feeds-scroll",
+		enabled: Boolean(me.data),
+	});
 	const [showAddFeed, setShowAddFeed] = useState(false);
 	const [showAddFolder, setShowAddFolder] = useState(false);
 	const [selectionMode, setSelectionMode] = useState(false);

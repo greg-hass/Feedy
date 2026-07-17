@@ -47,4 +47,10 @@ describe("TimelineRefreshToast", () => {
 		assert.match(unreadSource, /element\.scrollIntoView/);
 		assert.doesNotMatch(unreadSource, /window\.scrollTo/);
 	});
+
+	it("anchors the viewport for every background refetch", () => {
+		assert.match(unreadSource, /Capture the visible article before any background refetch/);
+		assert.match(unreadSource, /items\.isFetchingNextPage/);
+		assert.match(unreadSource, /window\.scrollBy\(\{ top: nextTop - anchor\.top/);
+	});
 });
