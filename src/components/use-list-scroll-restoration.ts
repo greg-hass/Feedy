@@ -2,11 +2,9 @@
 
 import { useEffect, useLayoutEffect } from "react";
 
-export function saveListScrollPosition(storageKey: string) {
-	if (typeof window === "undefined") {
-		return;
-	}
+const frozenStorageKeys = new Set<string>();
 
+function writeListScrollPosition(storageKey: string) {
 	const scrollY = Math.max(
 		window.scrollY,
 		document.documentElement.scrollTop,
@@ -16,6 +14,23 @@ export function saveListScrollPosition(storageKey: string) {
 		storageKey,
 		String(Math.max(0, Math.round(scrollY))),
 	);
+}
+
+export function saveListScrollPosition(storageKey: string) {
+	if (typeof window === "undefined" || frozenStorageKeys.has(storageKey)) {
+		return;
+	}
+
+	writeListScrollPosition(storageKey);
+}
+
+export function freezeListScrollPosition(storageKey: string) {
+	if (typeof window === "undefined") {
+		return;
+	}
+
+	writeListScrollPosition(storageKey);
+	frozenStorageKeys.add(storageKey);
 }
 
 function restoreListScrollPosition(scrollY: number) {
@@ -71,6 +86,13 @@ export function useListScrollRestoration({
 		const timers = [0, 50, 150, 300, 600].map((delay) =>
 			window.setTimeout(restore, delay),
 		);
+		if (frozenStorageKeys.has(storageKey)) {
+			// Deliberately let this timer outlive the effect. During navigation,
+			// Next may reset the outgoing document to zero before passive-effect
+			// cleanup runs. The key must stay frozen until the returning list has
+			// finished restoring.
+			window.setTimeout(() => frozenStorageKeys.delete(storageKey), 650);
+		}
 
 		return () => {
 			cancelled = true;

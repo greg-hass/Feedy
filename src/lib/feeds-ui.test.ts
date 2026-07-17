@@ -91,7 +91,8 @@ describe("Feeds UI contracts", () => {
 		assert.match(feedsScreenScrollSource, /window\.scrollTo\(\{ top: scrollY/);
 		assert.match(feedsScreenSource, /storageKey: "feedy-feeds-scroll"/);
 		assert.match(folderDetailSource, /storageKey: `feedy-folder-scroll:/);
-		assert.match(librarySource, /saveListScrollPosition\("feedy-feeds-scroll"\)/);
+		assert.match(feedsScreenScrollSource, /frozenStorageKeys\.has\(storageKey\)/);
+		assert.match(librarySource, /freezeListScrollPosition\("feedy-feeds-scroll"\)/);
 	});
 
 	it("opens New Folder in a fixed sheet instead of inline flow", () => {

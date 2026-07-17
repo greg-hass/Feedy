@@ -21,7 +21,7 @@ import { ItemCard } from "@/components/item-card";
 import { IconButton } from "@/components/ui/icon-button";
 import { Sheet } from "@/components/ui/sheet";
 import {
-	saveListScrollPosition,
+	freezeListScrollPosition,
 	useListScrollRestoration,
 } from "@/components/use-list-scroll-restoration";
 import {
@@ -327,7 +327,7 @@ function FolderFeedRow({
 			>
 				<Link
 					href={`/app/feeds/${feed.id}`}
-					onClick={() => saveListScrollPosition(scrollStorageKey)}
+					onClick={() => freezeListScrollPosition(scrollStorageKey)}
 					data-flat-library-row="true"
 					data-flat-surface="true"
 					className="flex items-center gap-3 rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]/20"
