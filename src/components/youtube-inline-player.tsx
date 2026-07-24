@@ -45,7 +45,7 @@ type YouTubePlayer = {
 	seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
 };
 
-function getYouTubeProgressStorageKey(itemId: string, videoId: string) {
+function getYouTubeProgressStorageKey(_itemId: string, videoId: string) {
 	return `${PLAYER_STORAGE_PREFIX}:${videoId}`;
 }
 

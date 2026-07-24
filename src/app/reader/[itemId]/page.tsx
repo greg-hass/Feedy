@@ -20,6 +20,7 @@ import {
 	shouldRenderReaderLeadMedia,
 } from "@/lib/reader-content";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
+import { getYouTubeWatchUrl } from "@/lib/media/youtube-url";
 import type { ItemRecord } from "@/types/app";
 
 export default function ReaderPage() {
@@ -208,6 +209,7 @@ export default function ReaderPage() {
 	const data = item.data;
 	const readerHtml = selectReaderHtml(data);
 	const showLeadMedia = shouldRenderReaderLeadMedia(data);
+	const youtubeVideoId = data.youtubeVideoId;
 
 	return (
 		<div
@@ -260,15 +262,20 @@ export default function ReaderPage() {
 								>
 									<Share2 className="size-4" />
 								</IconButton>
-								<a
-									href={data.canonicalUrl}
-									target="_blank"
-									rel="noreferrer"
+								<button
+									type="button"
+									onClick={() => {
+										window.open(
+											data.canonicalUrl ?? "",
+											"_blank",
+											"noopener,noreferrer",
+										);
+									}}
 									className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
 									aria-label="Open original article"
 								>
 									<ExternalLink className="size-4" />
-								</a>
+								</button>
 							</>
 						)}
 					</div>
@@ -305,15 +312,30 @@ export default function ReaderPage() {
 					</span>
 				</div>
 
-				{data.youtubeVideoId && (
-					<div className="mt-5 overflow-hidden rounded-[20px] border border-subtle">
+				{youtubeVideoId && (
+					<div className="relative mt-5 overflow-hidden rounded-[20px] border border-subtle">
 						<iframe
-							src={`https://www.youtube.com/embed/${data.youtubeVideoId}?playsinline=1&rel=0`}
+							src={`https://www.youtube.com/embed/${youtubeVideoId}?playsinline=1&rel=0`}
 							title={data.title}
 							className="aspect-video w-full"
 							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
 							allowFullScreen
 						/>
+						<button
+							type="button"
+							onClick={() => {
+								window.open(
+									getYouTubeWatchUrl(youtubeVideoId),
+									"_blank",
+									"noopener,noreferrer",
+								);
+							}}
+							className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-lg bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-95"
+							aria-label="Open in YouTube for picture in picture"
+							title="Open in YouTube for PiP"
+						>
+							<ExternalLink className="size-4" aria-hidden="true" />
+						</button>
 					</div>
 				)}
 
