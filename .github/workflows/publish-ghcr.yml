@@ -44,8 +44,16 @@ jobs:
           DATABASE_URL: postgresql://validation:validation@localhost:5432/feedy?schema=public
         run: npx prisma validate
 
+      # The shipped image installs with --omit=dev (see Dockerfile), so the
+      # blocking audit covers production dependencies only. Dev-only chains
+      # (e.g. eslint → minimatch@3 → brace-expansion@1.x) currently have
+      # advisories with no non-breaking fix; the full audit below keeps them
+      # visible without blocking the build.
       - name: Audit dependencies
-        run: npm audit --audit-level=low
+        run: npm audit --audit-level=low --omit=dev
+
+      - name: Audit all dependencies (informational)
+        run: npm audit --audit-level=low || true
 
       - name: Build application
         run: npm run build
