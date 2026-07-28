@@ -20,6 +20,7 @@ import {
 	shouldRenderReaderLeadMedia,
 } from "@/lib/reader-content";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
+import { decodeHtmlEntities } from "@/lib/utils";
 import { getYouTubeWatchUrl } from "@/lib/media/youtube-url";
 import type { ItemRecord } from "@/types/app";
 
@@ -265,11 +266,10 @@ export default function ReaderPage() {
 								<button
 									type="button"
 									onClick={() => {
-										window.open(
-											data.canonicalUrl ?? "",
-											"_blank",
-											"noopener,noreferrer",
-										);
+										// Same-window navigation: in an iOS PWA, window.open("_blank")
+										// spawns an in-app browser that is left behind as a blank
+										// window when a universal link hands off to a native app.
+										window.location.assign(data.canonicalUrl ?? "");
 									}}
 									className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
 									aria-label="Open original article"
@@ -296,7 +296,7 @@ export default function ReaderPage() {
 				</div>
 
 				<h1 className="mt-2 text-[1.4rem] font-semibold leading-[1.2] tracking-[-0.02em]">
-					{data.title}
+					{decodeHtmlEntities(data.title)}
 				</h1>
 
 				<div className="mt-3 flex items-center justify-between text-xs text-secondary">
@@ -324,11 +324,9 @@ export default function ReaderPage() {
 						<button
 							type="button"
 							onClick={() => {
-								window.open(
-									getYouTubeWatchUrl(youtubeVideoId),
-									"_blank",
-									"noopener,noreferrer",
-								);
+								// Same-window navigation avoids a leftover blank in-app
+								// browser window when iOS opens the YouTube app.
+								window.location.assign(getYouTubeWatchUrl(youtubeVideoId));
 							}}
 							className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-lg bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-95"
 							aria-label="Open in YouTube for picture in picture"

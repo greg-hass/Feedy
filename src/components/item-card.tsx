@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { memo, useEffect, useState } from "react";
 
 import { IconButton } from "@/components/ui/icon-button";
+import { useMe } from "@/components/app-shell";
 import { SearchHighlight } from "@/components/search-highlight";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
@@ -43,6 +44,7 @@ export const ItemCard = memo(function ItemCard({
 }) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const me = useMe();
 	const [imageLoaded, setImageLoaded] = useState(false);
 	const [thumbnailIndex, setThumbnailIndex] = useState(0);
 	const [internalPlayInline, setInternalPlayInline] = useState(false);
@@ -92,7 +94,7 @@ export const ItemCard = memo(function ItemCard({
 	};
 
 	const prefetchReader = () => {
-		if (isYouTube) {
+		if (isYouTube || me.data?.user.settings.readerOpenOriginalByDefault) {
 			return;
 		}
 
@@ -105,6 +107,21 @@ export const ItemCard = memo(function ItemCard({
 
 	const openReader = () => {
 		rememberTimelineAnchor();
+
+		// "Safari" article view: mark read immediately and hand off to the
+		// original site. Same-window navigation lets iOS open Safari or the
+		// native app without leaving a blank in-app browser window behind.
+		if (
+			me.data?.user.settings.readerOpenOriginalByDefault &&
+			item.canonicalUrl
+		) {
+			if (!item.read) {
+				updateState.mutate({ read: true });
+			}
+			window.location.assign(item.canonicalUrl);
+			return;
+		}
+
 		resetScrollBeforeNavigate();
 		router.push(`/reader/${item.id}`);
 	};
@@ -416,7 +433,6 @@ export const ItemCard = memo(function ItemCard({
 						{item.canonicalUrl && (
 							<a
 								href={item.canonicalUrl}
-								target="_blank"
 								rel="noreferrer"
 								className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
 								data-card-action

@@ -223,6 +223,52 @@ export function SettingsScreen() {
 				</div>
 
 				<div className="panel p-4">
+					<h3 className="text-sm font-semibold">Article view</h3>
+					<p className="mt-2 text-xs text-secondary">
+						Choose what happens when you tap an article. Safari marks the
+						article read and opens the original site.
+					</p>
+					<div className="mt-3 grid grid-cols-2 gap-2">
+						{[
+							{ value: false, label: "Reader" },
+							{ value: true, label: "Safari" },
+						].map((option) => {
+							const active =
+								Boolean(me.data?.user.settings.readerOpenOriginalByDefault) ===
+								option.value;
+							return (
+								<button
+									key={option.label}
+									onClick={() => {
+										saveSetting(
+											"readerOpenOriginalByDefault",
+											"article view",
+											{ readerOpenOriginalByDefault: option.value },
+										);
+									}}
+									disabled={settings.isPending}
+									aria-pressed={active}
+									className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+										active
+											? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
+											: "border-subtle bg-[var(--surface-muted)] text-secondary"
+									}`}
+								>
+									<span className="inline-flex items-center gap-1.5">
+										{active &&
+										settings.isPending &&
+										pendingSetting === "readerOpenOriginalByDefault" ? (
+											<Loader2 className="size-3.5 animate-spin" />
+										) : null}
+										{option.label}
+									</span>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
+				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Device</h3>
 					<div className="mt-3 flex items-start justify-between gap-4">
 						<div className="min-w-0">

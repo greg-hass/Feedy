@@ -80,6 +80,34 @@ describe("reader content policy", () => {
 		);
 	});
 
+	it("suppresses lead media when the readability body embeds the same image", () => {
+		assert.equal(
+			shouldRenderReaderLeadMedia({
+				mediaUrl: "https://example.com/uploads/hero.jpg?quality=82&w=1200",
+				youtubeVideoId: null,
+				readabilityHtml:
+					'<figure><img src="https://example.com/uploads/hero.jpg?w=640"></figure><p>Body</p>',
+				contentHtml: null,
+				feed: { sourceType: "RSS" },
+			}),
+			false,
+		);
+	});
+
+	it("keeps lead media when the body image is a different image", () => {
+		assert.equal(
+			shouldRenderReaderLeadMedia({
+				mediaUrl: "https://example.com/uploads/hero.jpg",
+				youtubeVideoId: null,
+				readabilityHtml:
+					'<p><img src="https://example.com/uploads/other.jpg"></p>',
+				contentHtml: null,
+				feed: { sourceType: "RSS" },
+			}),
+			true,
+		);
+	});
+
 	it("renders normal article lead media when body has no duplicate image", () => {
 		assert.equal(
 			shouldRenderReaderLeadMedia({

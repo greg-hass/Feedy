@@ -72,6 +72,27 @@ export function shouldRefetchReaderContent(input: ReaderContentInput) {
 	return !selectReaderHtml(input);
 }
 
+/** Normalize an image URL for duplicate comparison: drop query/hash (size params). */
+function normalizeImageUrl(url: string) {
+	try {
+		const parsed = new URL(url);
+		return `${parsed.origin}${parsed.pathname}`.toLowerCase();
+	} catch {
+		return url.toLowerCase();
+	}
+}
+
+/** True when the article body already embeds the lead image (possibly at a different size). */
+function htmlContainsImage(html: string, mediaUrl: string) {
+	const target = normalizeImageUrl(mediaUrl);
+	for (const match of html.matchAll(/<img\b[^>]*?\bsrc=["']([^"']+)["']/gi)) {
+		if (normalizeImageUrl(match[1]) === target) {
+			return true;
+		}
+	}
+	return false;
+}
+
 export function shouldRenderReaderLeadMedia(
 	input: ReaderContentInput & {
 		mediaUrl: string | null;
@@ -83,12 +104,18 @@ export function shouldRenderReaderLeadMedia(
 	}
 
 	const readerHtml = selectReaderHtml(input);
-	if (
-		input.feed.sourceType === "REDDIT_RSS" &&
-		readerHtml &&
-		/<img\b/i.test(readerHtml)
-	) {
-		return false;
+	if (readerHtml) {
+		// Reddit bodies are thumbnail-heavy; any inline image counts as a duplicate.
+		if (
+			input.feed.sourceType === "REDDIT_RSS" &&
+			/<img\b/i.test(readerHtml)
+		) {
+			return false;
+		}
+
+		if (htmlContainsImage(readerHtml, input.mediaUrl)) {
+			return false;
+		}
 	}
 
 	return true;
