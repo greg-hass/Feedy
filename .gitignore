@@ -42,3 +42,6 @@ next-env.d.ts
 .playwright-cli/
 cookies.txt
 src/generated/
+
+# local Graphify file-index cache
+/graphify-out/

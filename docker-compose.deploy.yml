@@ -104,10 +104,11 @@ services:
     volumes:
       - app_data:/app/data
     healthcheck:
-      test: ["CMD", "npx", "tsx", "src/healthcheck.ts"]
+      test: ["CMD", "node_modules/.bin/tsx", "src/healthcheck.ts"]
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 15s
 
 volumes:
   postgres_data:
