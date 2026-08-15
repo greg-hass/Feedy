@@ -176,7 +176,8 @@ export function UnreadScreen() {
 
 	const captureRefreshSnapshot = useCallback(() => {
 		pendingRefreshIdsRef.current = timelineItems.map((item) => item.id);
-		pendingViewportAnchorRef.current = captureTimelineScrollAnchor(timelineFixedTop);
+		pendingViewportAnchorRef.current =
+			captureTimelineScrollAnchor(timelineFixedTop);
 	}, [timelineFixedTop, timelineItems]);
 
 	const startRefresh = useCallback(() => {
@@ -227,7 +228,8 @@ export function UnreadScreen() {
 			return;
 		}
 
-		pendingViewportAnchorRef.current = captureTimelineScrollAnchor(timelineFixedTop);
+		pendingViewportAnchorRef.current =
+			captureTimelineScrollAnchor(timelineFixedTop);
 	}, [
 		items.isFetching,
 		items.isFetchingNextPage,
@@ -277,12 +279,7 @@ export function UnreadScreen() {
 
 		captureRefreshSnapshot();
 		void refetchItems();
-	}, [
-		captureRefreshSnapshot,
-		refresh.active,
-		refreshFingerprint,
-		refetchItems,
-	]);
+	}, [captureRefreshSnapshot, refresh.active, refreshFingerprint, refetchItems]);
 
 	useEffect(() => {
 		const updateHeaderOffset = () => {
@@ -379,9 +376,7 @@ export function UnreadScreen() {
 							pages: current.pages.map((page) => ({
 								...page,
 								items: page.items.map((entry) =>
-									entry.id === pendingReadItemId
-										? { ...entry, read: true }
-										: entry,
+									entry.id === pendingReadItemId ? { ...entry, read: true } : entry,
 								),
 							})),
 						}
@@ -442,9 +437,7 @@ export function UnreadScreen() {
 							setSearchOpen(true);
 						}}
 						aria-label={
-							searchOpen || query.trim()
-								? "Hide article search"
-								: "Search articles"
+							searchOpen || query.trim() ? "Hide article search" : "Search articles"
 						}
 					>
 						<Search className="size-4" />
@@ -533,9 +526,7 @@ export function UnreadScreen() {
 									<select
 										value={stateFilter}
 										onChange={(event) =>
-											setStateFilter(
-												event.target.value as "UNREAD" | "ALL" | "READ",
-											)
+											setStateFilter(event.target.value as "UNREAD" | "ALL" | "READ")
 										}
 										className="h-12 w-full rounded-[20px] bg-[var(--surface-strong)] px-4 text-sm font-medium text-[var(--text-primary)]"
 									>
@@ -550,11 +541,7 @@ export function UnreadScreen() {
 										value={sourceFilter}
 										onChange={(event) =>
 											setSourceFilter(
-												event.target.value as
-													| "ALL"
-													| "RSS"
-													| "REDDIT"
-													| "YOUTUBE",
+												event.target.value as "ALL" | "RSS" | "REDDIT" | "YOUTUBE",
 											)
 										}
 										className="h-12 w-full rounded-[20px] bg-[var(--surface-strong)] px-4 text-sm font-medium text-[var(--text-primary)]"
@@ -570,7 +557,10 @@ export function UnreadScreen() {
 
 						{searchOpen || query.trim() ? (
 							<section className={filtersOpen ? "mt-3" : undefined}>
-								<div data-flat-control="true" className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
+								<div
+									data-flat-control="true"
+									className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5"
+								>
 									<Search className="size-4 shrink-0 text-secondary" />
 									<Input
 										id="timeline-search-input"
@@ -600,13 +590,10 @@ export function UnreadScreen() {
 			{items.isLoading ? (
 				<LoadingSkeleton />
 			) : items.error ? (
-				<ErrorState
-					message={items.error.message}
-					onRetry={() => items.refetch()}
-				/>
+				<ErrorState message={items.error.message} onRetry={() => items.refetch()} />
 			) : timelineItems.length ? (
 				<div
-					className="space-y-3"
+					className="space-y-3 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-3 min-[744px]:space-y-0"
 					style={
 						timelineContentPullUp
 							? { marginTop: `-${timelineContentPullUp}px`, paddingTop: "1px" }
@@ -616,9 +603,13 @@ export function UnreadScreen() {
 					{timelineItems.map((item) => (
 						<ItemCard key={item.id} item={item} searchQuery={deferredQuery} />
 					))}
-					<div ref={bottomSentinelRef} aria-hidden className="h-px w-full" />
+					<div
+						ref={bottomSentinelRef}
+						aria-hidden
+						className="h-px w-full min-[744px]:col-span-2"
+					/>
 					{items.isFetchingNextPage ? (
-						<div className="flex items-center justify-center pb-2 pt-1 text-[11px] text-secondary">
+						<div className="flex items-center justify-center pb-2 pt-1 text-[11px] text-secondary min-[744px]:col-span-2">
 							<Loader2 className="mr-2 size-4 animate-spin" />
 							Loading more items
 						</div>

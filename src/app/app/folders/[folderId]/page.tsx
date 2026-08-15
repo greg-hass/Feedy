@@ -51,9 +51,7 @@ export default function FolderDetailPage() {
 	const me = useQuery({
 		queryKey: ["me"],
 		queryFn: () =>
-			api<{ navigation: { folders: NavFolder[]; feeds: NavFeed[] } }>(
-				"/api/me",
-			),
+			api<{ navigation: { folders: NavFolder[]; feeds: NavFeed[] } }>("/api/me"),
 		staleTime: 30_000,
 		refetchOnWindowFocus: "always",
 		refetchOnReconnect: true,
@@ -77,9 +75,7 @@ export default function FolderDetailPage() {
 	const goBack = () => {
 		if (typeof document !== "undefined") {
 			try {
-				const referrerUrl = document.referrer
-					? new URL(document.referrer)
-					: null;
+				const referrerUrl = document.referrer ? new URL(document.referrer) : null;
 				if (!referrerUrl || referrerUrl.host !== window.location.host) {
 					router.replace("/app/folders");
 					return;
@@ -96,9 +92,7 @@ export default function FolderDetailPage() {
 	const items = useQuery({
 		queryKey: ["items", "folder", params.folderId],
 		queryFn: () =>
-			api<ItemRecord[]>(
-				`/api/items?folderId=${params.folderId}&stateFilter=ALL`,
-			),
+			api<ItemRecord[]>(`/api/items?folderId=${params.folderId}&stateFilter=ALL`),
 		enabled: !!folderFeeds.length,
 		staleTime: 15_000,
 		refetchOnWindowFocus: "always",
@@ -250,7 +244,7 @@ export default function FolderDetailPage() {
 							onRetry={() => items.refetch()}
 						/>
 					) : items.data?.length ? (
-						<div className="space-y-3">
+						<div className="space-y-3 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-3 min-[744px]:space-y-0">
 							{items.data.map((item) => (
 								<ItemCard key={item.id} item={item} />
 							))}
@@ -440,9 +434,7 @@ function SelectableFolderFeedRow({
 					) : null}
 				</div>
 				<div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] uppercase tracking-[0.14em] text-secondary">
-					<span>
-						{feed.sourceType.replaceAll("_RSS", "").replaceAll("_", " ")}
-					</span>
+					<span>{feed.sourceType.replaceAll("_RSS", "").replaceAll("_", " ")}</span>
 					{feed.performance.isSlow ? (
 						<>
 							<span>·</span>
@@ -524,8 +516,7 @@ function FolderBulkMoveSheet({
 							<div className="min-w-0">
 								<p className="truncate text-sm font-semibold">{folder.title}</p>
 								<p className="mt-1 text-xs text-secondary">
-									{folder.counts.feedCount} feeds · {folder.counts.unreadCount}{" "}
-									unread
+									{folder.counts.feedCount} feeds · {folder.counts.unreadCount} unread
 								</p>
 							</div>
 							<span className="text-[10px] uppercase tracking-[0.16em] text-secondary">

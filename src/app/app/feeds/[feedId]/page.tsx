@@ -47,9 +47,7 @@ export default function FeedDetailPage() {
 	const goBack = () => {
 		if (typeof document !== "undefined") {
 			try {
-				const referrerUrl = document.referrer
-					? new URL(document.referrer)
-					: null;
+				const referrerUrl = document.referrer ? new URL(document.referrer) : null;
 				if (!referrerUrl || referrerUrl.host !== window.location.host) {
 					router.replace("/app/feeds");
 					return;
@@ -99,7 +97,10 @@ export default function FeedDetailPage() {
 			}
 		>
 			<div className="space-y-3">
-				<div data-flat-surface="true" className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+				<div
+					data-flat-surface="true"
+					className="rounded-[24px] border border-subtle bg-[var(--surface)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]"
+				>
 					<div className="flex items-center gap-3">
 						<FeedAvatar
 							feedId={feed.id}
@@ -109,8 +110,7 @@ export default function FeedDetailPage() {
 						<div className="min-w-0 flex-1">
 							<h1 className="truncate text-base font-semibold">{feedTitle}</h1>
 							<p className="text-xs text-secondary">
-								{feed.counts.unreadCount} unread ·{" "}
-								{relativeTime(feed.lastRefreshedAt)}
+								{feed.counts.unreadCount} unread · {relativeTime(feed.lastRefreshedAt)}
 							</p>
 						</div>
 					</div>
@@ -125,7 +125,7 @@ export default function FeedDetailPage() {
 							onRetry={() => items.refetch()}
 						/>
 					) : items.data?.length ? (
-						<div className="space-y-3">
+						<div className="space-y-3 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-3 min-[744px]:space-y-0">
 							{items.data.map((item) => (
 								<ItemCard key={item.id} item={item} />
 							))}

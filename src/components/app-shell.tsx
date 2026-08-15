@@ -69,7 +69,7 @@ export function MobileShell({
 
 	return (
 		<div className="app-shell screen-enter">
-			<div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+			<div className="mx-auto flex min-h-screen w-full max-w-md min-[744px]:max-w-5xl flex-col">
 				<header
 					data-mobile-shell-header="true"
 					className="fixed inset-x-0 top-0 z-40 will-change-transform"
@@ -78,7 +78,7 @@ export function MobileShell({
 						transform: `translateY(-${headerOffsetPx}px)`,
 					}}
 				>
-					<div className="mx-auto max-w-md px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
+					<div className="mx-auto max-w-md min-[744px]:max-w-5xl px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
 						<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
 							<div className="flex min-w-0 max-w-full items-center gap-2 justify-self-start">
 								{backButton ? <div className="shrink-0">{backButton}</div> : null}
@@ -94,10 +94,7 @@ export function MobileShell({
 							</div>
 							<div className="flex items-center gap-2 justify-self-end">
 								{actions}
-								<IconButton
-									onClick={() => logout.mutate()}
-									aria-label="Sign out"
-								>
+								<IconButton onClick={() => logout.mutate()} aria-label="Sign out">
 									<LogOut className="size-4" />
 								</IconButton>
 							</div>
@@ -129,7 +126,7 @@ export function MobileShell({
 						bottom: "max(4px, calc(env(safe-area-inset-bottom) - 12px))",
 					}}
 				>
-					<div className="mx-auto max-w-md px-5">
+					<div className="mx-auto max-w-md min-[744px]:max-w-5xl px-5">
 						<div
 							data-flat-navigation="true"
 							className="flex w-full items-center justify-around rounded-[34px] border px-2 py-1.5 backdrop-blur-2xl"
@@ -144,9 +141,7 @@ export function MobileShell({
 							{navItems.map((item) => {
 								const Icon = item.icon;
 								const active = pathname === item.href;
-								const handleTabClick = (
-									event: React.MouseEvent<HTMLAnchorElement>,
-								) => {
+								const handleTabClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
 									if (
 										event.metaKey ||
 										event.ctrlKey ||
@@ -179,13 +174,8 @@ export function MobileShell({
 										}}
 										aria-current={active ? "page" : undefined}
 									>
-										<Icon
-											className="size-[26px]"
-											strokeWidth={active ? 2.5 : 2}
-										/>
-										<span style={{ letterSpacing: "0.04em" }}>
-											{item.label}
-										</span>
+										<Icon className="size-[26px]" strokeWidth={active ? 2.5 : 2} />
+										<span style={{ letterSpacing: "0.04em" }}>{item.label}</span>
 									</Link>
 								);
 							})}
@@ -202,10 +192,7 @@ export function LoadingSkeleton() {
 	return (
 		<div className="space-y-4">
 			{[1, 2, 3].map((i) => (
-				<div
-					key={i}
-					className="panel overflow-hidden"
-				>
+				<div key={i} className="panel overflow-hidden">
 					<div className="aspect-video w-full shimmer" />
 					<div className="p-4">
 						<div
@@ -252,9 +239,7 @@ export function ErrorState({
 	onRetry?: () => void;
 }) {
 	return (
-		<div
-			className="panel state-panel p-6 text-center"
-		>
+		<div className="panel state-panel p-6 text-center">
 			<div
 				className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
 				style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
@@ -299,9 +284,7 @@ export function EmptyState({
 	action?: React.ReactNode;
 }) {
 	return (
-		<div
-			className="panel empty-state-panel px-6 py-12 text-center"
-		>
+		<div className="panel empty-state-panel px-6 py-12 text-center">
 			{icon && (
 				<div
 					className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"

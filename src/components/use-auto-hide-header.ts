@@ -7,6 +7,24 @@ const SCROLL_TO_HEADER_RATIO = 0.48;
 const MAX_OFFSET_HEADER_MULTIPLIER = 2.1;
 
 /**
+ * Clamp the header offset to [0, headerHeight * MAX_OFFSET_HEADER_MULTIPLIER]
+ * and snap it to a whole pixel.
+ *
+ * Rationale: fractional translateY on the header's compositing layer
+ * ("will-change-transform") makes iOS Safari rasterise text off the pixel
+ * grid, which renders the header — and the fixed timeline panel that mirrors
+ * this offset — blurry. Sub-pixel precision buys nothing visually.
+ */
+export function computeHeaderOffset(
+	nextOffset: number,
+	headerHeight: number,
+): number {
+	const safeHeight = Math.max(1, headerHeight);
+	const maxOffset = safeHeight * MAX_OFFSET_HEADER_MULTIPLIER;
+	return Math.round(Math.min(maxOffset, Math.max(0, nextOffset)));
+}
+
+/**
  * Gradually hides a fixed header on scroll-down and reveals it on scroll-up.
  *
  * Behaviour:
@@ -43,8 +61,7 @@ export function useAutoHideHeader(): {
 
 		const setOffset = (nextOffset: number) => {
 			const headerHeight = headerHeightRef.current;
-			const maxOffset = headerHeight * MAX_OFFSET_HEADER_MULTIPLIER;
-			const clampedOffset = Math.min(maxOffset, Math.max(0, nextOffset));
+			const clampedOffset = computeHeaderOffset(nextOffset, headerHeight);
 			const nextProgress = clampedOffset / headerHeight;
 			offsetRef.current = clampedOffset;
 			document.documentElement.style.setProperty(

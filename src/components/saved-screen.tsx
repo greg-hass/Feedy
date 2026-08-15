@@ -138,9 +138,7 @@ export function SavedScreen() {
 						setSearchOpen(true);
 					}}
 					aria-label={
-						searchOpen || query.trim()
-							? "Hide saved search"
-							: "Search saved items"
+						searchOpen || query.trim() ? "Hide saved search" : "Search saved items"
 					}
 				>
 					<Search className="size-4" />
@@ -156,7 +154,10 @@ export function SavedScreen() {
 			) : null}
 			{searchOpen || query.trim() ? (
 				<section className="mb-3">
-					<div data-flat-control="true" className="flex items-center gap-3 rounded-[22px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
+					<div
+						data-flat-control="true"
+						className="flex items-center gap-3 rounded-[22px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5"
+					>
 						<Search className="size-4 shrink-0 text-secondary" />
 						<Input
 							id="saved-search-input"
@@ -180,21 +181,16 @@ export function SavedScreen() {
 			{items.isLoading ? (
 				<LoadingSkeleton />
 			) : items.error ? (
-				<ErrorState
-					message={items.error.message}
-					onRetry={() => items.refetch()}
-				/>
+				<ErrorState message={items.error.message} onRetry={() => items.refetch()} />
 			) : items.data?.length ? (
-				<div className="space-y-3">
+				<div className="space-y-3 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-3 min-[744px]:space-y-0">
 					{items.data.map((item) => (
 						<ItemCard key={item.id} item={item} searchQuery={deferredQuery} />
 					))}
 				</div>
 			) : (
 				<EmptyState
-					title={
-						deferredQuery.trim() ? "No saved matches" : "Nothing saved yet"
-					}
+					title={deferredQuery.trim() ? "No saved matches" : "Nothing saved yet"}
 					body={
 						deferredQuery.trim()
 							? "Try a different phrase, feed name, or keyword."
