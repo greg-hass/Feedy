@@ -266,7 +266,7 @@ select {
 }
 
 [data-timeline-controls-panel="true"] {
-  transform: translateY(calc(-1 * var(--mobile-header-offset, 0px)));
+  top: calc(var(--timeline-fixed-top, 95px) - var(--mobile-header-offset, 0px));
 }
 
 .surface {

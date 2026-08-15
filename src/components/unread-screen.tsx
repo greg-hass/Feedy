@@ -502,10 +502,9 @@ export function UnreadScreen() {
 				<section
 					ref={timelinePanelRef}
 					data-timeline-controls-panel="true"
-					className="fixed inset-x-0 z-30 will-change-transform"
+					className="fixed inset-x-0 z-30"
 					style={
 						{
-							top: `${timelineFixedTop}px`,
 							"--timeline-fixed-top": `${timelineFixedTop}px`,
 							"--timeline-panel-height": `${timelinePanelHeight}px`,
 							backgroundColor: "var(--app-bg)",

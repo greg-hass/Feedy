@@ -8,12 +8,11 @@ const MAX_OFFSET_HEADER_MULTIPLIER = 2.1;
 
 /**
  * Clamp the header offset to [0, headerHeight * MAX_OFFSET_HEADER_MULTIPLIER]
- * and snap it to a whole pixel.
+ * and snap it to a whole pixel for fixed-position top updates.
  *
- * Rationale: fractional translateY on the header's compositing layer
- * ("will-change-transform") makes iOS Safari rasterise text off the pixel
- * grid, which renders the header — and the fixed timeline panel that mirrors
- * this offset — blurry. Sub-pixel precision buys nothing visually.
+ * Rationale: fractional movement on a transformed fixed layer makes iOS
+ * Safari rasterise text off the pixel grid. Using integer top values keeps
+ * the header and the fixed timeline panel sharp.
  */
 export function computeHeaderOffset(
 	nextOffset: number,

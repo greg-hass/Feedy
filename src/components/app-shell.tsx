@@ -72,10 +72,10 @@ export function MobileShell({
 			<div className="mx-auto flex min-h-screen w-full max-w-md min-[744px]:max-w-5xl flex-col">
 				<header
 					data-mobile-shell-header="true"
-					className="fixed inset-x-0 top-0 z-40 will-change-transform"
+					className="fixed inset-x-0 z-40"
 					style={{
 						backgroundColor: "var(--app-bg)",
-						transform: `translateY(-${headerOffsetPx}px)`,
+						top: headerOffsetPx > 0 ? `-${headerOffsetPx}px` : 0,
 					}}
 				>
 					<div className="mx-auto max-w-md min-[744px]:max-w-5xl px-5 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
