@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
 		// route (timeline, feeds, reader, settings) inside the PWA.
 		scope: "/",
 		display: "standalone",
-    background_color: "#081114",
-    theme_color: "#081114",
+		background_color: "#0a0a0a",
+		theme_color: "#0a0a0a",
     orientation: "portrait",
     icons: [
       {
