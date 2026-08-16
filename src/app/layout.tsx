@@ -34,10 +34,8 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "Feedy",
-    // Keep the standalone PWA's system status-bar region opaque. iOS 27's
-    // Liquid Glass top-edge treatment can blur fixed page content when the
-    // PWA opts into a translucent status bar.
-    statusBarStyle: "black",
+    // Let the app background continue behind the standalone PWA status bar.
+    statusBarStyle: "black-translucent",
   },
 };
 
