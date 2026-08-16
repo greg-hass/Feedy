@@ -68,7 +68,7 @@ export function MobileShell({
 	}, [accent]);
 
 	return (
-		<div className="app-shell screen-enter">
+		<div className="app-shell">
 			<div className="mx-auto flex min-h-screen w-full max-w-md min-[744px]:max-w-5xl flex-col">
 				<header
 					data-mobile-shell-header="true"

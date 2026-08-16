@@ -31,4 +31,9 @@ describe("Theme contract", () => {
 	it("exposes aria-current on the active nav link", () => {
 		assert.match(shellSource, /aria-current=\{active \? "page" : undefined\}/);
 	});
+
+	it("does not transform the app shell containing the fixed mobile header", () => {
+		assert.match(shellSource, /className="app-shell"/);
+		assert.doesNotMatch(shellSource, /className="app-shell[^"]*screen-enter/);
+	});
 });

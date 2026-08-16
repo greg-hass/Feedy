@@ -539,10 +539,6 @@ select {
   animation: screen-fade 240ms ease-out;
 }
 
-.screen-enter {
-  animation: screen-enter 220ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 .bookmark-pop {
   animation: bookmark-pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -555,17 +551,6 @@ select {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes screen-enter {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.992);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
@@ -627,7 +612,6 @@ select {
 
 @media (prefers-reduced-motion: reduce) {
   .screen-fade,
-  .screen-enter,
   .back-button-attention {
     animation: none;
   }
