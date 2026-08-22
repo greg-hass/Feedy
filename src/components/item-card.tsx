@@ -111,10 +111,7 @@ export const ItemCard = memo(function ItemCard({
 		// "Safari" article view: mark read immediately and hand off to the
 		// original site. Same-window navigation lets iOS open Safari or the
 		// native app without leaving a blank in-app browser window behind.
-		if (
-			me.data?.user.settings.readerOpenOriginalByDefault &&
-			item.canonicalUrl
-		) {
+		if (me.data?.user.settings.readerOpenOriginalByDefault && item.canonicalUrl) {
 			if (!item.read) {
 				updateState.mutate({ read: true });
 			}
@@ -228,33 +225,47 @@ export const ItemCard = memo(function ItemCard({
 				(isYouTube && item.youtubeVideoId ? (
 					<div className="relative overflow-hidden">
 						{playInline ? (
-							<>
-								<YouTubeInlinePlayer
-									itemId={item.id}
-									videoId={item.youtubeVideoId}
-									title={itemTitle}
-									startSeconds={resumeSeconds}
-									onReady={() => setInlinePlayerLoading(false)}
-									onProgressChange={(seconds) => {
-										setResumeSeconds(seconds);
-									}}
-									onMeaningfulPlayback={() => {
-										if (!item.read) {
-											updateState.mutate({ read: true });
-										}
-									}}
+							<div
+								className={`relative w-full bg-surface-muted ${youtubeThumbnailAspectClass}`}
+							>
+								{/* The thumbnail stays visible until the player is ready, so
+								 * the click never reveals a loading placeholder. */}
+								<Image
+									src={thumbnailUrl}
+									alt={itemTitle}
+									fill
+									sizes="(max-width: 448px) 100vw, 448px"
+									unoptimized
+									className={`h-full w-full object-cover ${
+										imageLoaded ? "opacity-100" : "opacity-0"
+									}`}
+									loading="lazy"
 								/>
-								{inlinePlayerLoading ? (
-									<div className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--surface)_10%,var(--app-bg)_90%)]">
-										<div className="flex flex-col items-center gap-3 rounded-[20px] border border-[var(--border)] bg-[var(--surface)]/90 px-4 py-3 text-center text-[var(--text-primary)] backdrop-blur-sm">
-											<div className="h-10 w-10 animate-pulse rounded-full bg-[var(--surface-muted)]" />
-											<p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-												Loading player...
-											</p>
-										</div>
-									</div>
-								) : null}
-							</>
+								{!imageLoaded && <div className="absolute inset-0 shimmer" />}
+								<div
+									className={`absolute inset-0 z-10 ${
+										inlinePlayerLoading ? "invisible" : ""
+									}`}
+								>
+									<YouTubeInlinePlayer
+										itemId={item.id}
+										videoId={item.youtubeVideoId}
+										title={itemTitle}
+										variant="mount"
+										className="h-full w-full"
+										startSeconds={resumeSeconds}
+										onReady={() => setInlinePlayerLoading(false)}
+										onProgressChange={(seconds) => {
+											setResumeSeconds(seconds);
+										}}
+										onMeaningfulPlayback={() => {
+											if (!item.read) {
+												updateState.mutate({ read: true });
+											}
+										}}
+									/>
+								</div>
+							</div>
 						) : (
 							<button
 								type="button"
