@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	Check,
 	ChevronRight,
+	FolderInput,
 	FolderOpen,
 	MoreHorizontal,
 	Pause,
@@ -110,9 +111,24 @@ export function FeedRow({
 }) {
 	const [showEdit, setShowEdit] = useState(false);
 	const [showHealth, setShowHealth] = useState(false);
+	const [showMove, setShowMove] = useState(false);
 	const queryClient = useQueryClient();
 	const health = getHealthPresentation(feed.healthStatus);
 	const pauseLabel = getFeedPauseActionLabel(feed.excludeFromTimeline);
+
+	const moveFeed = useMutation({
+		mutationFn: (folderId: string | null) =>
+			api(`/api/feeds/${feed.id}`, {
+				method: "PATCH",
+				body: JSON.stringify({ folderId }),
+			}),
+		onSuccess: async () => {
+			setShowMove(false);
+			await queryClient.invalidateQueries({ queryKey: ["me"] });
+		},
+	});
+	const me = queryClient.getQueryData<MeResponse>(["me"]);
+	const moveFolders = me?.navigation.folders ?? [];
 
 	const deleteFeed = useMutation({
 		mutationFn: () => api(`/api/feeds/${feed.id}`, { method: "DELETE" }),
@@ -125,8 +141,7 @@ export function FeedRow({
 	const reorder = useMutation({
 		mutationFn: (direction: "up" | "down") => {
 			const targetIndex = direction === "up" ? index - 1 : index + 1;
-			if (targetIndex < 0 || targetIndex >= feeds.length)
-				return Promise.resolve();
+			if (targetIndex < 0 || targetIndex >= feeds.length) return Promise.resolve();
 			const target = feeds[targetIndex];
 			return api(`/api/feeds/${feed.id}`, {
 				method: "PATCH",
@@ -153,7 +168,7 @@ export function FeedRow({
 	return (
 		<>
 			<SwipeRow
-				revealWidth={196}
+				revealWidth={260}
 				actions={
 					<>
 						<button
@@ -170,6 +185,16 @@ export function FeedRow({
 							) : (
 								<Pause className="size-4" />
 							)}
+						</button>
+						<button
+							type="button"
+							onClick={() => setShowMove(true)}
+							data-flat-control="true"
+							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--accent)]/12 text-[var(--accent)]"
+							aria-label={`Move ${feed.label || feed.title} to a folder`}
+							title="Move to folder"
+						>
+							<FolderInput className="size-4" />
 						</button>
 						<button
 							onClick={() => {
@@ -240,6 +265,17 @@ export function FeedRow({
 					onClose={() => setShowEdit(false)}
 					onDelete={() => deleteFeed.mutate()}
 					onReorder={(direction) => reorder.mutate(direction)}
+				/>
+			)}
+			{showMove && (
+				<BulkMoveSheet
+					folders={moveFolders}
+					selectedCount={1}
+					title="Move feed"
+					subtitle={feed.label || feed.title}
+					onClose={() => setShowMove(false)}
+					onMove={(folderId) => moveFeed.mutate(folderId)}
+					isPending={moveFeed.isPending}
 				/>
 			)}
 			{showHealth && (
@@ -354,11 +390,11 @@ export function SelectableFeedRow({
 			>
 				<Check className="size-3.5" />
 			</div>
-				<FeedAvatar
-					feedId={feed.id}
-					title={feed.label || feed.title}
-					iconHintUrl={feed.iconHintUrl}
-				/>
+			<FeedAvatar
+				feedId={feed.id}
+				title={feed.label || feed.title}
+				iconHintUrl={feed.iconHintUrl}
+			/>
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center justify-between gap-2">
 					<h3 className="truncate text-[15px] font-semibold tracking-[-0.02em]">
@@ -418,7 +454,10 @@ export function SelectableFolderRow({
 			>
 				<Check className="size-3.5" />
 			</div>
-			<div data-flat-icon="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+			<div
+				data-flat-icon="true"
+				className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
+			>
 				<FolderOpen className="size-5" />
 			</div>
 			<div className="min-w-0 flex-1">
@@ -469,17 +508,24 @@ export function BulkMoveSheet({
 	onClose,
 	onMove,
 	isPending,
+	title,
+	subtitle,
 }: {
 	folders: NavFolder[];
 	selectedCount: number;
 	onClose: () => void;
 	onMove: (folderId: string | null) => void;
 	isPending: boolean;
+	title?: string;
+	subtitle?: string;
 }) {
 	return (
 		<Sheet
-			title="Move selected feeds"
-			subtitle={`Choose where to place ${selectedCount} selected ${selectedCount === 1 ? "feed" : "feeds"}.`}
+			title={title ?? "Move selected feeds"}
+			subtitle={
+				subtitle ??
+				`Choose where to place ${selectedCount} selected ${selectedCount === 1 ? "feed" : "feeds"}.`
+			}
 			onClose={onClose}
 			panelClassName="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
 		>
@@ -502,19 +548,18 @@ export function BulkMoveSheet({
 					</span>
 				</button>
 				{folders.map((folder) => (
-						<button
-							key={folder.id}
-							type="button"
-							onClick={() => onMove(folder.id)}
-							disabled={isPending}
-							data-flat-surface="true"
+					<button
+						key={folder.id}
+						type="button"
+						onClick={() => onMove(folder.id)}
+						disabled={isPending}
+						data-flat-surface="true"
 						className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
 					>
 						<div className="min-w-0">
 							<p className="truncate text-sm font-semibold">{folder.title}</p>
 							<p className="mt-1 text-xs text-secondary">
-								{folder.counts.feedCount} feeds · {folder.counts.unreadCount}{" "}
-								unread
+								{folder.counts.feedCount} feeds · {folder.counts.unreadCount} unread
 							</p>
 						</div>
 						<span className="text-[10px] uppercase tracking-[0.16em] text-secondary">
@@ -537,8 +582,7 @@ function FeedHealthSheet({
 	const health = getHealthPresentation(feed.healthStatus);
 	const queryClient = useQueryClient();
 	const me = queryClient.getQueryData<MeResponse>(["me"]);
-	const effectiveRefreshMinutes =
-		me?.user.settings.refreshIntervalMinutes ?? 15;
+	const effectiveRefreshMinutes = me?.user.settings.refreshIntervalMinutes ?? 15;
 
 	return (
 		<Sheet
@@ -547,7 +591,10 @@ function FeedHealthSheet({
 			onClose={onClose}
 			panelClassName="max-h-[min(72vh,640px)] w-full max-w-md overflow-y-auto rounded-[28px] border border-subtle bg-[var(--surface)] p-4 pb-[calc(env(safe-area-inset-bottom)+18px)] shadow-[0_-18px_48px_rgba(0,0,0,0.34)]"
 		>
-			<div data-flat-surface="true" className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4">
+			<div
+				data-flat-surface="true"
+				className="mt-4 rounded-[22px] bg-[var(--surface-strong)] p-4"
+			>
 				<div className="flex items-center justify-between gap-3">
 					<div>
 						<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
@@ -567,7 +614,10 @@ function FeedHealthSheet({
 			</div>
 
 			<div className="mt-3 space-y-2">
-				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div
+					data-flat-surface="true"
+					className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3"
+				>
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Refresh cadence
 					</p>
@@ -579,18 +629,22 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div
+					data-flat-surface="true"
+					className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3"
+				>
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last refresh
 					</p>
 					<p className="mt-1 text-sm text-[var(--text-primary)]">
-						{feed.lastRefreshedAt
-							? relativeTime(feed.lastRefreshedAt)
-							: "Never"}
+						{feed.lastRefreshedAt ? relativeTime(feed.lastRefreshedAt) : "Never"}
 					</p>
 				</div>
 
-				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div
+					data-flat-surface="true"
+					className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3"
+				>
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last successful refresh
 					</p>
@@ -601,7 +655,10 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div
+					data-flat-surface="true"
+					className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3"
+				>
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Last failure
 					</p>
@@ -612,7 +669,10 @@ function FeedHealthSheet({
 					</p>
 				</div>
 
-				<div data-flat-surface="true" className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3">
+				<div
+					data-flat-surface="true"
+					className="rounded-[18px] border border-subtle bg-[var(--surface-muted)] px-3.5 py-3"
+				>
 					<p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
 						Recent refresh speed
 					</p>
@@ -693,16 +753,16 @@ export function FolderRow({
 								}
 							}}
 							disabled={deleteFolder.isPending}
-						data-flat-control="true"
-						className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
+							data-flat-control="true"
+							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--danger)]/12 text-[var(--danger)] disabled:opacity-60"
 							aria-label={`Delete folder ${folder.title}`}
 						>
 							<Trash2 className="size-4" />
 						</button>
 						<button
 							onClick={() => setShowEdit(true)}
-						data-flat-control="true"
-						className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
+							data-flat-control="true"
+							className="flex h-[calc(100%-10px)] w-14 items-center justify-center rounded-[18px] bg-[var(--surface-muted)] text-secondary"
 							aria-label={`Edit folder ${folder.title}`}
 						>
 							<MoreHorizontal className="size-4" />
@@ -718,7 +778,10 @@ export function FolderRow({
 					style={{ contentVisibility: "auto", containIntrinsicSize: "86px" }}
 				>
 					<div className="flex min-w-0 items-center gap-3">
-						<div data-flat-icon="true" className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]">
+						<div
+							data-flat-icon="true"
+							className="flex size-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"
+						>
 							<FolderOpen className="size-5" />
 						</div>
 						<div className="min-w-0">

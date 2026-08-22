@@ -38,12 +38,26 @@ describe("Feeds UI contracts", () => {
 		assert.match(librarySource, /aria-label=\{`\$\{pauseLabel\}/);
 	});
 
-	it("reveals the full three-action feed toolbar", () => {
-		assert.match(librarySource, /<SwipeRow\s+revealWidth=\{196\}/);
+	it("reveals the full four-action feed toolbar", () => {
+		assert.match(librarySource, /<SwipeRow\s+revealWidth=\{260\}/);
 		assert.match(
 			librarySource,
 			/transform: open \? `translateX\(-\$\{revealWidth\}px\)` : undefined/,
 		);
+		// A dedicated move-to-folder action keeps folder changes out of the
+		// edit-feed sheet: swipe → folder icon → pick folder → done.
+		assert.match(
+			librarySource,
+			/Move \$\{feed\.label \|\| feed\.title\} to a folder/,
+		);
+	});
+
+	it("keeps bulk-selection actions in the fixed bottom bar, not the header", () => {
+		// The Move/Cancel controls live in a fixed bar above the nav so they
+		// stay visible while scrolling and never fight the title row for space.
+		assert.match(feedsScreenSource, /data-flat-selection-bar="true"/);
+		assert.match(feedsScreenSource, /\{selectedCount\} selected/);
+		assert.doesNotMatch(feedsScreenSource, /Move \{selectedCount/);
 	});
 
 	it("marks paused feeds without relying on color alone", () => {
@@ -92,7 +106,10 @@ describe("Feeds UI contracts", () => {
 		assert.match(feedsScreenSource, /storageKey: "feedy-feeds-scroll"/);
 		assert.match(folderDetailSource, /storageKey: `feedy-folder-scroll:/);
 		assert.match(feedsScreenScrollSource, /frozenStorageKeys\.has\(storageKey\)/);
-		assert.match(librarySource, /freezeListScrollPosition\("feedy-feeds-scroll"\)/);
+		assert.match(
+			librarySource,
+			/freezeListScrollPosition\("feedy-feeds-scroll"\)/,
+		);
 	});
 
 	it("opens New Folder in a fixed sheet instead of inline flow", () => {

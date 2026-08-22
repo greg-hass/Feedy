@@ -124,9 +124,7 @@ export function FeedsScreen() {
 	);
 	const effectiveSelectedFeedIds = useMemo(
 		() =>
-			selectedFeedIds.filter((id) =>
-				matchingFeeds.some((feed) => feed.id === id),
-			),
+			selectedFeedIds.filter((id) => matchingFeeds.some((feed) => feed.id === id)),
 		[matchingFeeds, selectedFeedIds],
 	);
 	const selectedSet = useMemo(
@@ -170,22 +168,16 @@ export function FeedsScreen() {
 									formatSourceType(feed.sourceType),
 								]
 									.filter(Boolean)
-									.some((value) =>
-										value!.toLowerCase().includes(normalizedQuery),
-									),
+									.some((value) => value!.toLowerCase().includes(normalizedQuery)),
 						)
 						.sort(compareFeedLabels);
-					const folderMatches = folder.title
-						.toLowerCase()
-						.includes(normalizedQuery);
+					const folderMatches = folder.title.toLowerCase().includes(normalizedQuery);
 
 					return {
 						...folder,
 						matchingFeeds: matchingFolderFeeds,
 						visible:
-							!normalizedQuery ||
-							folderMatches ||
-							matchingFolderFeeds.length > 0,
+							!normalizedQuery || folderMatches || matchingFolderFeeds.length > 0,
 					};
 				})
 				.filter((folder) => folder.visible),
@@ -230,73 +222,47 @@ export function FeedsScreen() {
 			title="Feeds"
 			actions={
 				<div className="flex h-10 items-center gap-2">
-					{selectionMode ? (
-						<>
-							<button
-								onClick={() => {
-									setSelectionMode(false);
-									setSelectedFeedIds([]);
-									setShowBulkMove(false);
-								}}
-								className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-dim)] px-3 text-xs font-semibold text-[var(--accent)] transition duration-200"
-							>
-								<X className="size-4" />
-								Cancel
-							</button>
-							<button
-								onClick={() => setShowBulkMove(true)}
-								disabled={!selectedCount}
-								className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-dim)] px-3 text-xs font-semibold text-[var(--accent)] transition duration-200 disabled:pointer-events-none disabled:opacity-50"
-							>
-								<FolderInput className="size-4" />
-								Move {selectedCount ? `(${selectedCount})` : ""}
-							</button>
-						</>
-					) : (
-						<>
-							<button
-								onClick={() => setSelectionMode(true)}
-								className="inline-flex h-10 items-center gap-2 rounded-xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
-							>
-								<CheckSquare className="size-4" />
-								Select
-							</button>
-							<IconButton
-								variant={showAddFolder ? "active" : "default"}
-								onClick={() => setShowAddFolder((current) => !current)}
-								aria-label="Create folder"
-								aria-pressed={showAddFolder}
-							>
-								<FolderPlus className="size-4" />
-							</IconButton>
-							<IconButton
-								variant={showAddFeed ? "active" : "default"}
-								onClick={() => setShowAddFeed((current) => !current)}
-								aria-label="Add feed"
-								aria-pressed={showAddFeed}
-							>
-								<Plus className="size-4" />
-							</IconButton>
-						</>
+					{!selectionMode && (
+						<button
+							onClick={() => setSelectionMode(true)}
+							className="inline-flex h-10 items-center gap-2 rounded-xl border border-subtle bg-[var(--surface)] px-3 text-xs font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
+						>
+							<CheckSquare className="size-4" />
+							Select
+						</button>
 					)}
+					<IconButton
+						variant={showAddFolder ? "active" : "default"}
+						onClick={() => setShowAddFolder((current) => !current)}
+						aria-label="Create folder"
+						aria-pressed={showAddFolder}
+					>
+						<FolderPlus className="size-4" />
+					</IconButton>
+					<IconButton
+						variant={showAddFeed ? "active" : "default"}
+						onClick={() => setShowAddFeed((current) => !current)}
+						aria-label="Add feed"
+						aria-pressed={showAddFeed}
+					>
+						<Plus className="size-4" />
+					</IconButton>
 				</div>
 			}
 		>
-			{showAddFolder && (
-				<AddFolderSheet onClose={() => setShowAddFolder(false)} />
-			)}
+			{showAddFolder && <AddFolderSheet onClose={() => setShowAddFolder(false)} />}
 
 			{showAddFeed && (
 				<div className="mb-3">
-					<AddFeedForm
-						folders={folders}
-						onClose={() => setShowAddFeed(false)}
-					/>
+					<AddFeedForm folders={folders} onClose={() => setShowAddFeed(false)} />
 				</div>
 			)}
 
 			<section className="panel mb-4 p-3">
-				<div data-flat-control="true" className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5">
+				<div
+					data-flat-control="true"
+					className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/20 bg-[var(--surface-strong)] px-3.5"
+				>
 					<Search className="size-4 shrink-0 text-secondary" />
 					<Input
 						value={query}
@@ -334,9 +300,7 @@ export function FeedsScreen() {
 								data-flat-surface="true"
 								className="rounded-2xl bg-[var(--surface-strong)] px-3 py-2.5 text-center"
 							>
-								<p className={`text-sm font-semibold ${item.tone}`}>
-									{item.value}
-								</p>
+								<p className={`text-sm font-semibold ${item.tone}`}>{item.value}</p>
 								<p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-secondary">
 									{item.label}
 								</p>
@@ -352,87 +316,80 @@ export function FeedsScreen() {
 					hidden={!selectionMode}
 					inert={!selectionMode ? true : undefined}
 				>
-						{visibleFolders.length > 0 ? (
-							<section>
-								<SectionLabel
-									eyebrow="Library"
-									title="Folders"
-									meta={`${visibleFolders.length} groups`}
-								/>
-								<div className="space-y-2">
-									{visibleFolders.map((folder) => {
-										const folderFeedIds = folder.matchingFeeds.map(
-											(feed) => feed.id,
-										);
-										const folderSelected =
-											folderFeedIds.length > 0 &&
-											folderFeedIds.every((id) => selectedSet.has(id));
+					{visibleFolders.length > 0 ? (
+						<section>
+							<SectionLabel
+								eyebrow="Library"
+								title="Folders"
+								meta={`${visibleFolders.length} groups`}
+							/>
+							<div className="space-y-2">
+								{visibleFolders.map((folder) => {
+									const folderFeedIds = folder.matchingFeeds.map((feed) => feed.id);
+									const folderSelected =
+										folderFeedIds.length > 0 &&
+										folderFeedIds.every((id) => selectedSet.has(id));
 
-										return (
-											<SelectableFolderRow
-												key={folder.id}
-												folder={folder}
-												selected={folderSelected}
-												selectedCount={
-													folderFeedIds.filter((id) => selectedSet.has(id))
-														.length
-												}
-												onToggle={() =>
-													setSelectedFeedIds((current) => {
-														const currentSet = new Set(current);
-														if (folderSelected) {
-															folderFeedIds.forEach((id) =>
-																currentSet.delete(id),
-															);
-														} else {
-															folderFeedIds.forEach((id) => currentSet.add(id));
-														}
-														return Array.from(currentSet);
-													})
-												}
-											/>
-										);
-									})}
-								</div>
-							</section>
-						) : null}
-
-						{looseSelectableFeeds.length > 0 ? (
-							<section>
-								<SectionLabel
-									eyebrow={
-										visibleFolders.length > 0 ? "Loose feeds" : "Library"
-									}
-									title={visibleFolders.length > 0 ? "Uncategorized" : "Feeds"}
-									meta={`${looseSelectableFeeds.length} feeds`}
-								/>
-								<div className="space-y-2">
-									{looseSelectableFeeds.map((feed) => (
-										<SelectableFeedRow
-											key={feed.id}
-											feed={feed}
-											selected={selectedSet.has(feed.id)}
-											folderTitle={null}
+									return (
+										<SelectableFolderRow
+											key={folder.id}
+											folder={folder}
+											selected={folderSelected}
+											selectedCount={
+												folderFeedIds.filter((id) => selectedSet.has(id)).length
+											}
 											onToggle={() =>
-												setSelectedFeedIds((current) =>
-													current.includes(feed.id)
-														? current.filter((id) => id !== feed.id)
-														: [...current, feed.id],
-												)
+												setSelectedFeedIds((current) => {
+													const currentSet = new Set(current);
+													if (folderSelected) {
+														folderFeedIds.forEach((id) => currentSet.delete(id));
+													} else {
+														folderFeedIds.forEach((id) => currentSet.add(id));
+													}
+													return Array.from(currentSet);
+												})
 											}
 										/>
-									))}
-								</div>
-							</section>
-						) : null}
+									);
+								})}
+							</div>
+						</section>
+					) : null}
 
-						{!visibleFolders.length && !looseSelectableFeeds.length && (
-							<EmptyState
-								title="No feeds in this view"
-								body="Try another search or filter, then select folders or loose feeds."
-								icon={<Rss className="size-6" />}
+					{looseSelectableFeeds.length > 0 ? (
+						<section>
+							<SectionLabel
+								eyebrow={visibleFolders.length > 0 ? "Loose feeds" : "Library"}
+								title={visibleFolders.length > 0 ? "Uncategorized" : "Feeds"}
+								meta={`${looseSelectableFeeds.length} feeds`}
 							/>
-						)}
+							<div className="space-y-2">
+								{looseSelectableFeeds.map((feed) => (
+									<SelectableFeedRow
+										key={feed.id}
+										feed={feed}
+										selected={selectedSet.has(feed.id)}
+										folderTitle={null}
+										onToggle={() =>
+											setSelectedFeedIds((current) =>
+												current.includes(feed.id)
+													? current.filter((id) => id !== feed.id)
+													: [...current, feed.id],
+											)
+										}
+									/>
+								))}
+							</div>
+						</section>
+					) : null}
+
+					{!visibleFolders.length && !looseSelectableFeeds.length && (
+						<EmptyState
+							title="No feeds in this view"
+							body="Try another search or filter, then select folders or loose feeds."
+							icon={<Rss className="size-6" />}
+						/>
+					)}
 				</div>
 				<div
 					className="space-y-4"
@@ -448,12 +405,7 @@ export function FeedsScreen() {
 							/>
 							<div className="space-y-2">
 								{pinnedFeeds.map((feed, index) => (
-									<FeedRow
-										key={feed.id}
-										feed={feed}
-										feeds={pinnedFeeds}
-										index={index}
-									/>
+									<FeedRow key={feed.id} feed={feed} feeds={pinnedFeeds} index={index} />
 								))}
 							</div>
 						</section>
@@ -520,6 +472,51 @@ export function FeedsScreen() {
 						)}
 				</div>
 			</>
+
+			{selectionMode ? <div aria-hidden className="h-44" /> : null}
+
+			{selectionMode ? (
+				<div
+					data-flat-selection-bar="true"
+					className="fixed inset-x-0 z-40"
+					style={{ bottom: "calc(env(safe-area-inset-bottom) + 78px)" }}
+				>
+					<div className="mx-auto w-full max-w-md px-5">
+						<div
+							className="flex w-full items-center justify-between gap-3 rounded-[34px] border px-3 py-2 backdrop-blur-2xl"
+							style={{
+								background: "var(--glass-bg)",
+								borderColor: "var(--glass-border)",
+								boxShadow: "var(--glass-shadow)",
+								WebkitBackdropFilter: "blur(20px) saturate(180%)",
+							}}
+						>
+							<button
+								onClick={() => {
+									setSelectionMode(false);
+									setSelectedFeedIds([]);
+									setShowBulkMove(false);
+								}}
+								className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-xs font-semibold text-secondary transition duration-200 active:bg-[var(--surface-muted)]"
+							>
+								<X className="size-4" />
+								Cancel
+							</button>
+							<p className="min-w-0 flex-1 truncate text-center text-xs font-semibold text-secondary">
+								{selectedCount} selected
+							</p>
+							<button
+								onClick={() => setShowBulkMove(true)}
+								disabled={!selectedCount}
+								className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_24px_rgba(var(--accent-rgb),0.28)] transition duration-200 disabled:pointer-events-none disabled:opacity-50"
+							>
+								<FolderInput className="size-4" />
+								Move
+							</button>
+						</div>
+					</div>
+				</div>
+			) : null}
 
 			{showBulkMove ? (
 				<BulkMoveSheet
