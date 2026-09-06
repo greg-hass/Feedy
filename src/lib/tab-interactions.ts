@@ -1,7 +1,3 @@
-export function isActiveTabTap(currentPathname: string, targetHref: string) {
-  return currentPathname === targetHref;
-}
-
 export function vibrateIfSupported(
   navigatorLike: { vibrate?: (pattern: number | number[]) => boolean } | undefined,
   durationMs: number,

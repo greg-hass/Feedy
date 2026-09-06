@@ -4,7 +4,7 @@ import { hash } from "bcryptjs";
 
 import {
   authenticate,
-  loadUserForAuthentication,
+  loadPrimaryUser,
   repairSingleUserDatabase,
   syncSingleUserFromEnv,
   validateSessionPayload,
@@ -28,7 +28,7 @@ describe("authentication helpers", () => {
       },
     } as const;
 
-    const user = await loadUserForAuthentication(client as never);
+    const user = await loadPrimaryUser(client as never);
 
     assert.equal(user?.id, "user-1");
     assert.equal(updateCalled, false);

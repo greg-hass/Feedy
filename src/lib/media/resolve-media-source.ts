@@ -33,20 +33,13 @@ async function detectContentType(url: string) {
   }
 }
 
-async function resolveYouTubeSource(videoId: string): Promise<ResolvedFallbackSource> {
-  return {
-    kind: "youtube",
-    youtubeVideoId: videoId,
-  };
-}
-
 export async function resolvePlayableMediaSource(input: {
   mediaUrl: string | null;
   youtubeVideoId: string | null;
   title: string;
 }): Promise<ResolvedMediaSource> {
   if (input.youtubeVideoId) {
-    return resolveYouTubeSource(input.youtubeVideoId);
+    return { kind: "youtube", youtubeVideoId: input.youtubeVideoId };
   }
 
   if (input.mediaUrl) {

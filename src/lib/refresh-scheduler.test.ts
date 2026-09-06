@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { selectDueFeedIds, selectDueFeeds } from "@/lib/refresh-scheduler";
+import { selectDueFeeds } from "@/lib/refresh-scheduler";
 
-describe("selectDueFeedIds", () => {
+describe("selectDueFeeds", () => {
 	it("uses the Settings cadence for every feed", () => {
 		const now = new Date("2026-06-12T12:00:00.000Z").getTime();
 
 		assert.deepEqual(
-			selectDueFeedIds({
+			selectDueFeeds({
 				feeds: [
 					{
 						id: "due",
@@ -24,7 +24,7 @@ describe("selectDueFeedIds", () => {
 				now,
 				intervalMinutes: 15,
 				backlog: 0,
-			}),
+			}).dueFeedIds,
 			["due"],
 		);
 	});
@@ -33,7 +33,7 @@ describe("selectDueFeedIds", () => {
 		const now = new Date("2026-06-12T12:00:00.000Z").getTime();
 
 		assert.deepEqual(
-			selectDueFeedIds({
+			selectDueFeeds({
 				feeds: [
 					{
 						id: "failed-recently",
@@ -49,7 +49,7 @@ describe("selectDueFeedIds", () => {
 				now,
 				intervalMinutes: 15,
 				backlog: 0,
-			}),
+			}).dueFeedIds,
 			["failed-earlier"],
 		);
 	});
@@ -58,7 +58,7 @@ describe("selectDueFeedIds", () => {
 		const now = new Date("2026-06-12T12:00:00.000Z").getTime();
 
 		assert.deepEqual(
-			selectDueFeedIds({
+			selectDueFeeds({
 				feeds: [
 					{
 						id: "recent-failure",
@@ -74,7 +74,7 @@ describe("selectDueFeedIds", () => {
 				now,
 				intervalMinutes: 15,
 				backlog: 0,
-			}),
+			}).dueFeedIds,
 			["old-failure"],
 		);
 	});
@@ -83,7 +83,7 @@ describe("selectDueFeedIds", () => {
 		const now = new Date("2026-06-12T12:00:00.000Z").getTime();
 
 		assert.deepEqual(
-			selectDueFeedIds({
+			selectDueFeeds({
 				feeds: [
 					{
 						id: "recent-success",
@@ -99,19 +99,19 @@ describe("selectDueFeedIds", () => {
 				now,
 				intervalMinutes: 15,
 				backlog: 0,
-			}),
+			}).dueFeedIds,
 			["old-success"],
 		);
 	});
 
 	it("caps selected feeds so scheduled refresh cannot overfill the queue", () => {
 		assert.deepEqual(
-			selectDueFeedIds({
+			selectDueFeeds({
 				feeds: [{ id: "one", lastRefreshedAt: null, lastFailureAt: null }],
 				now: Date.now(),
 				intervalMinutes: 15,
 				backlog: 100,
-			}),
+			}).dueFeedIds,
 			[],
 		);
 	});

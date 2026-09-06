@@ -58,11 +58,3 @@ export function evaluateFeedMuteRules(rules: FeedMuteRules, item: ParsedFeedItem
     autoMarkRead: matched && rules.autoMarkRead,
   };
 }
-
-export function splitMutePatterns(input: string) {
-  return input
-    .split("\n")
-    .flatMap((line) => line.split(","))
-    .map((pattern) => pattern.trim())
-    .filter(Boolean);
-}

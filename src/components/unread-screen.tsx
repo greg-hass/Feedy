@@ -158,7 +158,7 @@ export function UnreadScreen() {
 	);
 	const refetchItems = items.refetch;
 	const { hasNextPage, isFetchingNextPage, fetchNextPage } = items;
-	const refresh = useRefreshController("/api/refresh/all", ["items"]);
+	const refresh = useRefreshController("/api/refresh/all", "items");
 	const queryClient = useQueryClient();
 
 	const scrollStorageKey = `feedy-timeline-scroll:${stateFilter}:${sourceFilter}`;

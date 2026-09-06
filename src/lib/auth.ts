@@ -175,15 +175,6 @@ export async function loadPrimaryUser(client: SingleUserClient = prisma) {
 	});
 }
 
-export async function loadUserForAuthentication(
-	client: SingleUserClient = prisma,
-) {
-	return client.user.findFirst({
-		orderBy: { createdAt: "asc" },
-		include: { settings: true },
-	});
-}
-
 async function signSession(payload: SessionPayload) {
 	return new SignJWT(payload)
 		.setProtectedHeader({ alg: "HS256" })

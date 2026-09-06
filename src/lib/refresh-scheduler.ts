@@ -45,9 +45,3 @@ export function selectDueFeeds({
 
 	return { dueFeedIds, capped };
 }
-
-export function selectDueFeedIds(
-	options: Parameters<typeof selectDueFeeds>[0],
-) {
-	return selectDueFeeds(options).dueFeedIds;
-}

@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCcw } from "lucide-react";
 
-import { IconButton } from "@/components/ui/icon-button";
 import { api } from "@/lib/client";
 import { calculateRefreshProgress } from "@/lib/refresh-progress";
 
-export function useRefreshController(endpoint: string, invalidate: string[]) {
+export function useRefreshController(endpoint: string, invalidate: string) {
   const queryClient = useQueryClient();
   const [trackedBatchId, setTrackedBatchId] = useState<string | null>(null);
   const [batchSummary, setBatchSummary] = useState<{
@@ -29,7 +27,8 @@ export function useRefreshController(endpoint: string, invalidate: string[]) {
         total: number;
       }>(`/api/refresh/status?batchId=${encodeURIComponent(trackedBatchId ?? "")}`),
     enabled: !!trackedBatchId,
-    refetchInterval: trackedBatchId ? 1500 : false,
+    refetchInterval: (query) =>
+      trackedBatchId && query.state.data?.active !== 0 ? 1500 : false,
   });
 
   const mutation = useMutation({
@@ -52,8 +51,8 @@ export function useRefreshController(endpoint: string, invalidate: string[]) {
             }
           : null,
       );
-      await queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
       if ((data.queued ?? 0) === 0) {
+        await queryClient.refetchQueries({ queryKey: [invalidate], type: "active" });
         window.setTimeout(() => setBatchSummary(null), 1800);
       }
     },
@@ -63,27 +62,22 @@ export function useRefreshController(endpoint: string, invalidate: string[]) {
     },
   });
 
+  const batchIsComplete = !!trackedBatchId && refreshStatus.data?.active === 0;
+
   useEffect(() => {
-    if (!trackedBatchId) {
+    if (!batchIsComplete) {
       return;
     }
 
-    const status = refreshStatus.data;
-    if (!status) {
-      return;
-    }
+    // Refresh loaded pages once after the batch settles, not on each poll/render.
+    void queryClient.refetchQueries({ queryKey: [invalidate], type: "active" });
+    const timeout = window.setTimeout(() => {
+      setTrackedBatchId(null);
+      setBatchSummary(null);
+    }, 1500);
 
-    void queryClient.refetchQueries({ queryKey: invalidate, type: "active" });
-
-    if (status.active === 0) {
-      const timeout = window.setTimeout(() => {
-        setTrackedBatchId(null);
-        setBatchSummary(null);
-      }, 1500);
-
-      return () => window.clearTimeout(timeout);
-    }
-  }, [invalidate, queryClient, refreshStatus.data, trackedBatchId]);
+    return () => window.clearTimeout(timeout);
+  }, [batchIsComplete, invalidate, queryClient]);
 
   const phase: "idle" | "queuing" | "refreshing" | "done" = (() => {
     if (!trackedBatchId && !mutation.isPending && batchSummary) return "done";
@@ -110,82 +104,3 @@ export function useRefreshController(endpoint: string, invalidate: string[]) {
 }
 
 export type RefreshController = ReturnType<typeof useRefreshController>;
-
-export function RefreshButton({
-  controller,
-  endpoint,
-  invalidate,
-  onStart,
-}: {
-  controller?: RefreshController;
-  endpoint?: string;
-  invalidate?: string[];
-  onStart?: () => void;
-}) {
-  const fallbackController = useRefreshController(endpoint ?? "/api/refresh/all", invalidate ?? ["items"]);
-  const refresh = controller || fallbackController;
-
-  return (
-    <>
-      <IconButton
-        variant={refresh.active ? "active" : "default"}
-        onClick={() => {
-          onStart?.();
-          refresh.start();
-        }}
-        disabled={refresh.active}
-        aria-label={refresh.active ? "Refreshing feeds" : "Refresh feeds"}
-      >
-        <RefreshCcw className={`size-4 ${refresh.active ? "animate-spin" : ""}`} />
-      </IconButton>
-      {refresh.active ? (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+88px)] z-50 px-5">
-          <div data-flat-toast="true" className="mx-auto w-full max-w-md rounded-[24px] border border-[var(--accent)]/18 bg-[linear-gradient(180deg,var(--surface)_0%,var(--surface-strong)_100%)] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.52)] ring-1 ring-[var(--text-primary)]/5 backdrop-blur-2xl">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[12px] font-semibold text-[var(--accent)]">
-                  {refresh.phase === "queuing"
-                    ? "Queueing refresh"
-                    : refresh.phase === "done"
-                      ? "Refresh complete"
-                      : "Refreshing feeds"}
-                </p>
-                <p className="mt-0.5 text-[11px] text-[var(--text-primary)]/72">
-                  {refresh.phase === "queuing" ? (
-                    "Preparing your feeds for refresh..."
-                  ) : refresh.phase === "done" ? (
-                    <>
-                      {refresh.summary?.queued === 0 ? "Refresh already queued" : "Refresh complete"}
-                      {refresh.status?.failed ? ` · ${refresh.status.failed} failed` : ""}
-                    </>
-                  ) : refresh.status ? (
-                    <>
-                      {`${refresh.status.completed} of ${refresh.status.total} feeds done`}
-                      {refresh.status.running > 0
-                        ? ` · ${refresh.status.running} refreshing`
-                        : ""}
-                      {refresh.status.failed > 0
-                        ? ` · ${refresh.status.failed} failed`
-                        : ""}
-                    </>
-                  ) : (
-                    "Pulling in the latest items from your subscriptions."
-                  )}
-                </p>
-              </div>
-              <span className="text-[11px] font-semibold text-[var(--accent)]">
-                {refresh.progress}%
-              </span>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--text-primary)]/8">
-              <div
-                className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent)_0%,color-mix(in_srgb,var(--accent)_100%,white_28%)_100%)] transition-[width] duration-500 ease-out"
-                style={{ width: `${refresh.progress}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
-  );
-}

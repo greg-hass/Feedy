@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { IconButton } from "@/components/ui/icon-button";
 import { useAutoHideHeader } from "@/components/use-auto-hide-header";
 import { api } from "@/lib/client";
-import { isActiveTabTap, vibrateIfSupported } from "@/lib/tab-interactions";
+import { vibrateIfSupported } from "@/lib/tab-interactions";
 import type { MeResponse } from "@/types/app";
 
 const navItems = [
@@ -152,7 +152,7 @@ export function MobileShell({
 										return;
 									}
 
-									if (!isActiveTabTap(pathname, item.href)) {
+									if (pathname !== item.href) {
 										return;
 									}
 
