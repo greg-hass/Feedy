@@ -83,14 +83,11 @@ export const ItemCard = memo(function ItemCard({
 			JSON.stringify({
 				itemId: item.id,
 				scrollY: Math.max(0, Math.round(window.scrollY)),
+				viewportTop: document
+					.querySelector<HTMLElement>(`[data-timeline-item-id="${item.id}"]`)
+					?.getBoundingClientRect().top,
 			}),
 		);
-	};
-
-	const resetScrollBeforeNavigate = () => {
-		window.scrollTo(0, 0);
-		document.documentElement.scrollTop = 0;
-		document.body.scrollTop = 0;
 	};
 
 	const prefetchReader = () => {
@@ -119,8 +116,7 @@ export const ItemCard = memo(function ItemCard({
 			return;
 		}
 
-		resetScrollBeforeNavigate();
-		router.push(`/reader/${item.id}`);
+		router.push(`/reader/${item.id}`, { scroll: false });
 	};
 
 	const navigateToReader = (event: React.MouseEvent<HTMLElement>) => {

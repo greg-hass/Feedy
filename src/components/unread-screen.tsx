@@ -192,6 +192,9 @@ export function UnreadScreen() {
 		timelineFixedTop,
 		isItemsLoading: items.isLoading,
 		timelineItems,
+		hasNextPage: hasNextPage && !items.isFetchNextPageError,
+		isFetchingNextPage,
+		fetchNextPage,
 	});
 
 	// Pull-to-refresh (extracted hook)

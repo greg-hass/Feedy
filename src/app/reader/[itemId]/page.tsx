@@ -48,9 +48,7 @@ export default function ReaderPage() {
 	};
 
 	const forceScrollTop = () => {
-		window.scrollTo(0, 0);
-		document.documentElement.scrollTop = 0;
-		document.body.scrollTop = 0;
+		window.scrollTo({ top: 0, behavior: "instant" });
 	};
 
 	const shareArticle = async (title: string, canonicalUrl: string) => {
@@ -98,10 +96,7 @@ export default function ReaderPage() {
 		},
 		onSuccess: async (_result, variables) => {
 			if (variables.read === true && typeof window !== "undefined") {
-				window.sessionStorage.setItem(
-					timelinePendingReadStorageKey,
-					params.itemId,
-				);
+				window.sessionStorage.setItem(timelinePendingReadStorageKey, params.itemId);
 			}
 			updateItemStateCaches(queryClient, params.itemId, variables, {
 				skipTimelineReadPatch: true,
@@ -119,14 +114,8 @@ export default function ReaderPage() {
 	});
 
 	useLayoutEffect(() => {
-		// Reset scroll on item navigation. One synchronous + one rAF is enough
-		// to win against Next.js + the browser's own scroll-restoration logic.
-		// Previously this fired 5 resets AND re-fired when `item.data?.id`
-		// arrived, which meant up to 10 synchronous scroll writes per reader
-		// open — visible jank on tap on mid-tier mobile.
+		// The destination owns the reset, before paint; never scroll the outgoing list.
 		forceScrollTop();
-		const frame = window.requestAnimationFrame(forceScrollTop);
-		return () => window.cancelAnimationFrame(frame);
 	}, [params.itemId]);
 
 	useEffect(() => {
@@ -213,10 +202,7 @@ export default function ReaderPage() {
 	const youtubeVideoId = data.youtubeVideoId;
 
 	return (
-		<div
-			className="min-h-screen w-full pb-10"
-			style={{ overflowAnchor: "none" }}
-		>
+		<div className="min-h-screen w-full pb-10" style={{ overflowAnchor: "none" }}>
 			{/* Sticky reader toolbar — stays pinned to the top while scrolling */}
 			<div
 				className="sticky top-0 z-30"

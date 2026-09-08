@@ -11,11 +11,11 @@ export function isLayoutMode(value: string | null): value is LayoutMode {
 
 export function getStoredLayoutMode(): LayoutMode {
 	if (typeof window === "undefined") {
-		return "card";
+		return "flat";
 	}
 
 	const value = window.localStorage.getItem(layoutModeStorageKey);
-	return isLayoutMode(value) ? value : "card";
+	return isLayoutMode(value) ? value : "flat";
 }
 
 export function applyLayoutMode(mode: LayoutMode) {

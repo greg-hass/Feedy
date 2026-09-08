@@ -1,153 +1,135 @@
-"use client";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+export function readTimelineAnchor(raw: string | null) {
+  try {
+    const value: unknown = JSON.parse(raw ?? "null");
+    if (!value || typeof value !== "object") return null;
+    const anchor = value as Record<string, unknown>;
+    if (typeof anchor.scrollY !== "number" || !Number.isFinite(anchor.scrollY))
+      return null;
+    return {
+      itemId: typeof anchor.itemId === "string" ? anchor.itemId : null,
+      scrollY: Math.max(0, anchor.scrollY),
+      viewportTop:
+        typeof anchor.viewportTop === "number" &&
+        Number.isFinite(anchor.viewportTop)
+          ? anchor.viewportTop
+          : null,
+    };
+  } catch {
+    return null;
+  }
+}
 
-type StorageKey = string;
-
-/**
- * Manages timeline scroll position save/restore across navigations.
- *
- * Saves scroll position to sessionStorage on scroll/visibilitychange/pagehide,
- * and restores it when the component mounts with new data.
- *
- * The scroll restoration retries across several animation frames to handle
- * layout settling (fonts, lazy images, flex recalculation).
- */
-export function useScrollRestoration(
-  deps: {
-    scrollStorageKey: StorageKey;
-    anchorStorageKey: StorageKey;
-    timelineFixedTop: number;
-    isItemsLoading: boolean;
-    timelineItems: Array<{ id: string }>;
-  },
-) {
-  const {
-    scrollStorageKey,
-    anchorStorageKey,
-    timelineFixedTop,
-    isItemsLoading,
-    timelineItems,
-  } = deps;
-
+/** Restore after client navigation, full reload, and Safari's back/forward cache. */
+export function useScrollRestoration({
+  scrollStorageKey,
+  anchorStorageKey,
+  isItemsLoading,
+  timelineItems,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: {
+  scrollStorageKey: string;
+  anchorStorageKey: string;
+  timelineFixedTop: number;
+  isItemsLoading: boolean;
+  timelineItems: Array<{ id: string }>;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  fetchNextPage?: () => Promise<unknown>;
+}) {
   const restoredScrollRef = useRef(false);
-  const saveScrollFrameRef = useRef<number | null>(null);
-  const saveScrollYRef = useRef(0);
+  const [resume, setResume] = useState(0);
 
-  // Save scroll position to sessionStorage
   useEffect(() => {
-    const flushScroll = () => {
+    const save = () => {
+      // An explicit article anchor wins over outgoing route resets and loading layouts.
+      if (
+        !restoredScrollRef.current ||
+        window.sessionStorage.getItem(anchorStorageKey)
+      )
+        return;
       window.sessionStorage.setItem(
         scrollStorageKey,
-        String(Math.max(0, Math.round(saveScrollYRef.current))),
+        String(Math.max(0, window.scrollY)),
       );
     };
-
-    const saveScroll = () => {
-      saveScrollYRef.current = window.scrollY;
-      if (saveScrollFrameRef.current != null) {
-        return;
-      }
-
-      saveScrollFrameRef.current = window.requestAnimationFrame(() => {
-        saveScrollFrameRef.current = null;
-        flushScroll();
-      });
+    const restoreOnReturn = () => {
+      if (!window.sessionStorage.getItem(anchorStorageKey)) return;
+      restoredScrollRef.current = false;
+      setResume((value) => value + 1);
     };
-
-    window.addEventListener("scroll", saveScroll, { passive: true });
-    window.addEventListener("pagehide", flushScroll);
-    window.addEventListener("visibilitychange", flushScroll);
+    const visibility = () => {
+      if (document.visibilityState === "visible") restoreOnReturn();
+      else save();
+    };
+    window.addEventListener("scroll", save, { passive: true });
+    window.addEventListener("pagehide", save);
+    window.addEventListener("pageshow", restoreOnReturn);
+    window.addEventListener("focus", restoreOnReturn);
+    document.addEventListener("visibilitychange", visibility);
     return () => {
-      if (saveScrollFrameRef.current != null) {
-        window.cancelAnimationFrame(saveScrollFrameRef.current);
-        saveScrollFrameRef.current = null;
-      }
-      saveScrollYRef.current = window.scrollY;
-      flushScroll();
-      window.removeEventListener("scroll", saveScroll);
-      window.removeEventListener("pagehide", flushScroll);
-      window.removeEventListener("visibilitychange", flushScroll);
+      window.removeEventListener("scroll", save);
+      window.removeEventListener("pagehide", save);
+      window.removeEventListener("pageshow", restoreOnReturn);
+      window.removeEventListener("focus", restoreOnReturn);
+      document.removeEventListener("visibilitychange", visibility);
     };
-  }, [scrollStorageKey]);
+  }, [scrollStorageKey, anchorStorageKey]);
 
-  // Restore scroll position after data loads
   useLayoutEffect(() => {
-    if (isItemsLoading || restoredScrollRef.current) {
+    if (isItemsLoading || restoredScrollRef.current) return;
+    const anchor = readTimelineAnchor(
+      window.sessionStorage.getItem(anchorStorageKey),
+    );
+    const stored = Number(window.sessionStorage.getItem(scrollStorageKey));
+    const savedScroll =
+      anchor?.scrollY ?? (Number.isFinite(stored) ? Math.max(0, stored) : 0);
+    const element = anchor?.itemId
+      ? Array.from(
+          document.querySelectorAll<HTMLElement>("[data-timeline-item-id]"),
+        ).find((entry) => entry.dataset.timelineItemId === anchor.itemId)
+      : undefined;
+    const target =
+      element && anchor?.viewportTop != null
+        ? Math.max(
+            0,
+            window.scrollY +
+              element.getBoundingClientRect().top -
+              anchor.viewportTop,
+          )
+        : savedScroll;
+    const maxScroll = Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight,
+    );
+
+    // A cold Safari return may only have the first page. Load enough before consuming the anchor.
+    if (target > maxScroll && hasNextPage && fetchNextPage) {
+      if (!isFetchingNextPage) void fetchNextPage().catch(() => {});
       return;
     }
 
+    window.scrollTo({ top: target, behavior: "instant" });
     restoredScrollRef.current = true;
-
-    const anchorStateRaw = window.sessionStorage.getItem(anchorStorageKey);
-    let anchorItemId: string | null = null;
-    let anchorScrollY: number | null = null;
-
-    if (anchorStateRaw) {
-      try {
-        const parsed = JSON.parse(anchorStateRaw) as { itemId?: string; scrollY?: number };
-        anchorItemId = parsed.itemId ?? null;
-        anchorScrollY = typeof parsed.scrollY === "number" ? parsed.scrollY : null;
-      } catch {
-        // Ignore malformed saved anchor state.
-      }
-    }
-
-    const savedScroll = anchorScrollY ?? Number(window.sessionStorage.getItem(scrollStorageKey) || "0");
-
-    if (savedScroll <= 0 && !anchorItemId) {
-      window.sessionStorage.removeItem(anchorStorageKey);
-      return;
-    }
-
-    const computeTarget = (): number => {
-      if (savedScroll > 0) {
-        return savedScroll;
-      }
-      if (anchorItemId) {
-        const el = document.querySelector<HTMLElement>(`[data-timeline-item-id="${anchorItemId}"]`);
-        if (el) {
-          return Math.max(0, el.offsetTop - timelineFixedTop - 8);
-        }
-      }
-      return 0;
-    };
-
-    let guardActive = true;
-
-    const restoreScroll = () => {
-      if (!guardActive) return;
-      window.scrollTo({ top: computeTarget(), behavior: "auto" });
-    };
-
-    const onUnwantedScroll = () => {
-      if (guardActive && window.scrollY < savedScroll * 0.5) {
-        restoreScroll();
-      }
-    };
-
-    window.addEventListener("scroll", onUnwantedScroll, { passive: true });
-
-    // One immediate restore + one rAF retry is enough for fonts and lazy
-    // images to settle. The previous version ran 5 retries (immediate + 2x
-    // rAF + 3x setTimeout) on every timeline mount, which contributed to the
-    // "jank on tab change" feel because all of it runs synchronously on the
-    // main thread before paint.
-    restoreScroll();
-    const frame = window.requestAnimationFrame(restoreScroll);
-    const timeout = window.setTimeout(() => {
-      guardActive = false;
-      window.removeEventListener("scroll", onUnwantedScroll);
-      window.sessionStorage.removeItem(anchorStorageKey);
-    }, 350);
-
-    return () => {
-      guardActive = false;
-      window.removeEventListener("scroll", onUnwantedScroll);
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timeout);
-    };
-  }, [isItemsLoading, scrollStorageKey, anchorStorageKey, timelineFixedTop, timelineItems]);
+    window.sessionStorage.setItem(
+      scrollStorageKey,
+      String(Math.min(target, maxScroll)),
+    );
+    window.sessionStorage.removeItem(anchorStorageKey);
+    // No timed scroll guard: it fights the user's first swipe after returning.
+  }, [
+    isItemsLoading,
+    scrollStorageKey,
+    anchorStorageKey,
+    timelineItems,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    resume,
+  ]);
 
   return { restoredScrollRef };
 }

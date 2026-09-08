@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -27,7 +26,6 @@ export function Providers({
 	children: React.ReactNode;
 	nonce?: string;
 }) {
-	const pathname = usePathname();
 	const [queryClient] = useState(
 		() =>
 			new QueryClient({
@@ -88,20 +86,6 @@ export function Providers({
 			window.removeEventListener(layoutModeChangeEvent, onLayoutModeChange);
 		};
 	}, []);
-
-	useLayoutEffect(() => {
-		if (!pathname.startsWith("/reader/")) {
-			return;
-		}
-
-		// Reset scroll once when entering the reader route. The reader page
-		// also resets on mount, so this provider-level reset is just a safety
-		// net for the brief window before the page's own effect runs — kept
-		// to a single call to avoid hammering the main thread on navigation.
-		window.scrollTo(0, 0);
-		document.documentElement.scrollTop = 0;
-		document.body.scrollTop = 0;
-	}, [pathname]);
 
 	return (
 		<ThemeProvider attribute="class" forcedTheme="dark" nonce={nonce}>

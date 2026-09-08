@@ -28,7 +28,9 @@ export const metadata: Metadata = {
       { url: "/icon-64.png", sizes: "64x64", type: "image/png" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: [{ url: "/apple-icon-180.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      { url: "/apple-icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
     shortcut: [{ url: "/icon-64.png", sizes: "64x64", type: "image/png" }],
   },
   appleWebApp: {
@@ -51,6 +53,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      data-layout="flat"
       suppressHydrationWarning
       className={`${manrope.variable} ${mono.variable} h-full antialiased`}
     >

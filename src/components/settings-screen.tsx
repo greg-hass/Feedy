@@ -50,7 +50,7 @@ export function SettingsScreen() {
 	const layoutMode = useSyncExternalStore<LayoutMode>(
 		subscribeToLayoutMode,
 		getStoredLayoutMode,
-		() => "card",
+		() => "flat",
 	);
 	const storage = useQuery({
 		queryKey: ["settings-storage"],
@@ -120,8 +120,8 @@ export function SettingsScreen() {
 									<button
 										key={mode}
 										type="button"
-									onClick={() => {
-										setStoredLayoutMode(mode);
+										onClick={() => {
+											setStoredLayoutMode(mode);
 										}}
 										className={`rounded-xl border px-3 py-2 text-xs font-medium capitalize transition-colors ${
 											active
@@ -145,16 +145,15 @@ export function SettingsScreen() {
 						</p>
 						<div className="mt-3 grid grid-cols-6 justify-items-center gap-2.5">
 							{accentOptions.map((option) => {
-								const active =
-									me.data?.user.settings.accentColor === option.key;
+								const active = me.data?.user.settings.accentColor === option.key;
 								return (
 									<button
 										key={option.key}
 										onClick={() => {
-										saveSetting("accentColor", "accent colour", {
-										accentColor: option.key,
-									});
-								}}
+											saveSetting("accentColor", "accent colour", {
+												accentColor: option.key,
+											});
+										}}
 										disabled={settings.isPending}
 										className={`flex size-11 items-center justify-center rounded-full border-2 transition-transform ${
 											active
@@ -187,8 +186,7 @@ export function SettingsScreen() {
 				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Refresh cadence</h3>
 					<p className="mt-2 text-xs text-secondary">
-						Current: {me.data?.user.settings.refreshIntervalMinutes ?? 15}{" "}
-						minutes
+						Current: {me.data?.user.settings.refreshIntervalMinutes ?? 15} minutes
 					</p>
 					<div className="mt-3 flex gap-2">
 						{[15, 30, 60, 180].map((minutes) => (
@@ -200,9 +198,7 @@ export function SettingsScreen() {
 									});
 								}}
 								disabled={settings.isPending}
-								aria-pressed={
-									me.data?.user.settings.refreshIntervalMinutes === minutes
-								}
+								aria-pressed={me.data?.user.settings.refreshIntervalMinutes === minutes}
 								className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 									me.data?.user.settings.refreshIntervalMinutes === minutes
 										? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
@@ -225,8 +221,8 @@ export function SettingsScreen() {
 				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Article view</h3>
 					<p className="mt-2 text-xs text-secondary">
-						Choose what happens when you tap an article. Safari marks the
-						article read and opens the original site.
+						Choose what happens when you tap an article. Safari marks the article read
+						and opens the original site.
 					</p>
 					<div className="mt-3 grid grid-cols-2 gap-2">
 						{[
@@ -240,11 +236,9 @@ export function SettingsScreen() {
 								<button
 									key={option.label}
 									onClick={() => {
-										saveSetting(
-											"readerOpenOriginalByDefault",
-											"article view",
-											{ readerOpenOriginalByDefault: option.value },
-										);
+										saveSetting("readerOpenOriginalByDefault", "article view", {
+											readerOpenOriginalByDefault: option.value,
+										});
 									}}
 									disabled={settings.isPending}
 									aria-pressed={active}
@@ -274,8 +268,8 @@ export function SettingsScreen() {
 						<div className="min-w-0">
 							<p className="text-sm font-medium">Keep screen awake</p>
 							<p className="mt-1 text-xs leading-relaxed text-secondary">
-								Prevent the screen from dimming while Feedy is open. iPhone may
-								still revoke this in low power mode or the background.
+								Prevent the screen from dimming while Feedy is open. iPhone may still
+								revoke this in low power mode or the background.
 							</p>
 						</div>
 						<button
@@ -338,11 +332,14 @@ export function SettingsScreen() {
 				<div className="panel p-4">
 					<h3 className="text-sm font-semibold">Database</h3>
 					<p className="mt-2 text-xs leading-relaxed text-secondary">
-						Local storage usage, retention, and safe purge controls. Bookmarked
-						items are never deleted.
+						Local storage usage, retention, and safe purge controls. Bookmarked items
+						are never deleted.
 					</p>
 					<div className="mt-4 grid grid-cols-2 gap-2">
-						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div
+							data-flat-surface="true"
+							className="rounded-2xl bg-[var(--surface-strong)] p-3"
+						>
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Database size
 							</p>
@@ -350,7 +347,10 @@ export function SettingsScreen() {
 								{storage.data ? formatBytes(storage.data.dbSizeBytes) : "—"}
 							</p>
 						</div>
-						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div
+							data-flat-surface="true"
+							className="rounded-2xl bg-[var(--surface-strong)] p-3"
+						>
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Feeds stored
 							</p>
@@ -358,17 +358,21 @@ export function SettingsScreen() {
 								{storage.data ? storage.data.feedCount.toLocaleString() : "—"}
 							</p>
 						</div>
-						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div
+							data-flat-surface="true"
+							className="rounded-2xl bg-[var(--surface-strong)] p-3"
+						>
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Articles stored
 							</p>
 							<p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-								{storage.data
-									? storage.data.articleCount.toLocaleString()
-									: "—"}
+								{storage.data ? storage.data.articleCount.toLocaleString() : "—"}
 							</p>
 						</div>
-						<div data-flat-surface="true" className="rounded-2xl bg-[var(--surface-strong)] p-3">
+						<div
+							data-flat-surface="true"
+							className="rounded-2xl bg-[var(--surface-strong)] p-3"
+						>
 							<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 								Saved items
 							</p>
@@ -379,7 +383,10 @@ export function SettingsScreen() {
 							</p>
 						</div>
 					</div>
-					<div data-flat-surface="true" className="mt-4 rounded-2xl bg-[var(--surface-strong)] p-3">
+					<div
+						data-flat-surface="true"
+						className="mt-4 rounded-2xl bg-[var(--surface-strong)] p-3"
+					>
 						<p className="text-[11px] uppercase tracking-[0.12em] text-tertiary">
 							Retention
 						</p>
@@ -387,8 +394,8 @@ export function SettingsScreen() {
 							{me.data?.user.settings.itemRetentionDays ?? 90} days
 						</p>
 						<p className="mt-1 text-xs leading-relaxed text-secondary">
-							Unread and read items older than this window are removed
-							automatically unless they are bookmarked.
+							Unread and read items older than this window are removed automatically
+							unless they are bookmarked.
 						</p>
 						<div className="mt-3 flex gap-2">
 							{[14, 30, 90, 180, 365].map((days) => (
@@ -398,9 +405,7 @@ export function SettingsScreen() {
 										setPendingLabel("retention");
 										settings.mutate({ itemRetentionDays: days });
 									}}
-									aria-pressed={
-										me.data?.user.settings.itemRetentionDays === days
-									}
+									aria-pressed={me.data?.user.settings.itemRetentionDays === days}
 									className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
 										me.data?.user.settings.itemRetentionDays === days
 											? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
