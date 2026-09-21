@@ -33,7 +33,11 @@ type ImportSummary = {
 	errors: Array<{ title: string; sourceUrl?: string; error: string }>;
 };
 
-async function importNodes(userId: string, nodes: OpmlNode[]) {
+async function importNodes(
+	userId: string,
+	nodes: OpmlNode[],
+	onProgress?: (processed: number, total: number) => void,
+) {
 	const summary: ImportSummary = {
 		imported: 0,
 		duplicates: 0,
@@ -105,6 +109,7 @@ async function importNodes(userId: string, nodes: OpmlNode[]) {
 		"OPML subscriptions",
 	);
 
+	let processed = 0;
 	await mapInBatches(
 		feedEntries,
 		REMOTE_PROBE_BATCH_SIZE,
@@ -158,6 +163,8 @@ async function importNodes(userId: string, nodes: OpmlNode[]) {
 					});
 				}
 			}
+			processed += 1;
+			onProgress?.(processed, feedEntries.length);
 		},
 	);
 
@@ -203,7 +210,27 @@ export async function POST(request: Request) {
 		});
 		recordId = record.id;
 
-		const summary = await importNodes(user.id, nodes);
+		// Persist coarse progress so the client can poll a percentage while the
+		// synchronous import runs. Writes are throttled and advisory: a dropped
+		// update only delays the displayed number, never the import itself.
+		let lastProgressWrite = 0;
+		const onProgress = (processed: number, total: number) => {
+			const now = Date.now();
+			if (processed < total && now - lastProgressWrite < 750) return;
+			lastProgressWrite = now;
+			void prisma.importExportRecord
+				.update({
+					where: { id: record.id },
+					data: {
+						summary: {
+							progress: { processed, total },
+						},
+					},
+				})
+				.catch(() => null);
+		};
+
+		const summary = await importNodes(user.id, nodes, onProgress);
 		await prisma.importExportRecord.update({
 			where: { id: record.id },
 			data: {
@@ -230,5 +257,43 @@ export async function POST(request: Request) {
 		}
 
 		return apiErrorFrom(error, "Could not import OPML");
+	}
+}
+
+export async function GET() {
+	try {
+		const user = await assertApiUser();
+		const record = await prisma.importExportRecord.findFirst({
+			where: { userId: user.id, type: ImportExportType.OPML_IMPORT },
+			orderBy: { createdAt: "desc" },
+			select: { status: true, summary: true },
+		});
+		if (!record) {
+			return NextResponse.json({ status: "none", progress: null });
+		}
+
+		const summaryObject =
+			record.summary &&
+			typeof record.summary === "object" &&
+			!Array.isArray(record.summary)
+				? (record.summary as Record<string, unknown>)
+				: null;
+		const progressRaw = summaryObject?.progress as
+			| { processed?: unknown; total?: unknown }
+			| undefined;
+		const progress =
+			record.status === ImportExportStatus.RUNNING &&
+			typeof progressRaw?.processed === "number" &&
+			typeof progressRaw?.total === "number" &&
+			progressRaw.total > 0
+				? {
+						processed: progressRaw.processed,
+						total: progressRaw.total,
+					}
+				: null;
+
+		return NextResponse.json({ status: record.status, progress });
+	} catch (error) {
+		return apiErrorFrom(error, "Could not read import status");
 	}
 }

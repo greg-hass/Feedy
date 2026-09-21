@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { MobileShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,32 @@ export function ImportExportScreen() {
 			setStatusMessage(err instanceof Error ? err.message : "Import failed");
 		},
 	});
+
+	const importProgress = useQuery({
+		queryKey: ["import-progress"],
+		queryFn: async () => {
+			const response = await fetch("/api/import/opml", {
+				cache: "no-store",
+				credentials: "same-origin",
+			});
+			if (!response.ok) {
+				throw new Error("Failed to read import progress");
+			}
+			return (await response.json()) as {
+				status: string;
+			progress: { processed: number; total: number } | null;
+			};
+		},
+		enabled: status === "uploading",
+		refetchInterval: status === "uploading" ? 1000 : false,
+		placeholderData: (previous) => previous,
+		retry: false,
+	});
+	const progress =
+		status === "uploading" ? (importProgress.data?.progress ?? null) : null;
+	const percent = progress
+		? Math.round((progress.processed / progress.total) * 100)
+		: 0;
 
 	const downloadJson = useMutation({
 		mutationFn: async () => {
@@ -167,13 +193,31 @@ export function ImportExportScreen() {
 								<p className="text-xs font-medium text-[var(--text-primary)]">
 									Importing feeds
 								</p>
-								<p className="text-xs text-secondary">Working</p>
+								<p className="text-xs text-secondary">
+									{progress ? `${percent}%` : "Working…"}
+								</p>
 							</div>
-							<div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
-								<div className="import-progress-bar h-full w-1/3 rounded-full bg-[var(--accent)]" />
+							<div
+								className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]"
+								role={progress ? "progressbar" : undefined}
+								aria-valuemin={progress ? 0 : undefined}
+								aria-valuemax={progress ? 100 : undefined}
+								aria-valuenow={progress ? percent : undefined}
+								aria-label={progress ? "OPML import progress" : undefined}
+							>
+								{progress ? (
+									<div
+										className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500 ease-out"
+										style={{ width: `${Math.min(100, Math.max(2, percent))}%` }}
+									/>
+								) : (
+									<div className="import-progress-bar h-full w-1/3 rounded-full bg-[var(--accent)]" />
+								)}
 							</div>
 							<p className="mt-2 text-xs text-secondary">
-								This can take a moment for larger OPML files.
+								{progress
+									? `Validated ${progress.processed} of ${progress.total} feeds. Failed feeds are skipped and listed at the end.`
+									: "This can take a moment for larger OPML files."}
 							</p>
 						</div>
 					) : null}
