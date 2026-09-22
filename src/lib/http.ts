@@ -26,8 +26,7 @@ const MAX_OUTBOUND_RESPONSE_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
 const execFileAsync = promisify(execFile);
 const MAX_RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
-// Anonymous Reddit RSS currently reports one request per rate window. Leave
-// a margin beyond one minute so a full queue cannot stay at the limit.
+// Fallback for responses that omit Reddit's rate window headers.
 const REDDIT_REQUEST_INTERVAL_MS = 65_000;
 
 function getDomainSemaphore(hostname: string) {
@@ -110,13 +109,9 @@ function rememberRedditRateWindow(hostname: string, response: Response) {
 	const resetSeconds = Number.parseFloat(response.headers.get("x-ratelimit-reset") ?? "");
 	if (!Number.isFinite(remaining) || remaining > 0 ||
 		!Number.isFinite(resetSeconds) || resetSeconds <= 0) return;
-	redditNextRequestAt.set(
-		hostname,
-		Math.max(
-			redditNextRequestAt.get(hostname) ?? 0,
-			Date.now() + Math.ceil(resetSeconds * 1000) + 1500,
-		),
-	);
+	// The server's reset is more precise than the fallback interval. Waiting
+	// for that window plus a margin keeps the queue moving without guesses.
+	redditNextRequestAt.set(hostname, Date.now() + Math.ceil(resetSeconds * 1000) + 2500);
 }
 
 async function fetchRedditWithCurl(
