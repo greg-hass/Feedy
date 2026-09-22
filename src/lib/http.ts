@@ -23,7 +23,9 @@ const redditNextRequestAt = new Map<string, number>();
 const MAX_OUTBOUND_RESPONSE_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
 const MAX_RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
-const REDDIT_REQUEST_INTERVAL_MS = 30_000;
+// Anonymous Reddit RSS currently reports one request per rate window. Leave
+// a margin beyond one minute so a full queue cannot stay at the limit.
+const REDDIT_REQUEST_INTERVAL_MS = 65_000;
 
 function getDomainSemaphore(hostname: string) {
 	let sem = domainSemaphores.get(hostname);
@@ -96,6 +98,21 @@ function rememberRateLimit(hostname: string, cooldownMs: number) {
 	domainRateLimitUntil.set(
 		hostname,
 		Math.max(domainRateLimitUntil.get(hostname) ?? 0, until),
+	);
+}
+
+function rememberRedditRateWindow(hostname: string, response: Response) {
+	if (!isRedditHost(hostname)) return;
+	const remaining = Number.parseFloat(response.headers.get("x-ratelimit-remaining") ?? "");
+	const resetSeconds = Number.parseFloat(response.headers.get("x-ratelimit-reset") ?? "");
+	if (!Number.isFinite(remaining) || remaining > 0 ||
+		!Number.isFinite(resetSeconds) || resetSeconds <= 0) return;
+	redditNextRequestAt.set(
+		hostname,
+		Math.max(
+			redditNextRequestAt.get(hostname) ?? 0,
+			Date.now() + Math.ceil(resetSeconds * 1000) + 1500,
+		),
 	);
 }
 
@@ -411,6 +428,7 @@ async function fetchWithPolicy(
 			headers,
 		};
 		let response = await outboundFetch(fetchUrl as string | URL, fetchInit);
+		rememberRedditRateWindow(url.hostname, response);
 
 		if (response.status === 429) {
 			const cooldownMs = getRateLimitCooldownMs(response);
@@ -429,6 +447,7 @@ async function fetchWithPolicy(
 				: ((await undiciFetch(fetchUrl as string | URL, {
 						...(fetchInit as Record<string, unknown>),
 					})) as unknown as Response);
+			rememberRedditRateWindow(url.hostname, response);
 		}
 
 		if (

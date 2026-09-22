@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import { JSDOM } from "jsdom";
 import { useRefreshController } from "./refresh-button";
 
-it("does not reload the timeline on renders or unfinished status polls, and reloads once on completion", async () => {
+it("reloads immediately and when feeds finish without reloading on each render or status poll", async () => {
   const dom = new JSDOM('<div id="root"></div>');
   const previous = new Map(["window", "document", "fetch", "IS_REACT_ACT_ENVIRONMENT"].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
@@ -34,20 +34,24 @@ it("does not reload the timeline on renders or unfinished status polls, and relo
     const initial = timelineRequests;
     await act(async () => start());
     await settle();
+    assert.equal(timelineRequests, initial + 1);
     for (let tick = 1; tick <= 20; tick++) { await render(tick); await settle(); }
     const duringRefresh = timelineRequests - initial;
     console.log(JSON.stringify({ unrelatedRenders: 20, timelineReloadsDuringRefresh: duringRefresh }));
-    assert.equal(duringRefresh, 0);
+    assert.equal(duringRefresh, 1);
     status = { ...status, completed: 1, active: 1, succeeded: 1, running: 1 };
     await act(async () => { await client.refetchQueries({ queryKey: ["refresh-status"] }); });
     await settle();
-    assert.equal(timelineRequests, initial);
+    assert.equal(timelineRequests, initial + 2);
+    await act(async () => { await client.refetchQueries({ queryKey: ["refresh-status"] }); });
+    await settle();
+    assert.equal(timelineRequests, initial + 2);
     status = { ...status, completed: 2, active: 0, succeeded: 2, running: 0 };
     await act(async () => { await client.refetchQueries({ queryKey: ["refresh-status"] }); });
     await settle();
-    assert.equal(timelineRequests, initial + 1);
+    assert.equal(timelineRequests, initial + 3);
     for (let tick = 21; tick <= 25; tick++) { await render(tick); await settle(); }
-    assert.equal(timelineRequests, initial + 1);
+    assert.equal(timelineRequests, initial + 3);
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 1600)); });
     await settle();
     assert.equal(active, false);

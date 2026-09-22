@@ -212,13 +212,9 @@ export function UnreadScreen() {
 	});
 
 	// Pull-to-refresh (extracted hook)
-	const { pullDistance } = usePullToRefresh({
+	const { pullDistance, triggerDistance } = usePullToRefresh({
 		isRefreshActive: refresh.active,
 		onRefresh: startRefresh,
-		onPullCancel: () => {
-			void refetchItems();
-			void queryClient.refetchQueries({ queryKey: ["me"], type: "active" });
-		},
 	});
 
 	useEffect(() => {
@@ -530,9 +526,24 @@ export function UnreadScreen() {
 				}}
 			>
 				<div className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-secondary shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.03)]">
-					{pullDistance >= 56 ? "Release to refresh feeds" : "Pull to refresh"}
+					{pullDistance >= triggerDistance ? "Release to refresh feeds" : "Pull to refresh"}
 				</div>
 			</div>
+			{refresh.active || refresh.error ? (
+				<div
+					role="status"
+					aria-live="polite"
+					className="mx-5 mb-3 rounded-2xl bg-[var(--surface)] px-4 py-2 text-xs text-secondary"
+				>
+					{refresh.error
+						? `Refresh failed: ${refresh.error}`
+						: refresh.phase === "queuing"
+							? "Queueing feed refresh…"
+							: refresh.status
+							? `Refreshing feeds ${refresh.status.completed}/${refresh.status.total}${refresh.status.failed ? ` · ${refresh.status.failed} failed` : ""}`
+							: "Refreshing feeds…"}
+				</div>
+			) : null}
 
 			{timelinePanelOpen ? (
 				<section

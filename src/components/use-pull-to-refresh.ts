@@ -11,10 +11,10 @@ import { useEffect, useState } from "react";
 export function usePullToRefresh(deps: {
 	isRefreshActive: boolean;
 	onRefresh: () => void;
-	onPullCancel: () => void;
 }) {
-	const { isRefreshActive, onRefresh, onPullCancel } = deps;
+	const { isRefreshActive, onRefresh } = deps;
 	const [pullDistance, setPullDistance] = useState(0);
+	const triggerDistance = 48;
 
 	useEffect(() => {
 		let startY: number | null = null;
@@ -54,16 +54,14 @@ export function usePullToRefresh(deps: {
 			}
 
 			dragging = true;
-			latestDistance = Math.min(88, Math.round(delta * 0.45));
+			latestDistance = Math.min(88, Math.round(delta * 0.6));
 			setPullDistance(latestDistance);
 			event.preventDefault();
 		};
 
-		const finishDrag = () => {
-			if (dragging && latestDistance >= 56 && !isRefreshActive) {
+		const finishDrag = (cancelled: boolean) => {
+			if (!cancelled && dragging && latestDistance >= triggerDistance && !isRefreshActive) {
 				onRefresh();
-			} else if (dragging && !isRefreshActive) {
-				onPullCancel();
 			}
 
 			startY = null;
@@ -93,16 +91,18 @@ export function usePullToRefresh(deps: {
 
 		window.addEventListener("touchstart", onTouchStart, { passive: true });
 		window.addEventListener("touchmove", onTouchMove, { passive: false });
-		window.addEventListener("touchend", finishDrag, { passive: true });
-		window.addEventListener("touchcancel", finishDrag, { passive: true });
+		const onTouchEnd = () => finishDrag(false);
+		const onTouchCancel = () => finishDrag(true);
+		window.addEventListener("touchend", onTouchEnd, { passive: true });
+		window.addEventListener("touchcancel", onTouchCancel, { passive: true });
 
 		return () => {
 			window.removeEventListener("touchstart", onTouchStart);
 			window.removeEventListener("touchmove", onTouchMove);
-			window.removeEventListener("touchend", finishDrag);
-			window.removeEventListener("touchcancel", finishDrag);
+			window.removeEventListener("touchend", onTouchEnd);
+			window.removeEventListener("touchcancel", onTouchCancel);
 		};
-	}, [isRefreshActive, onRefresh, onPullCancel]);
+	}, [isRefreshActive, onRefresh]);
 
-	return { pullDistance };
+	return { pullDistance, triggerDistance };
 }
