@@ -5,6 +5,7 @@ import {
 	__setOutboundFetch,
 	buildRedditRssProxyUrl,
 	fetchWithTimeout,
+	shouldPaceRedditHop,
 } from "@/lib/http";
 
 describe("buildRedditRssProxyUrl", () => {
@@ -24,6 +25,14 @@ describe("buildRedditRssProxyUrl", () => {
 			proxied.searchParams.get("url"),
 			"https://www.reddit.com/r/selfhosted/.rss?sort=new",
 		);
+	});
+});
+
+describe("shouldPaceRedditHop", () => {
+	it("paces the first Reddit request but not redirects in its chain", () => {
+		assert.equal(shouldPaceRedditHop("www.reddit.com", false), true);
+		assert.equal(shouldPaceRedditHop("www.reddit.com", true), false);
+		assert.equal(shouldPaceRedditHop("feeds.example.com", false), false);
 	});
 });
 

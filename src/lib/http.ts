@@ -39,6 +39,13 @@ function isRedditHost(hostname: string) {
 	return normalized === "reddit.com" || normalized.endsWith(".reddit.com");
 }
 
+export function shouldPaceRedditHop(
+	hostname: string,
+	hasPacedRedditRequest: boolean,
+) {
+	return isRedditHost(hostname) && !hasPacedRedditRequest;
+}
+
 export function buildRedditRssProxyUrl(
 	proxyBaseUrl: string,
 	targetUrl: string,
@@ -114,8 +121,8 @@ async function waitForRateLimitCooldown(hostname: string) {
 	}
 }
 
-async function paceRedditRequest(hostname: string) {
-	if (!isRedditHost(hostname) || testFetchOverride) return;
+async function paceRedditRequest(hostname: string, shouldPace: boolean) {
+	if (!shouldPace || !isRedditHost(hostname) || testFetchOverride) return;
 	const waitMs = Math.max(0, (redditNextRequestAt.get(hostname) ?? 0) - Date.now());
 	if (waitMs > 0) {
 		await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
@@ -314,6 +321,7 @@ async function fetchWithPolicy(
 	init: RequestInit,
 	timeoutMs: number,
 	redirectCount: number,
+	hasPacedRedditRequest = false,
 ): Promise<Response> {
 	const urlString =
 		typeof input === "string"
@@ -336,7 +344,10 @@ async function fetchWithPolicy(
 
 	const release = await acquireDomainSlot(url.hostname);
 	await waitForRateLimitCooldown(url.hostname);
-	await paceRedditRequest(url.hostname);
+	await paceRedditRequest(
+		url.hostname,
+		shouldPaceRedditHop(url.hostname, hasPacedRedditRequest),
+	);
 
 	const proxiedUrl =
 		isRedditHost(url.hostname) && env.REDDIT_RSS_PROXY_URL
@@ -439,7 +450,13 @@ async function fetchWithPolicy(
 			const nextUrl = new URL(location, url);
 			clearTimeout(timeout);
 			release();
-			return await fetchWithPolicy(nextUrl, init, timeoutMs, redirectCount + 1);
+			return await fetchWithPolicy(
+				nextUrl,
+				init,
+				timeoutMs,
+				redirectCount + 1,
+				hasPacedRedditRequest || isRedditHost(url.hostname),
+			);
 		}
 
 		const body =
