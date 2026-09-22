@@ -31,6 +31,22 @@ At minimum, set:
 
 For private LAN HTTP deployments, `COOKIE_SECURE=false` is expected. Public deployments should use HTTPS and `COOKIE_SECURE=true`.
 
+## Deploying updates
+
+On a server running the deploy compose file (or an equivalent stack compose):
+
+```bash
+docker compose pull
+docker compose run --rm migrate   # one-shot migrations, container auto-removed
+docker compose up -d
+```
+
+Always invoke the `migrate` service with `run --rm`. Using
+`docker compose --profile migrate up migrate` leaves an exited container
+behind, which tools like Dockge then report as the whole stack being
+"exited" even while web/worker/postgres/redis keep running. If that has
+already happened, clean it up with `docker rm feedy-migrate-1`.
+
 ## Reverse proxy
 
 Put a proxy such as Caddy, Nginx, or Traefik in front of the `web` container and forward to port `3000`.
