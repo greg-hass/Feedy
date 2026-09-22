@@ -116,7 +116,7 @@ async function createValidatedFeedForUser(
 		await queueSingleFeedRefresh(userId, feed.id, JobTrigger.MANUAL);
 	}
 
-	if (options?.queueInitialIconFetch !== false) {
+	if (options?.queueInitialIconFetch !== false && feed.sourceType !== FeedSourceType.REDDIT_RSS) {
 		await enqueueIconFetch({ feedId: feed.id });
 	}
 
@@ -646,7 +646,6 @@ export async function refreshFeed(
 		});
 		const finalizeDurationMs = performance.now() - finalizeStartedAt;
 
-		await enqueueIconFetch({ feedId: feed.id }).catch(() => null);
 		await Promise.all(
 			readerExtractionItemIds.map((itemId) =>
 				enqueueReaderExtraction({ itemId }).catch((error) => {

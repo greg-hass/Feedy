@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { extname } from "node:path";
 
 import * as cheerio from "cheerio";
+import { FeedSourceType } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { fetchWithTimeout } from "@/lib/http";
@@ -149,69 +150,16 @@ async function discoverYouTubeChannelAvatar(siteUrl?: string | null) {
 	}
 }
 
-async function discoverRedditSubredditIcon(siteUrl?: string | null) {
-	if (!siteUrl) {
-		return null;
-	}
-	const match = siteUrl.match(/reddit\.com\/r\/([a-zA-Z0-9_]+)/i);
-	if (!match) {
-		return null;
-	}
-	const sub = match[1];
-
-	try {
-		const response = await fetchWithTimeout(
-			`https://www.reddit.com/r/${sub}/about.json`,
-			{
-				headers: {
-					"User-Agent":
-						"Feedy/1.0 (self-hosted RSS reader; contact: feedy@local)",
-				},
-			},
-			8_000,
-		);
-		if (!response.ok) {
-			return null;
-		}
-		const json = (await response.json()) as {
-			data?: {
-				community_icon?: string;
-				icon_img?: string;
-			};
-		};
-		const data = json.data ?? {};
-		// community_icon is the subreddit-set avatar (preferred). icon_img is the
-		// user's avatar on user profiles — only useful as a fallback for /user/.
-		const raw =
-			(data.community_icon && data.community_icon.length > 0
-				? data.community_icon
-				: data.icon_img) || null;
-		if (!raw) {
-			return null;
-		}
-		// Reddit serves these at the resolution specified by width/height query
-		// params. Strip them so we get the original asset and let enhanceIconCandidate
-		// re-add the size we want.
-		return raw.split("?")[0];
-	} catch {
-		return null;
-	}
-}
-
 async function buildIconCandidates(siteUrl?: string | null, hint?: string | null) {
 	const youtubeAvatar = await discoverYouTubeChannelAvatar(siteUrl);
-	const redditIcon = await discoverRedditSubredditIcon(siteUrl);
 	const pageIcons = await discoverPageIcons(siteUrl);
 	const fallbackIcons = inferIconCandidates(siteUrl, hint);
 	const isYouTube = Boolean(siteUrl?.includes("youtube.com"));
 
 	const candidates = new Set<string>();
 
-	// Source-specific avatars go FIRST so the platform's generic favicon
-	// (reddit.com/favicon.ico, youtube.com/favicon.ico) never wins by default.
-	if (redditIcon) {
-		candidates.add(enhanceIconCandidate(redditIcon, false));
-	}
+	// Source-specific avatars go first so the platform's generic favicon
+	// (youtube.com/favicon.ico) does not win by default.
 	if (youtubeAvatar) {
 		candidates.add(youtubeAvatar);
 	}
@@ -242,6 +190,12 @@ export async function fetchAndCacheIcon(feedId: string) {
 
   if (!feed) {
     return null;
+  }
+
+  // Reddit feeds use the bundled icon unless an older cached icon exists.
+  // An icon lookup must not spend the same rate budget as article refreshes.
+  if (feed.sourceType === FeedSourceType.REDDIT_RSS) {
+    return feed.icon;
   }
 
   for (const candidate of await buildIconCandidates(feed.siteUrl, feed.iconHintUrl)) {
