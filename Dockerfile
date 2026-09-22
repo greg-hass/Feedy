@@ -23,7 +23,7 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 1001 feedy && useradd --system --uid 1001 --gid feedy feedy
 
 # Standalone Next.js output for the web server (includes its own node_modules)

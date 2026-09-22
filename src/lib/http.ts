@@ -1,4 +1,6 @@
 import { ProxyAgent, Agent, fetch as undiciFetch } from "undici";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 import { env } from "@/lib/env";
 import dns from "node:dns/promises";
@@ -22,6 +24,7 @@ const domainRateLimitUntil = new Map<string, number>();
 const redditNextRequestAt = new Map<string, number>();
 const MAX_OUTBOUND_RESPONSE_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
+const execFileAsync = promisify(execFile);
 const MAX_RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
 // Anonymous Reddit RSS currently reports one request per rate window. Leave
 // a margin beyond one minute so a full queue cannot stay at the limit.
@@ -114,6 +117,49 @@ function rememberRedditRateWindow(hostname: string, response: Response) {
 			Date.now() + Math.ceil(resetSeconds * 1000) + 1500,
 		),
 	);
+}
+
+async function fetchRedditWithCurl(
+	url: string | URL,
+	init: RequestInit,
+	timeoutMs: number,
+): Promise<Response> {
+	const args = [
+		"--silent",
+		"--show-error",
+		"--http1.1",
+		"--noproxy", "*",
+		"--max-redirs", "0",
+		"--max-time", String(Math.max(1, Math.ceil(timeoutMs / 1000))),
+		"--max-filesize", String(MAX_OUTBOUND_RESPONSE_BYTES),
+		"--dump-header", "/dev/stderr",
+	];
+	for (const [name, value] of new Headers(init.headers)) {
+		args.push("--header", `${name}: ${value}`);
+	}
+	args.push("--url", String(url));
+	const { stdout, stderr } = await execFileAsync("curl", args, {
+		encoding: "buffer",
+		maxBuffer: MAX_OUTBOUND_RESPONSE_BYTES + 64 * 1024,
+		signal: init.signal ?? undefined,
+	});
+	const headerBlocks = stderr.toString("latin1").trim().split(/\r?\n\r?\n/);
+	const lines = headerBlocks.at(-1)?.split(/\r?\n/) ?? [];
+	const statusMatch = lines.shift()?.match(/^HTTP\/\d(?:\.\d)? (\d{3})(?: (.*))?$/);
+	if (!statusMatch) {
+		throw new Error("Reddit RSS response did not include an HTTP status");
+	}
+	const status = Number(statusMatch[1]);
+	const headers = new Headers();
+	for (const line of lines) {
+		const colon = line.indexOf(":");
+		if (colon > 0) headers.append(line.slice(0, colon), line.slice(colon + 1).trim());
+	}
+	return new Response(status === 204 || status === 304 ? null : stdout, {
+		status,
+		statusText: statusMatch[2] ?? "",
+		headers,
+	});
 }
 
 /**
@@ -397,13 +443,17 @@ async function fetchWithPolicy(
 		// Build the fetch function:
 		// 1. Reddit proxy path: route through the configured proxy agent.
 		//    The proxy handles DNS for the target URL.
-		// 2. Reddit without proxy: use plain undici fetch. Reddit is behind
-		//    Cloudflare — DNS pinning to a specific edge IP causes HTTP 421
-		//    "Misdirected Request" because Cloudflare's anycast routing
-		//    doesn't recognise the pinned connection. SSRF validation still
-		//    runs above (resolveOutboundHostname), we just don't pin.
+		// 2. Reddit without proxy: use curl. On the Pi, the same public RSS
+		//    URL returns 403 through undici but 200 through curl, including
+		//    when both resolve to the same Reddit edge. DNS validation still
+		//    runs above and redirects remain manual and revalidated here.
 		// 3. Everything else: DNS-pinned undici to prevent re-resolution.
-		const outboundFetch = useProxy
+		const useCurl = isRedditHost(url.hostname) && !useProxy && !proxiedUrl &&
+			!testFetchOverride && (!init.method || init.method.toUpperCase() === "GET") && !init.body;
+		const outboundFetch = useCurl
+			? (fUrl: string | URL, fInit?: RequestInit) =>
+				fetchRedditWithCurl(fUrl, fInit ?? {}, timeoutMs)
+			: useProxy
 			? (() => {
 					return (fUrl: string | URL, fInit?: RequestInit) =>
 						undiciFetch(fUrl, {
