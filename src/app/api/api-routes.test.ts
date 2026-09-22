@@ -130,9 +130,9 @@ describe("Request validation schemas", () => {
     assert.ok(!invalid.success);
   });
 
-  it("settingsSchema rejects retention days below 14", async () => {
+  it("settingsSchema rejects retention days below 30", async () => {
     const { settingsSchema } = await import("@/lib/schemas");
-    const tooLow = settingsSchema.safeParse({ itemRetentionDays: 7 });
+    const tooLow = settingsSchema.safeParse({ itemRetentionDays: 14 });
     assert.ok(!tooLow.success);
 
     const valid = settingsSchema.safeParse({ itemRetentionDays: 30 });

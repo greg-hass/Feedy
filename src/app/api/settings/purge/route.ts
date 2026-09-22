@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 		const user = await assertApiUser();
 		const input = await parseJson(request, purgeSchema);
 		const retentionDays =
-			input.itemRetentionDays ?? user.settings?.itemRetentionDays ?? 90;
+			input.itemRetentionDays ?? user.settings?.itemRetentionDays ?? 30;
 		const result = await pruneUserData(user.id, retentionDays);
 
 		invalidateNavigationCache(user.id);

@@ -54,7 +54,7 @@ function buildSingleUserSettingsData() {
 	return {
 		theme: ThemePreference.SYSTEM,
 		accentColor: AccentPreference.EMERALD,
-		itemRetentionDays: 90,
+		itemRetentionDays: 30,
 		hideYouTubeShorts: false,
 		refreshIntervalMinutes: env.REFRESH_DEFAULT_INTERVAL_MINUTES,
 	};
@@ -67,7 +67,7 @@ function buildExistingSettingsData(existingSettings: Settings | null) {
 					refreshIntervalMinutes:
 						existingSettings.refreshIntervalMinutes ||
 						env.REFRESH_DEFAULT_INTERVAL_MINUTES,
-					itemRetentionDays: existingSettings.itemRetentionDays || 90,
+					itemRetentionDays: Math.max(existingSettings.itemRetentionDays || 30, 30),
 					hideYouTubeShorts: existingSettings.hideYouTubeShorts ?? false,
 				},
 			}

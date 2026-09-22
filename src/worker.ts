@@ -104,7 +104,7 @@ async function runRetentionCleanup() {
 	if (!user) {
 		return;
 	}
-	const retentionDays = user.settings?.itemRetentionDays ?? 90;
+	const retentionDays = user.settings?.itemRetentionDays ?? 30;
 	const result = await pruneUserData(user.id, retentionDays);
 
 	if (

@@ -14,7 +14,7 @@ type StorageStatsRow = {
 export async function GET() {
   try {
     const user = await assertApiUser();
-    const retentionDays = user.settings?.itemRetentionDays ?? 90;
+    const retentionDays = user.settings?.itemRetentionDays ?? 30;
     const [row] = await prisma.$queryRaw<StorageStatsRow[]>(Prisma.sql`
       SELECT
         pg_database_size(current_database())::bigint AS "dbSizeBytes",

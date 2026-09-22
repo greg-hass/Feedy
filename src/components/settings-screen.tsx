@@ -433,14 +433,14 @@ export function SettingsScreen() {
 							Retention
 						</p>
 						<p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-							{me.data?.user.settings.itemRetentionDays ?? 90} days
+							{me.data?.user.settings.itemRetentionDays ?? 30} days
 						</p>
 						<p className="mt-1 text-xs leading-relaxed text-secondary">
-							Unread and read items older than this window are removed automatically
-							unless they are bookmarked.
+							Items older than this window are removed automatically, except the
+							latest 15 articles in each feed. Bookmarked items are always kept.
 						</p>
 						<div className="mt-3 flex gap-2">
-							{[14, 30, 90, 180, 365].map((days) => (
+							{[30, 90, 180, 365].map((days) => (
 								<button
 									key={days}
 									onClick={() => {
