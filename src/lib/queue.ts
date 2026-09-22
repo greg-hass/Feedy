@@ -1,8 +1,11 @@
 import { Queue } from "bullmq";
+import { FeedSourceType } from "@prisma/client";
 
+import { prisma } from "@/lib/db";
 import { getRedis } from "@/lib/redis";
 
 export const refreshQueueName = "feed-refresh";
+export const redditRefreshQueueName = "reddit-feed-refresh";
 export const iconQueueName = "icon-fetch";
 export const readerExtractionQueueName = "reader-extraction";
 
@@ -21,11 +24,22 @@ export type ReaderExtractionJobPayload = {
 };
 
 let refreshQueue: Queue<RefreshJobPayload> | undefined;
+let redditRefreshQueue: Queue<RefreshJobPayload> | undefined;
 let iconQueue: Queue<IconJobPayload> | undefined;
 let readerExtractionQueue: Queue<ReaderExtractionJobPayload> | undefined;
 
 export function getRefreshQueue() {
-	refreshQueue ??= new Queue<RefreshJobPayload>(refreshQueueName, {
+	refreshQueue ??= createRefreshQueue(refreshQueueName);
+	return refreshQueue;
+}
+
+export function getRedditRefreshQueue() {
+	redditRefreshQueue ??= createRefreshQueue(redditRefreshQueueName);
+	return redditRefreshQueue;
+}
+
+function createRefreshQueue(name: string) {
+	return new Queue<RefreshJobPayload>(name, {
 		connection: getRedis(),
 		defaultJobOptions: {
 			attempts: 4,
@@ -41,7 +55,6 @@ export function getRefreshQueue() {
 		},
 	});
 
-	return refreshQueue;
 }
 
 function getIconQueue() {
@@ -82,8 +95,19 @@ function getReaderExtractionQueue() {
 }
 
 export async function enqueueFeedRefresh(payload: RefreshJobPayload) {
-	const queue = getRefreshQueue();
 	const dedupeId = `refresh-${payload.feedId}`;
+	const feed = await prisma.feed.findUnique({
+		where: { id: payload.feedId },
+		select: { sourceType: true },
+	});
+	const isReddit = feed?.sourceType === FeedSourceType.REDDIT_RSS;
+	const queue = isReddit ? getRedditRefreshQueue() : getRefreshQueue();
+	if (isReddit) {
+		// Jobs queued before the dedicated Reddit queue was introduced still
+		// live in the original queue. Let those finish before scheduling another.
+		const previousJob = await getRefreshQueue().getJob(dedupeId);
+		if (previousJob) return { enqueued: false, job: previousJob };
+	}
 
 	const job = await queue.add(dedupeId, payload, {
 		jobId: dedupeId,

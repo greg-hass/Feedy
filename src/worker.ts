@@ -1,4 +1,4 @@
-import { UnrecoverableError, Worker } from "bullmq";
+import { UnrecoverableError, Worker, type Job } from "bullmq";
 
 import { JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -10,9 +10,11 @@ import { env } from "@/lib/env";
 import {
 	enqueueReaderExtraction,
 	getRefreshQueue,
+	redditRefreshQueueName,
 	iconQueueName,
 	readerExtractionQueueName,
 	refreshQueueName,
+	type RefreshJobPayload,
 } from "@/lib/queue";
 import { getRedis } from "@/lib/redis";
 import { pruneUserData } from "@/lib/retention";
@@ -48,6 +50,7 @@ async function scheduleDueFeeds() {
 		where: { userId: user.id },
 		select: {
 			id: true,
+			sourceType: true,
 			lastRefreshedAt: true,
 			lastFailureAt: true,
 		},
@@ -248,30 +251,36 @@ async function boot() {
 	await syncSingleUserFromEnv();
 	await recoverStaleRefreshJobsOnBoot();
 
+	const processRefresh = async (job: Job<RefreshJobPayload>) => {
+		try {
+			await refreshFeed(
+				job.data.feedId,
+				queueTriggerToJobTrigger(job.data.trigger),
+				job.data.refreshJobId,
+			);
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : "Unknown refresh error";
+
+			if (isPermanentRefreshError(error)) {
+				throw new UnrecoverableError(message);
+			}
+
+			throw error;
+		}
+	};
 	const refreshWorker = new Worker(
 		refreshQueueName,
-		async (job) => {
-			try {
-				await refreshFeed(
-					job.data.feedId,
-					queueTriggerToJobTrigger(job.data.trigger),
-					job.data.refreshJobId,
-				);
-			} catch (error) {
-				const message =
-					error instanceof Error ? error.message : "Unknown refresh error";
-
-				if (isPermanentRefreshError(error)) {
-					throw new UnrecoverableError(message);
-				}
-
-				throw error;
-			}
-		},
+		processRefresh,
 		{
 			connection: getRedis(),
 			concurrency: env.REFRESH_WORKER_CONCURRENCY,
 		},
+	);
+	const redditRefreshWorker = new Worker(
+		redditRefreshQueueName,
+		processRefresh,
+		{ connection: getRedis(), concurrency: 1 },
 	);
 
 	const iconWorker = new Worker(
@@ -298,6 +307,9 @@ async function boot() {
 
 	refreshWorker.on("failed", (job, error) => {
 		console.error("Refresh job failed", job?.id, error);
+	});
+	redditRefreshWorker.on("failed", (job, error) => {
+		console.error("Reddit refresh job failed", job?.id, error);
 	});
 
 	iconWorker.on("failed", (job, error) => {
@@ -375,6 +387,7 @@ async function boot() {
 		try {
 			await Promise.allSettled([
 				refreshWorker.close(),
+				redditRefreshWorker.close(),
 				iconWorker.close(),
 				readerExtractionWorker.close(),
 			]);

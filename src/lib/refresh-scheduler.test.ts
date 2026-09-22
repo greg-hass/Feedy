@@ -1,9 +1,26 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { FeedSourceType } from "@prisma/client";
 
 import { selectDueFeeds } from "@/lib/refresh-scheduler";
 
 describe("selectDueFeeds", () => {
+	it("refreshes Reddit no more often than hourly", () => {
+		const now = new Date("2026-06-12T12:00:00.000Z").getTime();
+		assert.deepEqual(
+			selectDueFeeds({
+				feeds: [
+					{ id: "reddit-recent", sourceType: FeedSourceType.REDDIT_RSS, lastRefreshedAt: new Date("2026-06-12T11:30:00.000Z"), lastFailureAt: null },
+					{ id: "reddit-due", sourceType: FeedSourceType.REDDIT_RSS, lastRefreshedAt: new Date("2026-06-12T10:59:00.000Z"), lastFailureAt: null },
+				],
+				now,
+				intervalMinutes: 15,
+				backlog: 0,
+			}).dueFeedIds,
+			["reddit-due"],
+		);
+	});
+
 	it("uses the Settings cadence for every feed", () => {
 		const now = new Date("2026-06-12T12:00:00.000Z").getTime();
 

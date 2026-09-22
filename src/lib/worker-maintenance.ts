@@ -1,3 +1,5 @@
+import { FeedSourceType } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
 import { enqueueFeedRefresh } from "@/lib/queue";
 import {
@@ -101,7 +103,13 @@ export async function failStaleQueuedRefreshJobs(
 	const result = await client.refreshJob.updateMany({
 		where: {
 			status: "QUEUED",
-			requestedAt: { lt: new Date(Date.now() - maxAgeMinutes * 60_000) },
+			OR: [
+				{ requestedAt: { lt: new Date(Date.now() - 90 * 60_000) } },
+				{
+					requestedAt: { lt: new Date(Date.now() - maxAgeMinutes * 60_000) },
+					feed: { isNot: { sourceType: FeedSourceType.REDDIT_RSS } },
+				},
+			],
 		},
 		data: {
 			status: "FAILED",
