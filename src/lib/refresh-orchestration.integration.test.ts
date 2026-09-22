@@ -83,6 +83,12 @@ testDescribe("refresh orchestration integration", () => {
 					},
 				},
 			);
+			// Exercise BullMQ's stable job ID when the DB sentinel is absent.
+			// Queue.add still returns a truthy Job for a duplicate ID.
+			await prisma.refreshJob.updateMany({
+				where: { feedId: feed.id },
+				data: { status: "FAILED" },
+			});
 			const second = await queueSingleFeedRefresh(
 				user.id,
 				feed.id,

@@ -108,21 +108,20 @@ export async function enqueueFeedRefresh(payload: RefreshJobPayload) {
 		const previousJob = await getRefreshQueue().getJob(dedupeId);
 		if (previousJob) return { enqueued: false, job: previousJob };
 	}
+	const existing = await queue.getJob(dedupeId);
+	if (existing) return { enqueued: false, job: existing };
 
 	const job = await queue.add(dedupeId, payload, {
 		jobId: dedupeId,
 	});
-
-	if (!job) {
-		// BullMQ deduped against an existing active job (same jobId already
-		// exists in waiting/delayed/active state). Fetch the existing job
-		// so the caller can inspect it (e.g. to check trigger type).
-		const existing = await queue.getJob(dedupeId);
-		return { enqueued: false, job: existing! };
+	// BullMQ returns a truthy Job with the *new* payload even when a stable
+	// jobId collided and Redis kept the older job. Read the stored payload to
+	// distinguish that case, including concurrent enqueues from web and worker.
+	const storedJob = await queue.getJob(dedupeId);
+	if (storedJob && storedJob.data.refreshJobId !== payload.refreshJobId) {
+		return { enqueued: false, job: storedJob };
 	}
-
-	// New job created. BullMQ returns our payload as-is, so no payload
-	// comparison needed — a truthy job always carries matching data.
+	// A missing stored job has already been processed and removed.
 	return { enqueued: true, job };
 }
 
