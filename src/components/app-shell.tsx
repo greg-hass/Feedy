@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { IconButton } from "@/components/ui/icon-button";
 import { useAutoHideHeader } from "@/components/use-auto-hide-header";
 import { api } from "@/lib/client";
+import { formatUnreadBadge } from "@/lib/utils";
 import { vibrateIfSupported } from "@/lib/tab-interactions";
 import type { MeResponse } from "@/types/app";
 
@@ -62,6 +63,7 @@ export function MobileShell({
 	const logout = useLogout();
 
 	const accent = me.data?.user.settings.accentColor ?? "EMERALD";
+	const unreadTotal = me.data?.navigation.stats.unreadTotal ?? 0;
 
 	useEffect(() => {
 		document.documentElement.dataset.accent = accent;
@@ -172,9 +174,28 @@ export function MobileShell({
 										style={{
 											color: active ? "var(--accent)" : "var(--nav-inactive)",
 										}}
+										aria-label={
+											item.href === "/app/unread" && unreadTotal > 0
+												? `${item.label}, ${unreadTotal.toLocaleString()} unread`
+												: undefined
+										}
 										aria-current={active ? "page" : undefined}
 									>
-										<Icon className="size-[26px]" strokeWidth={active ? 2.5 : 2} />
+										<span className="relative">
+											<Icon className="size-[26px]" strokeWidth={active ? 2.5 : 2} />
+											{item.href === "/app/unread" && unreadTotal > 0 ? (
+												<span
+													aria-hidden="true"
+													className="absolute -right-2.5 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none tabular-nums shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+													style={{
+														backgroundColor: "var(--accent)",
+														color: "var(--accent-contrast)",
+													}}
+												>
+													{formatUnreadBadge(unreadTotal)}
+												</span>
+											) : null}
+										</span>
 										<span style={{ letterSpacing: "0.04em" }}>{item.label}</span>
 									</Link>
 								);

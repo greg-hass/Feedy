@@ -15,6 +15,26 @@ import {
 	MAX_OPML_IMPORT_FEEDS,
 } from "@/lib/workload-limits";
 
+async function downloadExportFile(path: string, filename: string) {
+	const response = await fetch(path, {
+		cache: "no-store",
+		credentials: "same-origin",
+	});
+	if (!response.ok) {
+		const data = (await response.json().catch(() => null)) as {
+			error?: string;
+		} | null;
+		throw new Error(data?.error || "Export failed");
+	}
+
+	const url = window.URL.createObjectURL(await response.blob());
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = filename;
+	anchor.click();
+	window.URL.revokeObjectURL(url);
+}
+
 export function ImportExportScreen() {
 	const queryClient = useQueryClient();
 	const [file, setFile] = useState<File | null>(null);
@@ -90,25 +110,8 @@ export function ImportExportScreen() {
 		: 0;
 
 	const downloadJson = useMutation({
-		mutationFn: async () => {
-			const response = await fetch("/api/export/json", {
-				cache: "no-store",
-				credentials: "same-origin",
-			});
-			if (!response.ok) {
-				const data = (await response.json().catch(() => null)) as {
-					error?: string;
-				} | null;
-				throw new Error(data?.error || "JSON export failed");
-			}
-
-			const url = window.URL.createObjectURL(await response.blob());
-			const anchor = document.createElement("a");
-			anchor.href = url;
-			anchor.download = "feedy-backup.json";
-			anchor.click();
-			window.URL.revokeObjectURL(url);
-		},
+		mutationFn: () =>
+			downloadExportFile("/api/export/json", "feedy-backup.json"),
 		onMutate: () => {
 			setExportStatus("downloading");
 			setExportMessage("Preparing your JSON backup...");
@@ -121,6 +124,25 @@ export function ImportExportScreen() {
 			setExportStatus("error");
 			setExportMessage(
 				error instanceof Error ? error.message : "JSON export failed",
+			);
+		},
+	});
+
+	const downloadOpml = useMutation({
+		mutationFn: () =>
+			downloadExportFile("/api/export/opml", "feedy-subscriptions.opml"),
+		onMutate: () => {
+			setExportStatus("downloading");
+			setExportMessage("Preparing your OPML file...");
+		},
+		onSuccess: () => {
+			setExportStatus("success");
+			setExportMessage("OPML subscriptions exported.");
+		},
+		onError: (error) => {
+			setExportStatus("error");
+			setExportMessage(
+				error instanceof Error ? error.message : "OPML export failed",
 			);
 		},
 	});
@@ -138,7 +160,7 @@ export function ImportExportScreen() {
 					<input
 						ref={fileInputRef}
 						type="file"
-						accept="*/*"
+						accept=".opml,.xml,text/xml,application/xml"
 						className="hidden"
 						onChange={(event) => {
 							setFile(event.target.files?.[0] ?? null);
@@ -245,11 +267,14 @@ export function ImportExportScreen() {
 						articles. For larger libraries, keep a database backup.
 					</p>
 					<div className="mt-3 grid grid-cols-2 gap-2">
-						<a href="/api/export/opml">
-							<Button variant="secondary" className="w-full text-xs">
-								Export OPML
-							</Button>
-						</a>
+						<Button
+							variant="secondary"
+							className="w-full text-xs"
+							onClick={() => downloadOpml.mutate()}
+							disabled={exportStatus === "downloading"}
+						>
+							{exportStatus === "downloading" ? "Exporting..." : "Export OPML"}
+						</Button>
 						<Button
 							className="w-full text-xs"
 							onClick={() => downloadJson.mutate()}
@@ -262,12 +287,12 @@ export function ImportExportScreen() {
 						<div
 							role={exportStatus === "error" ? "alert" : "status"}
 							aria-live="polite"
-							className={`mt-3 rounded-xl px-3 py-2 text-xs ${
+							className={`mt-3 rounded-2xl border px-4 py-3 text-xs ${
 								exportStatus === "success"
-									? "bg-[var(--accent-soft)] text-[var(--accent)]"
+									? "border-subtle bg-[var(--surface-strong)] text-[var(--text-primary)]"
 									: exportStatus === "error"
-										? "bg-[var(--danger)]/10 text-[var(--danger)]"
-										: "bg-[var(--surface-muted)] text-secondary"
+										? "border-[var(--danger)]/25 bg-[var(--danger)]/8 text-[var(--danger)]"
+										: "border-subtle bg-[var(--surface-muted)] text-secondary"
 							}`}
 						>
 							{exportMessage}

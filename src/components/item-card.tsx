@@ -411,7 +411,7 @@ export const ItemCard = memo(function ItemCard({
 						</span>
 						{!isYouTube && (
 							<>
-								<span className="text-[var(--border)]">·</span>
+								<span className="text-[var(--text-tertiary)]">·</span>
 								<span className="text-[var(--text-secondary)]">
 									{item.feed.sourceType.replace("_RSS", "").replace("_", " ")}
 								</span>

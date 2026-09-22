@@ -52,3 +52,15 @@ export function decodeHtmlEntities(value: string | null | undefined) {
   const twice = decodeOnce(once);
   return twice;
 }
+
+/**
+ * Compact label for the navigation unread badge. Capped so the badge keeps a
+ * stable width inside the nav pill; callers should not render it when the
+ * count is zero.
+ */
+export function formatUnreadBadge(count: number): string {
+  if (!Number.isFinite(count) || count <= 0) {
+    return "0";
+  }
+  return count > 99 ? "99+" : String(count);
+}

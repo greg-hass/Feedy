@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { decodeHtmlEntities } from "@/lib/utils";
+import { decodeHtmlEntities, formatUnreadBadge } from "@/lib/utils";
 
 describe("decodeHtmlEntities", () => {
 	it("decodes named entities", () => {
@@ -27,5 +27,24 @@ describe("decodeHtmlEntities", () => {
 	it("returns empty string for nullish input", () => {
 		assert.equal(decodeHtmlEntities(null), "");
 		assert.equal(decodeHtmlEntities(undefined), "");
+	});
+});
+
+describe("formatUnreadBadge", () => {
+	it("renders small counts verbatim", () => {
+		assert.equal(formatUnreadBadge(1), "1");
+		assert.equal(formatUnreadBadge(42), "42");
+		assert.equal(formatUnreadBadge(99), "99");
+	});
+
+	it("caps large counts so the badge keeps a stable width", () => {
+		assert.equal(formatUnreadBadge(100), "99+");
+		assert.equal(formatUnreadBadge(12345), "99+");
+	});
+
+	it("falls back to zero for non-positive or invalid counts", () => {
+		assert.equal(formatUnreadBadge(0), "0");
+		assert.equal(formatUnreadBadge(-3), "0");
+		assert.equal(formatUnreadBadge(Number.NaN), "0");
 	});
 });
