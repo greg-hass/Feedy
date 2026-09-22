@@ -8,7 +8,7 @@ export function normalizeRedditFeed(url: string) {
   }
 
   const subredditMatch = parsed.pathname.match(/\/r\/([^/]+)/);
-  const subreddit = subredditMatch?.[1] ?? null;
+  const subreddit = subredditMatch?.[1]?.replace(/\.rss$/i, "") ?? null;
   const feedPath = subreddit ? `/r/${subreddit}/.rss` : parsed.pathname.endsWith(".rss") ? parsed.pathname : `${parsed.pathname.replace(/\/$/, "")}.rss`;
   return {
     title: subreddit ? `r/${subreddit}` : "Reddit RSS",
