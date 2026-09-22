@@ -166,7 +166,8 @@ export default function FolderDetailPage() {
 										<button
 											onClick={() => setShowBulkMove(true)}
 											disabled={!selectedCount}
-											className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] transition duration-200 disabled:opacity-50 disabled:pointer-events-none"
+											data-flat-control="true"
+											className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-[11px] font-semibold text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.18)] transition duration-200 disabled:opacity-50 disabled:pointer-events-none"
 										>
 											<FolderInput className="size-3.5" />
 											Move
@@ -176,7 +177,7 @@ export default function FolderDetailPage() {
 												setSelectionMode(false);
 												setSelectedFeedIds([]);
 											}}
-											className="inline-flex items-center gap-1.5 rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
+											className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
 										>
 											<X className="size-3.5" />
 											Cancel
@@ -189,7 +190,7 @@ export default function FolderDetailPage() {
 										</p>
 										<button
 											onClick={() => setSelectionMode(true)}
-											className="inline-flex items-center gap-1.5 rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
+											className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-subtle bg-[var(--surface)] px-3 py-2 text-[11px] font-semibold text-secondary transition duration-200 hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]"
 										>
 											<CheckSquare className="size-3.5" />
 											Select

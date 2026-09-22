@@ -240,6 +240,7 @@ body {
   background: var(--app-bg);
   color: var(--text-primary);
   font-family: var(--font-manrope), sans-serif;
+  text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -441,7 +442,8 @@ select {
 
 :root[data-layout="flat"] .icon-button,
 :root[data-layout="flat"] .app-button,
-:root[data-layout="flat"] [data-flat-control="true"] {
+:root[data-layout="flat"] [data-flat-control="true"],
+:root[data-layout="flat"] [data-flat-control="true"] * {
   border-radius: 8px !important;
   box-shadow: none !important;
 }
@@ -622,8 +624,8 @@ select {
 }
 
 .reader-content {
-  line-height: 1.7;
-  font-size: 0.9375rem;
+  line-height: 1.65;
+  font-size: 1.0625rem;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -648,7 +650,7 @@ select {
   line-height: 1.3;
 }
 
-.reader-content h1 { font-size: 1.5rem; }
+.reader-content h1 { font-size: 1.75rem; }
 .reader-content h2 { font-size: 1.25rem; }
 .reader-content h3 { font-size: 1.125rem; }
 

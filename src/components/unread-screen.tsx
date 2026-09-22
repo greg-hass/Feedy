@@ -647,6 +647,7 @@ export function UnreadScreen() {
 							!deferredQuery.trim() && stateFilter === "UNREAD" ? (
 								<Link
 									href="/app/discover"
+											data-flat-control="true"
 									className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-contrast)] shadow-[0_12px_28px_rgba(var(--accent-rgb),0.22)]"
 								>
 									Discover feeds

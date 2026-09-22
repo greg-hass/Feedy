@@ -257,7 +257,7 @@ export default function ReaderPage() {
 										// window when a universal link hands off to a native app.
 										window.location.assign(data.canonicalUrl ?? "");
 									}}
-									className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
+									className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)] after:absolute after:-inset-1 after:content-['']"
 									aria-label="Open original article"
 								>
 									<ExternalLink className="size-4" />
@@ -268,7 +268,7 @@ export default function ReaderPage() {
 				</div>
 			</div>
 
-			<div className="px-5">
+			<div className="mx-auto w-full max-w-[40rem] px-5">
 				<div className="flex items-center gap-2.5">
 					<FeedAvatar
 						feedId={data.feed.id}
@@ -281,7 +281,7 @@ export default function ReaderPage() {
 					</p>
 				</div>
 
-				<h1 className="mt-2 text-[1.4rem] font-semibold leading-[1.2] tracking-[-0.02em]">
+				<h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em]">
 					{decodeHtmlEntities(data.title)}
 				</h1>
 
@@ -345,7 +345,7 @@ export default function ReaderPage() {
 						}}
 					/>
 				) : data.summary ? (
-					<p className="mt-6 text-[15px] leading-relaxed text-secondary">
+					<p className="mt-6 text-[17px] leading-[1.65] text-secondary">
 						{data.summary}
 					</p>
 				) : null}

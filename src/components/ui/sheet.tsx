@@ -139,7 +139,7 @@ export function Sheet({
 						type="button"
 						onClick={onClose}
 						aria-label={`Close ${title}`}
-						className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
+						className="relative inline-flex h-8 w-8 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)] after:absolute after:-inset-1.5 after:content-['']"
 					>
 						<X className="size-5" />
 					</button>

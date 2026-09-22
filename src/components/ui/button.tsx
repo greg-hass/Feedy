@@ -17,7 +17,7 @@ const buttonVariants = cva(
         danger: "bg-[var(--danger)] text-white",
       },
       size: {
-        sm: "rounded-xl px-3 py-2 text-xs",
+        sm: "rounded-xl min-h-11 px-3.5 py-2.5 text-xs",
         md: "rounded-2xl px-4 py-3 text-sm",
         lg: "rounded-[18px] px-6 py-4 text-base",
       },

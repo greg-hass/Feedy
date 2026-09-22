@@ -497,7 +497,8 @@ export function FeedsScreen() {
 									setSelectedFeedIds([]);
 									setShowBulkMove(false);
 								}}
-								className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-xs font-semibold text-secondary transition duration-200 active:bg-[var(--surface-muted)]"
+								data-flat-control="true"
+								className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-xs font-semibold text-secondary transition duration-200 active:bg-[var(--surface-muted)]"
 							>
 								<X className="size-4" />
 								Cancel
@@ -508,7 +509,8 @@ export function FeedsScreen() {
 							<button
 								onClick={() => setShowBulkMove(true)}
 								disabled={!selectedCount}
-								className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_24px_rgba(var(--accent-rgb),0.28)] transition duration-200 disabled:pointer-events-none disabled:opacity-50"
+								data-flat-control="true"
+								className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-[var(--accent)] px-4 text-xs font-semibold text-[var(--accent-contrast)] shadow-[0_10px_24px_rgba(var(--accent-rgb),0.28)] transition duration-200 disabled:pointer-events-none disabled:opacity-50"
 							>
 								<FolderInput className="size-4" />
 								Move

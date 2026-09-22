@@ -379,6 +379,12 @@ export const ItemCard = memo(function ItemCard({
 					<p className="truncate text-[12px] font-medium text-secondary">
 						{feedTitle}
 					</p>
+					{!item.read ? (
+						<span
+							aria-hidden="true"
+							className="ml-auto inline-block size-[7px] shrink-0 rounded-full bg-[var(--accent)] shadow-[0_0_0_3px_var(--accent-dim)]"
+						/>
+					) : null}
 				</div>
 
 				<Link
@@ -387,7 +393,7 @@ export const ItemCard = memo(function ItemCard({
 					onClick={navigateToReader}
 				>
 					<h3
-						className={`mt-1.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] line-clamp-2 transition-colors duration-200 ${hoverTextClass} ${item.read ? "opacity-50" : ""}`}
+						className={`mt-1.5 text-[17px] font-semibold leading-snug tracking-[-0.01em] line-clamp-2 transition-colors duration-200 ${hoverTextClass} ${item.read ? "text-secondary" : ""}`}
 					>
 						<SearchHighlight text={itemTitle} query={searchQuery} />
 					</h3>
@@ -395,7 +401,7 @@ export const ItemCard = memo(function ItemCard({
 
 				{item.summary && !thumbnailUrl && (
 					<p
-						className={`mt-1.5 text-[13px] leading-relaxed text-secondary line-clamp-2 ${item.read ? "opacity-50" : ""}`}
+						className={`mt-1.5 text-[13px] leading-relaxed line-clamp-2 ${item.read ? "text-[var(--text-tertiary)]" : "text-[var(--text-secondary)]"}`}
 					>
 						<SearchHighlight
 							text={decodeHtmlEntities(item.summary)}
@@ -441,7 +447,7 @@ export const ItemCard = memo(function ItemCard({
 							<a
 								href={item.canonicalUrl}
 								rel="noreferrer"
-								className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)]"
+								className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-subtle bg-[var(--surface)] text-secondary transition duration-200 hover:bg-[var(--surface-muted)] after:absolute after:-inset-1 after:content-['']"
 								data-card-action
 							>
 								<ExternalLink className="size-[18px]" />

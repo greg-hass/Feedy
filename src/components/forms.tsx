@@ -381,6 +381,7 @@ export function EditFeedSheet({
 				<button
 					type="button"
 					onClick={() => setIsPinned(!isPinned)}
+											data-flat-control="true"
 					className={`mt-2.5 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
 						isPinned
 							? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_22px_rgba(var(--accent-rgb),0.2)]"

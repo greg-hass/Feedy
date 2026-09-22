@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const iconButtonVariants = cva(
-  "inline-flex items-center justify-center rounded-xl border border-subtle transition duration-200 disabled:opacity-50 disabled:pointer-events-none",
+  "relative inline-flex items-center justify-center rounded-xl border border-subtle transition duration-200 disabled:opacity-50 disabled:pointer-events-none after:absolute after:content-['']",
   {
     variants: {
       variant: {
@@ -15,8 +15,8 @@ const iconButtonVariants = cva(
         ghost: "border-transparent bg-transparent text-secondary hover:bg-[var(--surface-muted)]",
       },
       size: {
-        sm: "h-8 w-8",
-        md: "h-10 w-10",
+        sm: "h-8 w-8 after:-inset-1.5",
+        md: "h-10 w-10 after:-inset-1",
       },
     },
     defaultVariants: {
