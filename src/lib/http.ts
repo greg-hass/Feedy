@@ -23,7 +23,7 @@ const redditNextRequestAt = new Map<string, number>();
 const MAX_OUTBOUND_RESPONSE_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
 const MAX_RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
-const REDDIT_REQUEST_INTERVAL_MS = 60_000;
+const REDDIT_REQUEST_INTERVAL_MS = 30_000;
 
 function getDomainSemaphore(hostname: string) {
 	let sem = domainSemaphores.get(hostname);
@@ -93,11 +93,9 @@ function rememberRateLimit(hostname: string, cooldownMs: number) {
 }
 
 /**
- * Wait for a rate-limit cooldown to expire instead of throwing.
- * Capped at MAX_RATE_LIMIT_WAIT_MS to avoid blocking the worker indefinitely.
+ * Wait for a rate-limit cooldown to expire instead of throwing. The cooldown
+ * is capped when it is recorded, so waiting for the full delay is bounded.
  */
-const MAX_RATE_LIMIT_WAIT_MS = 60_000;
-
 async function waitForRateLimitCooldown(hostname: string) {
 	const limitedUntil = domainRateLimitUntil.get(hostname) ?? 0;
 	const remainingMs = limitedUntil - Date.now();
@@ -108,7 +106,7 @@ async function waitForRateLimitCooldown(hostname: string) {
 		return;
 	}
 
-	const waitMs = Math.min(remainingMs, MAX_RATE_LIMIT_WAIT_MS);
+	const waitMs = Math.min(remainingMs, MAX_RATE_LIMIT_COOLDOWN_MS);
 	await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
 
 	if (Date.now() >= limitedUntil) {
