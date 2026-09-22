@@ -132,32 +132,43 @@ async function fetchRedditWithCurl(
 		"--max-redirs", "0",
 		"--max-time", String(Math.max(1, Math.ceil(timeoutMs / 1000))),
 		"--max-filesize", String(MAX_OUTBOUND_RESPONSE_BYTES),
-		"--dump-header", "/dev/stderr",
+		"--include",
 	];
 	for (const [name, value] of new Headers(init.headers)) {
 		args.push("--header", `${name}: ${value}`);
 	}
 	args.push("--url", String(url));
-	const { stdout, stderr } = await execFileAsync("curl", args, {
+	const { stdout } = await execFileAsync("curl", args, {
 		encoding: "buffer",
 		maxBuffer: MAX_OUTBOUND_RESPONSE_BYTES + 64 * 1024,
 		signal: init.signal ?? undefined,
 	});
-	const headerBlocks = stderr.toString("latin1").trim().split(/\r?\n\r?\n/);
-	const lines = headerBlocks.at(-1)?.split(/\r?\n/) ?? [];
-	const statusMatch = lines.shift()?.match(/^HTTP\/\d(?:\.\d)? (\d{3})(?: (.*))?$/);
-	if (!statusMatch) {
-		throw new Error("Reddit RSS response did not include an HTTP status");
-	}
-	const status = Number(statusMatch[1]);
-	const headers = new Headers();
-	for (const line of lines) {
-		const colon = line.indexOf(":");
-		if (colon > 0) headers.append(line.slice(0, colon), line.slice(colon + 1).trim());
-	}
-	return new Response(status === 204 || status === 304 ? null : stdout, {
+	let bodyOffset = 0;
+	let status = 0;
+	let statusText = "";
+	let headers = new Headers();
+	do {
+		const headerEnd = stdout.indexOf("\r\n\r\n", bodyOffset);
+		if (headerEnd < 0) {
+			throw new Error("Reddit RSS response did not include HTTP headers");
+		}
+		const lines = stdout.subarray(bodyOffset, headerEnd).toString("latin1").split("\r\n");
+		const statusMatch = lines.shift()?.match(/^HTTP\/\d(?:\.\d)? (\d{3})(?: (.*))?$/);
+		if (!statusMatch) {
+			throw new Error("Reddit RSS response did not include an HTTP status");
+		}
+		status = Number(statusMatch[1]);
+		statusText = statusMatch[2] ?? "";
+		headers = new Headers();
+		for (const line of lines) {
+			const colon = line.indexOf(":");
+			if (colon > 0) headers.append(line.slice(0, colon), line.slice(colon + 1).trim());
+		}
+		bodyOffset = headerEnd + 4;
+	} while (status >= 100 && status < 200);
+	return new Response(status === 204 || status === 304 ? null : stdout.subarray(bodyOffset), {
 		status,
-		statusText: statusMatch[2] ?? "",
+		statusText,
 		headers,
 	});
 }
