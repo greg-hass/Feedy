@@ -49,6 +49,9 @@ services:
   web:
     image: ghcr.io/greg-hass/feedy:latest
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
     env_file:
       - .env
     environment:
@@ -84,6 +87,9 @@ services:
   worker:
     image: ghcr.io/greg-hass/feedy:latest
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
     env_file:
       - .env
     environment:

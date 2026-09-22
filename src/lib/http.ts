@@ -19,9 +19,11 @@ const domainSemaphores = new Map<
 	{ running: number; queue: SemaphoreSlot[] }
 >();
 const domainRateLimitUntil = new Map<string, number>();
+const redditNextRequestAt = new Map<string, number>();
 const MAX_OUTBOUND_RESPONSE_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
 const MAX_RATE_LIMIT_COOLDOWN_MS = 10 * 60 * 1000;
+const REDDIT_REQUEST_INTERVAL_MS = 60_000;
 
 function getDomainSemaphore(hostname: string) {
 	let sem = domainSemaphores.get(hostname);
@@ -112,6 +114,15 @@ async function waitForRateLimitCooldown(hostname: string) {
 	if (Date.now() >= limitedUntil) {
 		domainRateLimitUntil.delete(hostname);
 	}
+}
+
+async function paceRedditRequest(hostname: string) {
+	if (!isRedditHost(hostname) || testFetchOverride) return;
+	const waitMs = Math.max(0, (redditNextRequestAt.get(hostname) ?? 0) - Date.now());
+	if (waitMs > 0) {
+		await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+	}
+	redditNextRequestAt.set(hostname, Date.now() + REDDIT_REQUEST_INTERVAL_MS);
 }
 
 function isPrivateAddress(address: string) {
@@ -327,6 +338,7 @@ async function fetchWithPolicy(
 
 	const release = await acquireDomainSlot(url.hostname);
 	await waitForRateLimitCooldown(url.hostname);
+	await paceRedditRequest(url.hostname);
 
 	const proxiedUrl =
 		isRedditHost(url.hostname) && env.REDDIT_RSS_PROXY_URL

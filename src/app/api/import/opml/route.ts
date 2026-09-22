@@ -5,6 +5,7 @@ import { ImportExportStatus, ImportExportType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { invalidateNavigationCache } from "@/lib/navigation-data";
 import { parseOpml } from "@/lib/feed/opml";
+import { normalizeRedditFeed } from "@/lib/feed/discover-reddit";
 import { validateFeedUrl } from "@/lib/feed/parse";
 import { createValidatedFeedForUser } from "@/lib/feed/service";
 import { createFixedWindowRateLimiter } from "@/lib/rate-limit";
@@ -115,7 +116,17 @@ async function importNodes(
 		REMOTE_PROBE_BATCH_SIZE,
 		async ({ entry, folderPath }) => {
 			try {
-				const validated = await validateFeedUrl(entry.xmlUrl!);
+				const reddit = normalizeRedditFeed(entry.xmlUrl!);
+				const validated = reddit
+					? {
+							title: reddit.title,
+							description: reddit.description,
+							siteUrl: reddit.siteUrl,
+							feedUrl: reddit.feedUrl,
+							iconUrl: reddit.favicon,
+							sourceType: reddit.sourceType,
+						}
+					: await validateFeedUrl(entry.xmlUrl!);
 				const existing = await prisma.feed.findFirst({
 					where: {
 						userId,

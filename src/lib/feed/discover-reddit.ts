@@ -1,6 +1,9 @@
 export function normalizeRedditFeed(url: string) {
   const parsed = new URL(url);
-  if (!parsed.hostname.includes("reddit.com")) {
+  if (
+    (parsed.protocol !== "https:" && parsed.protocol !== "http:") ||
+    (parsed.hostname !== "reddit.com" && !parsed.hostname.endsWith(".reddit.com"))
+  ) {
     return null;
   }
 
