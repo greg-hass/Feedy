@@ -1,6 +1,6 @@
 import { UnrecoverableError, Worker, type Job } from "bullmq";
 
-import { JobTrigger } from "@prisma/client";
+import { FeedSourceType, JobTrigger } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchAndCacheIcon } from "@/lib/feed/icons";
 import { ensureReaderContent, refreshFeed } from "@/lib/feed/service";
@@ -10,6 +10,7 @@ import { env } from "@/lib/env";
 import {
 	enqueueReaderExtraction,
 	getRefreshQueue,
+	getRedditRefreshQueue,
 	redditRefreshQueueName,
 	iconQueueName,
 	readerExtractionQueueName,
@@ -271,7 +272,20 @@ async function boot() {
 	};
 	const refreshWorker = new Worker(
 		refreshQueueName,
-		processRefresh,
+		async (job: Job<RefreshJobPayload>) => {
+			const feed = await prisma.feed.findUnique({
+				where: { id: job.data.feedId },
+				select: { sourceType: true },
+			});
+			if (feed?.sourceType === FeedSourceType.REDDIT_RSS) {
+				// Move jobs left in the original queue by earlier deployments.
+				await getRedditRefreshQueue().add(job.name, job.data, {
+					jobId: job.id,
+				});
+				return;
+			}
+			await processRefresh(job);
+		},
 		{
 			connection: getRedis(),
 			concurrency: env.REFRESH_WORKER_CONCURRENCY,
