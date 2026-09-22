@@ -252,7 +252,10 @@ async function boot() {
 	await syncSingleUserFromEnv();
 	await recoverStaleRefreshJobsOnBoot();
 
-	const processRefresh = async (job: Job<RefreshJobPayload>) => {
+	const processRefresh = async (
+		job: Job<RefreshJobPayload>,
+		sourceType?: FeedSourceType,
+	) => {
 		try {
 			await refreshFeed(
 				job.data.feedId,
@@ -263,7 +266,7 @@ async function boot() {
 			const message =
 				error instanceof Error ? error.message : "Unknown refresh error";
 
-			if (isPermanentRefreshError(error)) {
+			if (isPermanentRefreshError(error, sourceType)) {
 				throw new UnrecoverableError(message);
 			}
 
@@ -293,7 +296,7 @@ async function boot() {
 	);
 	const redditRefreshWorker = new Worker(
 		redditRefreshQueueName,
-		processRefresh,
+		(job: Job<RefreshJobPayload>) => processRefresh(job, FeedSourceType.REDDIT_RSS),
 		{ connection: getRedis(), concurrency: 1 },
 	);
 

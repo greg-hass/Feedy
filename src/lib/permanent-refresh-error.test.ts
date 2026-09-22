@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { FeedSourceType } from "@prisma/client";
 
 import { isPermanentRefreshError } from "@/lib/permanent-refresh-error";
 
@@ -20,6 +21,12 @@ describe("isPermanentRefreshError", () => {
 					`Expected false for status ${status}`,
 				);
 			}
+		});
+
+		it("retries a Reddit RSS 403 but keeps other 403s permanent", () => {
+			const error = new Error("Feed returned 403");
+			assert.equal(isPermanentRefreshError(error, FeedSourceType.REDDIT_RSS), false);
+			assert.equal(isPermanentRefreshError(error, FeedSourceType.RSS), true);
 		});
 	});
 

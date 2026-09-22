@@ -1,3 +1,5 @@
+import { FeedSourceType } from "@prisma/client";
+
 // HTTP status codes that indicate a permanently broken feed.
 // Thrown by our own code as "Feed returned {status}" in
 // src/lib/feed/parse.ts and src/lib/feed/youtube.ts.
@@ -17,11 +19,19 @@ const PERMANENT_PARSER_ERROR_PATTERNS = [
  * or returns a permanent HTTP failure status). Permanent errors are marked
  * Unrecoverable so BullMQ does not retry them.
  */
-export function isPermanentRefreshError(error: unknown): boolean {
+export function isPermanentRefreshError(
+	error: unknown,
+	sourceType?: FeedSourceType,
+): boolean {
 	const message = error instanceof Error ? error.message : String(error);
 
 	// HTTP status errors — format controlled by our own throw sites.
 	const httpMatch = message.match(/Feed returned (\d{3})/);
+	// Reddit occasionally responds 403 to an otherwise public RSS feed. Give
+	// that feed one paced retry before treating this attempt as failed.
+	if (httpMatch?.[1] === "403" && sourceType === FeedSourceType.REDDIT_RSS) {
+		return false;
+	}
 	if (httpMatch && PERMANENT_HTTP_STATUSES.has(Number(httpMatch[1]))) {
 		return true;
 	}

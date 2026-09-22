@@ -42,7 +42,7 @@ function createRefreshQueue(name: string) {
 	return new Queue<RefreshJobPayload>(name, {
 		connection: getRedis(),
 		defaultJobOptions: {
-			attempts: 4,
+			attempts: name === redditRefreshQueueName ? 2 : 4,
 			backoff: {
 				type: "exponential",
 				delay: 30_000,
