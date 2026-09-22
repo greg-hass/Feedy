@@ -16,6 +16,13 @@ import {
 	subscribeToLayoutMode,
 	type LayoutMode,
 } from "@/lib/layout";
+import {
+	getStoredTimelineView,
+	setStoredTimelineView,
+	subscribeToTimelineView,
+	timelineViews,
+	type TimelineView,
+} from "@/lib/timeline-view";
 import type { MeResponse } from "@/types/app";
 
 type SettingKey = keyof MeResponse["user"]["settings"];
@@ -51,6 +58,11 @@ export function SettingsScreen() {
 		subscribeToLayoutMode,
 		getStoredLayoutMode,
 		() => "flat",
+	);
+	const timelineView = useSyncExternalStore<TimelineView>(
+		subscribeToTimelineView,
+		getStoredTimelineView,
+		() => "cards",
 	);
 	const storage = useQuery({
 		queryKey: ["settings-storage"],
@@ -131,6 +143,36 @@ export function SettingsScreen() {
 										aria-pressed={active}
 									>
 										{mode}
+									</button>
+								);
+							})}
+						</div>
+					</div>
+					<div className="mt-5">
+						<p className="text-xs font-medium text-[var(--text-primary)]">
+							Timeline density
+						</p>
+						<p className="mt-1 text-xs text-secondary">
+							Compact rows fit more text feeds on screen.
+						</p>
+						<div className="mt-3 grid grid-cols-2 gap-2">
+							{timelineViews.map((view) => {
+								const active = timelineView === view;
+								return (
+									<button
+										key={view}
+										type="button"
+										onClick={() => {
+											setStoredTimelineView(view);
+										}}
+										className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+											active
+												? "border-[var(--accent)]/30 bg-[var(--accent-dim)] text-[var(--accent)]"
+												: "border-subtle bg-[var(--surface-muted)] text-secondary"
+											}`}
+										aria-pressed={active}
+									>
+										{view === "cards" ? "Cards" : "Compact list"}
 									</button>
 								);
 							})}

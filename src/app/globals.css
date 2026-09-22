@@ -334,6 +334,11 @@ select {
   box-shadow: var(--card-shadow);
 }
 
+/* Dense rows use a tighter radius than media cards. */
+.compact-item-card {
+  border-radius: 16px;
+}
+
 :root[data-layout="flat"] .feed-item-card {
   background: transparent;
   border: 0;

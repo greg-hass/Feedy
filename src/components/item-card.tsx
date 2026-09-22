@@ -5,13 +5,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Bookmark, ExternalLink, Play } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 
 import { IconButton } from "@/components/ui/icon-button";
 import { useMe } from "@/components/app-shell";
 import { SearchHighlight } from "@/components/search-highlight";
 import { FeedAvatar } from "@/components/feed-avatar";
 import { api } from "@/lib/client";
+import { getFeedFolderColorMap } from "@/lib/folder-color";
 import {
 	getYouTubeThumbnailUrls,
 	isLikelyLowResolutionYouTubePlaceholder,
@@ -35,47 +36,37 @@ function formatResumeTime(seconds: number) {
 	return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
-export const ItemCard = memo(function ItemCard({
-	item,
-	searchQuery = "",
-}: {
-	item: ItemRecord;
-	searchQuery?: string;
-}) {
+/** Feed-row dot colouring per folder, shared by cards and the reader. */
+export function useFolderColorMap() {
+	const me = useMe();
+	const navigation = me.data?.navigation;
+	return useMemo(() => getFeedFolderColorMap(navigation), [navigation]);
+}
+
+function FolderDot({ color }: { color: string }) {
+	return (
+		<span
+			aria-hidden="true"
+			className="size-1 shrink-0 rounded-full"
+			style={{ backgroundColor: color }}
+		/>
+	);
+}
+
+/**
+ * Navigation, prefetching, and read/bookmark state shared by every card
+ * presentation (media card and compact row).
+ */
+function useItemCardController(item: ItemRecord) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const me = useMe();
-	const [imageLoaded, setImageLoaded] = useState(false);
-	const [thumbnailIndex, setThumbnailIndex] = useState(0);
-	const [internalPlayInline, setInternalPlayInline] = useState(false);
-	const [inlinePlayerLoading, setInlinePlayerLoading] = useState(false);
 	const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
 	const [optimisticBookmarked, setOptimisticBookmarked] = useState<
 		boolean | null
 	>(null);
-	const [resumeSeconds, setResumeSeconds] = useState(() =>
-		item.youtubeVideoId
-			? getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId)
-			: 0,
-	);
+
 	const isYouTube = item.feed.sourceType.includes("YOUTUBE");
-	const youtubeThumbnailUrls = item.youtubeVideoId
-		? getYouTubeThumbnailUrls(item.youtubeVideoId, {
-				existingUrl: item.mediaUrl,
-				isShort: item.youtubeIsShort,
-			})
-		: null;
-	const youtubeThumbnailAspectClass = item.youtubeIsShort
-		? "aspect-[9/16]"
-		: "aspect-video";
-	const playInline = internalPlayInline;
-	const hoverCardClass =
-		"[@media(hover:hover)]:hover:border-[var(--accent)]/30 [@media(hover:hover)]:hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]";
-	const hoverScaleClass = "[@media(hover:hover)]:group-hover:scale-105";
-	const hoverTextClass =
-		"[@media(hover:hover)]:group-hover:text-[var(--accent)]";
-	const hoverOpacityClass = "[@media(hover:hover)]:group-hover:opacity-100";
-	const hoverButtonScaleClass = "[@media(hover:hover)]:group-hover:scale-110";
 
 	const rememberTimelineAnchor = () => {
 		window.sessionStorage.setItem(
@@ -101,6 +92,32 @@ export const ItemCard = memo(function ItemCard({
 			staleTime: 30_000,
 		});
 	};
+
+	const updateState = useMutation({
+		mutationFn: (body: { read?: boolean; bookmarked?: boolean }) =>
+			api(`/api/items/${item.id}/state`, {
+				method: "POST",
+				body: JSON.stringify(body),
+			}),
+		onMutate: async (variables) => {
+			if (typeof variables.bookmarked === "boolean") {
+				setOptimisticBookmarked(variables.bookmarked);
+				setBookmarkAnimating(true);
+			}
+		},
+		onSuccess: async (_result, variables) => {
+			updateItemStateCaches(queryClient, item.id, variables);
+			updateReaderStateCache(queryClient, item.id, variables);
+			await queryClient.invalidateQueries({ queryKey: ["me"] });
+			await queryClient.invalidateQueries({ queryKey: ["items"] });
+		},
+		onError: () => {
+			setOptimisticBookmarked(null);
+		},
+		onSettled: () => {
+			setOptimisticBookmarked(null);
+		},
+	});
 
 	const openReader = () => {
 		rememberTimelineAnchor();
@@ -134,8 +151,11 @@ export const ItemCard = memo(function ItemCard({
 		openReader();
 	};
 
-	const navigateFromCard = (event: React.MouseEvent<HTMLElement>) => {
-		if (isYouTube || event.defaultPrevented) {
+	const navigateFromCard = (
+		event: React.MouseEvent<HTMLElement>,
+		{ allowYouTube = false }: { allowYouTube?: boolean } = {},
+	) => {
+		if ((!allowYouTube && isYouTube) || event.defaultPrevented) {
 			return;
 		}
 
@@ -162,31 +182,69 @@ export const ItemCard = memo(function ItemCard({
 
 	const isBookmarked = optimisticBookmarked ?? item.bookmarked;
 
-	const updateState = useMutation({
-		mutationFn: (body: { read?: boolean; bookmarked?: boolean }) =>
-			api(`/api/items/${item.id}/state`, {
-				method: "POST",
-				body: JSON.stringify(body),
-			}),
-		onMutate: async (variables) => {
-			if (typeof variables.bookmarked === "boolean") {
-				setOptimisticBookmarked(variables.bookmarked);
-				setBookmarkAnimating(true);
-			}
-		},
-		onSuccess: async (_result, variables) => {
-			updateItemStateCaches(queryClient, item.id, variables);
-			updateReaderStateCache(queryClient, item.id, variables);
-			await queryClient.invalidateQueries({ queryKey: ["me"] });
-			await queryClient.invalidateQueries({ queryKey: ["items"] });
-		},
-		onError: () => {
-			setOptimisticBookmarked(null);
-		},
-		onSettled: () => {
-			setOptimisticBookmarked(null);
-		},
-	});
+	const toggleBookmarked = () => {
+		vibrateIfSupported(window.navigator, 10);
+		updateState.mutate({ bookmarked: !isBookmarked });
+	};
+
+	return {
+		rememberTimelineAnchor,
+		prefetchReader,
+		openReader,
+		navigateToReader,
+		navigateFromCard,
+		isBookmarked,
+		bookmarkAnimating,
+		toggleBookmarked,
+		updateState,
+	};
+}
+
+export const ItemCard = memo(function ItemCard({
+	item,
+	searchQuery = "",
+}: {
+	item: ItemRecord;
+	searchQuery?: string;
+}) {
+	const {
+		rememberTimelineAnchor,
+		prefetchReader,
+		navigateToReader,
+		navigateFromCard,
+		isBookmarked,
+		bookmarkAnimating,
+		toggleBookmarked,
+		updateState,
+	} = useItemCardController(item);
+	const folderColorMap = useFolderColorMap();
+	const [imageLoaded, setImageLoaded] = useState(false);
+	const [thumbnailIndex, setThumbnailIndex] = useState(0);
+	const [internalPlayInline, setInternalPlayInline] = useState(false);
+	const [inlinePlayerLoading, setInlinePlayerLoading] = useState(false);
+	const [resumeSeconds, setResumeSeconds] = useState(() =>
+		item.youtubeVideoId
+			? getSavedYouTubeProgressSeconds(item.id, item.youtubeVideoId)
+			: 0,
+	);
+	const isYouTube = item.feed.sourceType.includes("YOUTUBE");
+	const youtubeThumbnailUrls = item.youtubeVideoId
+		? getYouTubeThumbnailUrls(item.youtubeVideoId, {
+				existingUrl: item.mediaUrl,
+				isShort: item.youtubeIsShort,
+			})
+		: null;
+	const youtubeThumbnailAspectClass = item.youtubeIsShort
+		? "aspect-[9/16]"
+		: "aspect-video";
+	const playInline = internalPlayInline;
+	const hoverCardClass =
+		"[@media(hover:hover)]:hover:border-[var(--accent)]/30 [@media(hover:hover)]:hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]";
+	const hoverScaleClass = "[@media(hover:hover)]:group-hover:scale-105";
+	const hoverTextClass =
+		"[@media(hover:hover)]:group-hover:text-[var(--accent)]";
+	const hoverOpacityClass = "[@media(hover:hover)]:group-hover:opacity-100";
+	const hoverButtonScaleClass = "[@media(hover:hover)]:group-hover:scale-110";
 
 	const thumbnailUrl =
 		isYouTube && item.youtubeVideoId
@@ -194,6 +252,7 @@ export const ItemCard = memo(function ItemCard({
 			: item.mediaUrl;
 	const feedTitle = decodeHtmlEntities(item.feed.label || item.feed.title);
 	const itemTitle = decodeHtmlEntities(item.title);
+	const folderColor = folderColorMap.get(item.feed.id) ?? null;
 	const applyNextYouTubeThumbnailFallback = () => {
 		if (
 			youtubeThumbnailUrls &&
@@ -376,6 +435,7 @@ export const ItemCard = memo(function ItemCard({
 						iconHintUrl={item.feed.iconHintUrl}
 						size={20}
 					/>
+					{folderColor ? <FolderDot color={folderColor} /> : null}
 					<p className="truncate text-[12px] font-medium text-secondary">
 						{feedTitle}
 					</p>
@@ -430,15 +490,12 @@ export const ItemCard = memo(function ItemCard({
 							variant="default"
 							size="md"
 							className={isBookmarked ? "text-[var(--accent)]" : ""}
-							onClick={() => {
-								vibrateIfSupported(window.navigator, 10);
-								updateState.mutate({ bookmarked: !isBookmarked });
-							}}
+							onClick={toggleBookmarked}
 							aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
 							data-card-action
 						>
 							<Bookmark
-								className={`size-[18px] ${bookmarkAnimating ? "bookmark-flip" : ""}`}
+								className={`size-[18px] ${bookmarkFlipClass(bookmarkAnimating)}`}
 								fill={isBookmarked ? "currentColor" : "none"}
 							/>
 						</IconButton>
@@ -455,6 +512,126 @@ export const ItemCard = memo(function ItemCard({
 						)}
 					</div>
 				</div>
+			</div>
+		</article>
+	);
+});
+
+function bookmarkFlipClass(bookmarkAnimating: boolean) {
+	return bookmarkAnimating ? "bookmark-flip" : "";
+}
+
+/** Dense row presentation: small thumb, two-line title, ~64-76px tall. */
+export const CompactItemCard = memo(function CompactItemCard({
+	item,
+	searchQuery = "",
+}: {
+	item: ItemRecord;
+	searchQuery?: string;
+}) {
+	const {
+		rememberTimelineAnchor,
+		prefetchReader,
+		navigateToReader,
+		navigateFromCard,
+		isBookmarked,
+		bookmarkAnimating,
+		toggleBookmarked,
+	} = useItemCardController(item);
+	const folderColorMap = useFolderColorMap();
+
+	const isYouTube = item.feed.sourceType.includes("YOUTUBE");
+	const youtubeThumbnailUrls = item.youtubeVideoId
+		? getYouTubeThumbnailUrls(item.youtubeVideoId, {
+				existingUrl: item.mediaUrl,
+				isShort: item.youtubeIsShort,
+			})
+		: null;
+	const thumbnailUrl = isYouTube
+		? (youtubeThumbnailUrls?.[0] ?? item.mediaUrl ?? null)
+		: item.mediaUrl;
+	const feedTitle = decodeHtmlEntities(item.feed.label || item.feed.title);
+	const itemTitle = decodeHtmlEntities(item.title);
+	const folderColor = folderColorMap.get(item.feed.id) ?? null;
+	const hoverTextClass =
+		"[@media(hover:hover)]:group-hover:text-[var(--accent)]";
+
+	return (
+		<article
+			data-timeline-item-id={item.id}
+			onClick={(event) => navigateFromCard(event, { allowYouTube: true })}
+			onPointerEnter={prefetchReader}
+			onFocus={prefetchReader}
+			className="group feed-item-card compact-item-card cursor-pointer overflow-hidden transition-all duration-300 [@media(hover:hover)]:hover:border-[var(--accent)]/30"
+		>
+			<div className="flex items-start gap-3 p-3">
+				<Link
+					href={`/reader/${item.id}`}
+					onPointerDown={rememberTimelineAnchor}
+					onClick={navigateToReader}
+					className="relative flex h-14 w-[5.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-muted"
+					aria-label={itemTitle}
+				>
+					{thumbnailUrl ? (
+						<Image
+							src={thumbnailUrl}
+							alt=""
+							fill
+							sizes="84px"
+							unoptimized
+							loading="lazy"
+							className="h-full w-full object-cover"
+						/>
+					) : (
+						<FeedAvatar
+							feedId={item.feed.id}
+							title={item.feed.label || item.feed.title}
+							iconHintUrl={item.feed.iconHintUrl}
+							size={28}
+						/>
+					)}
+				</Link>
+
+				<div className="min-w-0 flex-1">
+					<div className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)]">
+						{folderColor ? <FolderDot color={folderColor} /> : null}
+						<span className="truncate font-medium">{feedTitle}</span>
+						<span className="text-[var(--text-tertiary)]">·</span>
+						<span className="shrink-0">{relativeTime(item.publishedAt)}</span>
+						{!item.read ? (
+							<span
+								aria-hidden="true"
+								className="ml-auto inline-block size-[7px] shrink-0 rounded-full bg-[var(--accent)] shadow-[0_0_0_3px_var(--accent-dim)]"
+							/>
+						) : null}
+					</div>
+					<Link
+						href={`/reader/${item.id}`}
+						onPointerDown={rememberTimelineAnchor}
+						onClick={navigateToReader}
+						className="block"
+					>
+						<h3
+							className={`mt-1 line-clamp-2 text-[14px] font-semibold leading-snug tracking-[-0.005em] transition-colors duration-200 ${hoverTextClass} ${item.read ? "text-secondary" : ""}`}
+						>
+							<SearchHighlight text={itemTitle} query={searchQuery} />
+						</h3>
+					</Link>
+				</div>
+
+				<IconButton
+					variant="ghost"
+					size="sm"
+					className={`${isBookmarked ? "text-[var(--accent)]" : ""} mt-0.5`}
+					onClick={toggleBookmarked}
+					aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
+					data-card-action
+				>
+					<Bookmark
+						className={`size-4 ${bookmarkFlipClass(bookmarkAnimating)}`}
+						fill={isBookmarked ? "currentColor" : "none"}
+					/>
+				</IconButton>
 			</div>
 		</article>
 	);

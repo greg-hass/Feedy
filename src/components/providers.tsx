@@ -11,6 +11,11 @@ import {
 	getStoredLayoutMode,
 	layoutModeChangeEvent,
 } from "@/lib/layout";
+import {
+	applyTimelineView,
+	getStoredTimelineView,
+	timelineViewChangeEvent,
+} from "@/lib/timeline-view";
 // Set once at module load time — prevents the browser from auto-scrolling
 // to 0 on popstate (back navigation). Without this, the browser's own scroll
 // restoration fires before any React effect can set it to "manual", causing
@@ -74,16 +79,23 @@ export function Providers({
 
 	useLayoutEffect(() => {
 		applyLayoutMode(getStoredLayoutMode());
+		applyTimelineView(getStoredTimelineView());
 	}, []);
 
 	useEffect(() => {
 		const onLayoutModeChange = () => applyLayoutMode(getStoredLayoutMode());
+		const onTimelineViewChange = () =>
+			applyTimelineView(getStoredTimelineView());
 		window.addEventListener("storage", onLayoutModeChange);
 		window.addEventListener(layoutModeChangeEvent, onLayoutModeChange);
+		window.addEventListener("storage", onTimelineViewChange);
+		window.addEventListener(timelineViewChangeEvent, onTimelineViewChange);
 
 		return () => {
 			window.removeEventListener("storage", onLayoutModeChange);
 			window.removeEventListener(layoutModeChangeEvent, onLayoutModeChange);
+			window.removeEventListener("storage", onTimelineViewChange);
+			window.removeEventListener(timelineViewChangeEvent, onTimelineViewChange);
 		};
 	}, []);
 

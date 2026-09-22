@@ -17,19 +17,32 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import { Bookmark, Loader2, Search, SlidersHorizontal } from "lucide-react";
+import {
+	Bookmark,
+	LayoutGrid,
+	Loader2,
+	Rows3,
+	Search,
+	SlidersHorizontal,
+} from "lucide-react";
 
 import {
 	MobileShell,
 	LoadingSkeleton,
+	CompactSkeleton,
 	ErrorState,
 	EmptyState,
 } from "@/components/app-shell";
-import { ItemCard } from "@/components/item-card";
+import { CompactItemCard, ItemCard } from "@/components/item-card";
 import { usePullToRefresh } from "@/components/use-pull-to-refresh";
 import { useScrollRestoration } from "@/components/use-scroll-restoration";
 import { useTimelineFilters } from "@/components/use-timeline-filters";
 import { useRefreshController } from "@/components/refresh-button";
+import {
+	setStoredTimelineView,
+	timelineListClassName,
+	useTimelineView,
+} from "@/lib/timeline-view";
 import { TimelineRefreshToast } from "@/components/timeline-refresh-toast";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +85,7 @@ function getTimelineRefreshFingerprint(
 }
 
 export function UnreadScreen() {
+	const timelineView = useTimelineView();
 	const timelineAnchorStorageKey = "feedy-timeline-anchor-item";
 	const timelinePendingReadStorageKey = "feedy-timeline-pending-read";
 	const [timelineFixedTop, setTimelineFixedTop] = useState(95);
@@ -431,6 +445,25 @@ export function UnreadScreen() {
 			actions={
 				<>
 					<IconButton
+						variant={timelineView === "compact" ? "active" : "default"}
+						onClick={() =>
+							setStoredTimelineView(
+								timelineView === "compact" ? "cards" : "compact",
+							)
+						}
+						aria-label={
+							timelineView === "compact"
+								? "Switch to card view"
+								: "Switch to compact list view"
+						}
+					>
+						{timelineView === "compact" ? (
+							<Rows3 className="size-4" />
+						) : (
+							<LayoutGrid className="size-4" />
+						)}
+					</IconButton>
+					<IconButton
 						variant={searchOpen || query.trim() ? "active" : "default"}
 						onClick={() => {
 							if (searchOpen && !query.trim()) {
@@ -590,21 +623,37 @@ export function UnreadScreen() {
 			<div style={{ height: `${timelineControlsPanelHeight}px` }} />
 
 			{items.isLoading ? (
-				<LoadingSkeleton />
+				timelineView === "compact" ? (
+					<CompactSkeleton />
+				) : (
+					<LoadingSkeleton />
+				)
 			) : items.error ? (
 				<ErrorState message={items.error.message} onRetry={() => items.refetch()} />
 			) : timelineItems.length ? (
 				<div
-					className="space-y-3 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-3 min-[744px]:space-y-0"
+					className={timelineListClassName(timelineView)}
 					style={
 						timelineContentPullUp
 							? { marginTop: `-${timelineContentPullUp}px`, paddingTop: "1px" }
 							: undefined
 					}
 				>
-					{timelineItems.map((item) => (
-						<ItemCard key={item.id} item={item} searchQuery={deferredQuery} />
-					))}
+					{timelineItems.map((item) =>
+						timelineView === "compact" ? (
+							<CompactItemCard
+								key={item.id}
+								item={item}
+								searchQuery={deferredQuery}
+							/>
+						) : (
+							<ItemCard
+								key={item.id}
+								item={item}
+								searchQuery={deferredQuery}
+							/>
+						),
+					)}
 					<div
 						ref={bottomSentinelRef}
 						aria-hidden

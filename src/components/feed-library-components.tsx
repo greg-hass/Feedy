@@ -18,6 +18,7 @@ import {
 import { FeedAvatar } from "@/components/feed-avatar";
 import { Sheet } from "@/components/ui/sheet";
 import { freezeListScrollPosition } from "@/components/use-list-scroll-restoration";
+import { folderDotColor } from "@/lib/folder-color";
 import { api } from "@/lib/client";
 import { getFeedPauseActionLabel, getFeedPausePatch } from "@/lib/feed-pause";
 import { formatSourceType } from "@/lib/feed-source";
@@ -557,7 +558,14 @@ export function BulkMoveSheet({
 						className="flex w-full items-center justify-between rounded-[20px] bg-[var(--surface-strong)] px-4 py-3 text-left disabled:opacity-50"
 					>
 						<div className="min-w-0">
-							<p className="truncate text-sm font-semibold">{folder.title}</p>
+							<div className="flex items-center gap-1.5">
+								<span
+									aria-hidden="true"
+									className="size-1 shrink-0 rounded-full"
+									style={{ backgroundColor: folderDotColor(folder.title) }}
+								/>
+								<p className="truncate text-sm font-semibold">{folder.title}</p>
+							</div>
 							<p className="mt-1 text-xs text-secondary">
 								{folder.counts.feedCount} feeds · {folder.counts.unreadCount} unread
 							</p>

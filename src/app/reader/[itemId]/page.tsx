@@ -9,6 +9,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { FeedAvatar } from "@/components/feed-avatar";
+import { useFolderColorMap } from "@/components/item-card";
 import { api } from "@/lib/client";
 import {
 	updateItemStateCaches,
@@ -27,6 +28,7 @@ import type { ItemRecord } from "@/types/app";
 export default function ReaderPage() {
 	const params = useParams<{ itemId: string }>();
 	const router = useRouter();
+	const folderColorMap = useFolderColorMap();
 	const queryClient = useQueryClient();
 	const [bookmarkAnimating, setBookmarkAnimating] = useState(false);
 	const [optimisticBookmarked, setOptimisticBookmarked] = useState<
@@ -276,7 +278,16 @@ export default function ReaderPage() {
 						iconHintUrl={data.feed.iconHintUrl}
 						size={32}
 					/>
-					<p className="text-xs uppercase tracking-[0.18em] text-secondary">
+					{folderColorMap.get(data.feed.id) ? (
+					<span
+						aria-hidden="true"
+						className="size-1 shrink-0 rounded-full"
+						style={{
+							backgroundColor: folderColorMap.get(data.feed.id),
+						}}
+					/>
+				) : null}
+				<p className="text-xs uppercase tracking-[0.18em] text-secondary">
 						{data.feed.label || data.feed.title}
 					</p>
 				</div>

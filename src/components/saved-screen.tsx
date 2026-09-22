@@ -8,15 +8,21 @@ import {
 	EmptyState,
 	ErrorState,
 	LoadingSkeleton,
+	CompactSkeleton,
 	MobileShell,
 } from "@/components/app-shell";
-import { ItemCard } from "@/components/item-card";
+import { CompactItemCard, ItemCard } from "@/components/item-card";
+import {
+	timelineListClassName,
+	useTimelineView,
+} from "@/lib/timeline-view";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import type { ItemRecord } from "@/types/app";
 
 export function SavedScreen() {
+	const timelineView = useTimelineView();
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const [pullDistance, setPullDistance] = useState(0);
@@ -179,26 +185,42 @@ export function SavedScreen() {
 				</section>
 			) : null}
 			{items.isLoading ? (
-				<LoadingSkeleton />
+				timelineView === "compact" ? (
+					<CompactSkeleton />
+				) : (
+					<LoadingSkeleton />
+				)
 			) : items.error ? (
 				<ErrorState message={items.error.message} onRetry={() => items.refetch()} />
 			) : items.data?.length ? (
-				<div className="space-y-3 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-3 min-[744px]:space-y-0">
-					{items.data.map((item) => (
-						<ItemCard key={item.id} item={item} searchQuery={deferredQuery} />
-					))}
+				<div className={timelineListClassName(timelineView)}>
+					{items.data.map((item) =>
+						timelineView === "compact" ? (
+							<CompactItemCard
+								key={item.id}
+								item={item}
+								searchQuery={deferredQuery}
+							/>
+						) : (
+							<ItemCard
+								key={item.id}
+								item={item}
+								searchQuery={deferredQuery}
+							/>
+						),
+					)}
 				</div>
-			) : (
-				<EmptyState
-					title={deferredQuery.trim() ? "No saved matches" : "Nothing saved yet"}
-					body={
-						deferredQuery.trim()
-							? "Try a different phrase, feed name, or keyword."
-							: "Bookmark articles, videos, or Reddit posts to keep them close."
-					}
-					icon={<Bookmark className="size-6" />}
-				/>
-			)}
+		) : (
+			<EmptyState
+				title={deferredQuery.trim() ? "No saved matches" : "Nothing saved yet"}
+				body={
+					deferredQuery.trim()
+						? "Try a different phrase, feed name, or keyword."
+						: "Bookmark articles, videos, or Reddit posts to keep them close."
+				}
+				icon={<Bookmark className="size-6" />}
+			/>
+		)}
 		</MobileShell>
 	);
 }

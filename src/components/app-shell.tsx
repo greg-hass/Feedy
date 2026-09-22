@@ -249,6 +249,36 @@ export function LoadingSkeleton() {
 	);
 }
 
+// Compact rows skeleton (matches CompactItemCard layout)
+export function CompactSkeleton({ count = 8 }: { count?: number }) {
+	return (
+		<div className="space-y-2 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-2 min-[744px]:space-y-0">
+			{Array.from({ length: count }, (_, i) => (
+				<div key={i} className="feed-item-card flex items-start gap-3 p-3">
+					<div
+						className="h-14 w-[5.25rem] shrink-0 rounded-xl shimmer"
+						style={{ backgroundColor: "var(--surface-muted)" }}
+					/>
+					<div className="min-w-0 flex-1 space-y-2 py-1">
+						<div
+							className="h-3 w-24 rounded-full"
+							style={{ backgroundColor: "var(--surface-muted)" }}
+						/>
+						<div
+							className="h-4 w-full rounded-full"
+							style={{ backgroundColor: "var(--surface-muted)" }}
+						/>
+						<div
+							className="h-4 w-2/3 rounded-full"
+							style={{ backgroundColor: "var(--surface-muted)" }}
+						/>
+					</div>
+				</div>
+			))}
+		</div>
+	);
+}
+
 // Premium Error State
 export function ErrorState({
 	title = "Something went wrong",

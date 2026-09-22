@@ -17,7 +17,11 @@ import { useRef, useState } from "react";
 
 import { FeedAvatar } from "@/components/feed-avatar";
 import { EditFeedSheet } from "@/components/forms";
-import { ItemCard } from "@/components/item-card";
+import { CompactItemCard, ItemCard } from "@/components/item-card";
+import {
+	timelineListClassName,
+	useTimelineView,
+} from "@/lib/timeline-view";
 import { IconButton } from "@/components/ui/icon-button";
 import { Sheet } from "@/components/ui/sheet";
 import {
@@ -27,6 +31,7 @@ import {
 import {
 	MobileShell,
 	LoadingSkeleton,
+	CompactSkeleton,
 	ErrorState,
 	EmptyState,
 } from "@/components/app-shell";
@@ -41,6 +46,7 @@ function compareFeedLabels(a: NavFeed, b: NavFeed) {
 }
 
 export default function FolderDetailPage() {
+	const timelineView = useTimelineView();
 	const params = useParams<{ folderId: string }>();
 	const router = useRouter();
 	const queryClient = useQueryClient();
@@ -238,24 +244,32 @@ export default function FolderDetailPage() {
 
 				<main className="flex-1">
 					{items.isLoading ? (
+					timelineView === "compact" ? (
+						<CompactSkeleton />
+					) : (
 						<LoadingSkeleton />
+					)
 					) : items.error ? (
 						<ErrorState
 							message={items.error.message}
 							onRetry={() => items.refetch()}
 						/>
 					) : items.data?.length ? (
-						<div className="space-y-3 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-3 min-[744px]:space-y-0">
-							{items.data.map((item) => (
-								<ItemCard key={item.id} item={item} />
-							))}
+						<div className={timelineListClassName(timelineView)}>
+							{items.data.map((item) =>
+								timelineView === "compact" ? (
+									<CompactItemCard key={item.id} item={item} />
+								) : (
+									<ItemCard key={item.id} item={item} />
+								),
+							)}
 						</div>
-					) : (
-						<EmptyState
-							title="No items"
-							body="Pull down to refresh or wait for the next automatic refresh."
-						/>
-					)}
+				) : (
+					<EmptyState
+						title="No items"
+						body="Pull down to refresh or wait for the next automatic refresh."
+					/>
+				)}
 				</main>
 
 				{showBulkMove ? (
