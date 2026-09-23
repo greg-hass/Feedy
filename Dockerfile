@@ -13,54 +13,44 @@ RUN npx prisma generate
 COPY . .
 RUN npm run build
 
-# Copy static files into standalone for self-contained runtime
-RUN mkdir -p .next/standalone/.next/static && cp -r .next/static/* .next/standalone/.next/static/ 2>/dev/null || true
-RUN cp -r public .next/standalone/ 2>/dev/null || true
+# Bundle background processes so the runtime does not need the complete 800 MB
+# production dependency tree or tsx. jsdom and Prisma stay external because
+# Next's standalone output already contains their native/runtime files.
+RUN npx esbuild src/worker.ts src/healthcheck.ts prisma/seed.ts \
+    --bundle --platform=node --format=cjs --target=node22 \
+    --outdir=/app/dist \
+    --external:@prisma/client --external:.prisma/* --external:jsdom
 
 # ------------------------------------------------------------------
 
 FROM node:22-bookworm-slim
 WORKDIR /app
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production \
+    HOME=/home/feedy
 
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl && rm -rf /var/lib/apt/lists/*
-RUN groupadd --system --gid 1001 feedy && useradd --system --uid 1001 --gid feedy feedy
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd --system --gid 1001 feedy && \
+    useradd --system --uid 1001 --gid feedy --home-dir /home/feedy feedy
 
-# Standalone Next.js output for the web server (includes its own node_modules)
-COPY --from=builder /app/.next/standalone /app/.next/standalone
+# Next standalone includes only traced web dependencies. Copy directly to /app
+# so bundled workers can resolve its jsdom and generated Prisma client.
+COPY --from=builder --chown=feedy:feedy /app/.next/standalone ./
+COPY --from=builder --chown=feedy:feedy /app/.next/static ./.next/static
+COPY --from=builder --chown=feedy:feedy /app/public ./public
+COPY --from=builder --chown=feedy:feedy /app/dist ./dist
+COPY --from=builder --chown=feedy:feedy /app/prisma ./prisma
 
-# Prisma schema and migrations for prisma migrate deploy
-COPY prisma/ prisma/
+# Keep the migration CLI isolated from the application dependency tree. This is
+# substantially smaller than reinstalling every web and worker dependency.
+RUN mkdir -p /opt/prisma /app/data/icons /app/data/exports /app/.next/cache /home/feedy && \
+    cd /opt/prisma && npm install --no-save --ignore-scripts prisma@6.7.0 && \
+    rm -rf /root/.npm && \
+    chown -R feedy:feedy /opt/prisma /app/data /app/.next/cache /home/feedy
 
-# Worker-runtime dependencies: production deps + tsx (Prisma CLI is copied from builder below)
-COPY package.json package-lock.json tsconfig.json ./
-RUN npm ci --omit=dev --ignore-scripts && \
-    npm install --no-save --ignore-scripts tsx && \
-    rm -rf /root/.npm
-
-# Prisma: copy CLI, client, engines, and generated code all from the builder.
-# Must be version-aligned — installing prisma from the registry grabs latest,
-# which may be incompatible with the engines pinned in package-lock.
-# Copy after npm ci because npm replaces node_modules.
-COPY --from=builder /app/node_modules/.prisma node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma node_modules/prisma
-
-# Worker source files (web uses bundled standalone; worker runs via tsx)
-COPY src/worker.ts src/worker.ts
-COPY src/healthcheck.ts src/healthcheck.ts
-COPY src/lib/ src/lib/
-COPY src/types/ src/types/
-
-COPY docker/entrypoint.sh docker/entrypoint.sh
-RUN chmod +x docker/entrypoint.sh
-
-# /app/data stores cached icons/exports. Prisma also writes engine metadata
-# during migrate deploy, so keep its runtime engine directories writable.
-RUN mkdir -p /app/data/icons /app/data/exports /app/.next/standalone/.next/cache /home/feedy && \
-    chown -R feedy:feedy /app/data /app/.next/standalone /home/feedy /app/node_modules/@prisma /app/node_modules/prisma
-
-ENV HOME=/home/feedy
+COPY --chown=feedy:feedy docker/entrypoint.sh ./docker/entrypoint.sh
+RUN chmod 0555 ./docker/entrypoint.sh
 
 EXPOSE 3000
 USER feedy

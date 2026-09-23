@@ -9,27 +9,26 @@ describe("Dockerfile runtime hardening", () => {
     assert.match(dockerfile, /^USER\s+feedy$/m);
   });
 
-  it("keeps Prisma migrate engine directories writable for the non-root user", () => {
+  it("keeps the isolated Prisma migration CLI writable for the non-root user", () => {
+    const dockerfile = readFileSync("Dockerfile", "utf8");
+
+    assert.match(dockerfile, /npm install --no-save --ignore-scripts prisma@6\.7\.0/);
+    assert.match(dockerfile, /chown -R feedy:feedy \/opt\/prisma/);
+  });
+
+  it("uses Next standalone output with its generated Prisma client", () => {
     const dockerfile = readFileSync("Dockerfile", "utf8");
 
     assert.match(
       dockerfile,
-      /chown -R feedy:feedy .*\/app\/node_modules\/@prisma .*\/app\/node_modules\/prisma/,
+      /COPY --from=builder --chown=feedy:feedy \/app\/\.next\/standalone \.\//,
     );
   });
 
-  it("copies the generated Prisma client after npm installs runtime dependencies", () => {
+  it("bundles worker entrypoints instead of installing tsx in the runtime image", () => {
     const dockerfile = readFileSync("Dockerfile", "utf8");
 
-    assert.ok(
-      dockerfile.indexOf("RUN npm ci --omit=dev --ignore-scripts") <
-        dockerfile.indexOf("COPY --from=builder /app/node_modules/.prisma node_modules/.prisma"),
-    );
-  });
-
-  it("copies tsconfig into the runtime image for tsx path aliases", () => {
-    const dockerfile = readFileSync("Dockerfile", "utf8");
-
-    assert.match(dockerfile, /COPY package\.json package-lock\.json tsconfig\.json \.\//);
+    assert.match(dockerfile, /npx esbuild src\/worker\.ts src\/healthcheck\.ts prisma\/seed\.ts/);
+    assert.doesNotMatch(dockerfile, /npm install .*tsx/);
   });
 });

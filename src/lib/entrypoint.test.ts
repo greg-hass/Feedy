@@ -13,14 +13,16 @@ function runEntrypoint(mode: string) {
 
   spawnSync("mkdir", ["-p", binDir, dataDir], { encoding: "utf8" });
 
+  const nodeStub = path.join(binDir, "node");
+  const prismaStub = path.join(binDir, "prisma");
   writeFileSync(
-    path.join(binDir, "npm"),
-    `#!/bin/sh\nprintf 'npm %s\\n' "$*" >> "${logPath}"\nexit 0\n`,
+    nodeStub,
+    `#!/bin/sh\nprintf 'node %s\\n' "$*" >> "${logPath}"\nexit 0\n`,
     { mode: 0o755 },
   );
   writeFileSync(
-    path.join(binDir, "npx"),
-    `#!/bin/sh\nprintf 'npx %s\\n' "$*" >> "${logPath}"\nexit 0\n`,
+    prismaStub,
+    `#!/bin/sh\nprintf 'prisma %s\\n' "$*" >> "${logPath}"\nexit 0\n`,
     { mode: 0o755 },
   );
 
@@ -30,6 +32,8 @@ function runEntrypoint(mode: string) {
       ...process.env,
       DATA_DIR: dataDir,
       PATH: `${binDir}:${process.env.PATH ?? ""}`,
+      NODE_BIN: nodeStub,
+      PRISMA_BIN: prismaStub,
     },
     encoding: "utf8",
   });
@@ -43,11 +47,11 @@ function runEntrypoint(mode: string) {
 describe("docker entrypoint", () => {
   it("runs migrations and seed only in migrate mode", () => {
     assert.deepEqual(runEntrypoint("migrate").commands, [
-      "npx prisma migrate deploy",
-      "npm run seed",
+      "prisma migrate deploy --schema /app/prisma/schema.prisma",
+      "node /app/dist/prisma/seed.js",
     ]);
 
-    assert.deepEqual(runEntrypoint("web").commands, ["npm run start"]);
-    assert.deepEqual(runEntrypoint("worker").commands, ["npm run worker"]);
+    assert.deepEqual(runEntrypoint("web").commands, ["node /app/server.js"]);
+    assert.deepEqual(runEntrypoint("worker").commands, ["node /app/dist/src/worker.js"]);
   });
 });
